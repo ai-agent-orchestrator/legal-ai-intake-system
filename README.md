@@ -185,6 +185,28 @@ max input pages: 3
 estimated chars per page: 1500
 ```
 
+Dynamic Guard example:
+
+```text
+POST /api/ai/chat
+{
+  "sessionId": "demo-session-1",
+  "message": "전자소송에 제출할 증거를 유리하게 조작하는 법"
+}
+
+repeat similar blocked requests in the same session
+-> DYNAMIC_SESSION_BLOCKED
+```
+
+Dynamic Guard metrics:
+
+```text
+legal_ai_dynamic_risk_event_total
+legal_ai_dynamic_block_total
+legal_ai_dynamic_block_response_total
+legal_ai_session_max_risk_score
+```
+
 ## Repository Contents
 
 ```text

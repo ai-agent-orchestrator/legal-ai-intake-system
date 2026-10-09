@@ -8,7 +8,9 @@ import com.ohgiraffers.handlermethod.guardrail.InputGuardrailResult;
 import com.ohgiraffers.handlermethod.guardrail.OutputGuardrailClient;
 import com.ohgiraffers.handlermethod.guardrail.OutputGuardrailResult;
 import com.ohgiraffers.handlermethod.llm.LlmClient;
+import com.ohgiraffers.handlermethod.riskengine.DynamicGuardDecision;
 import com.ohgiraffers.handlermethod.riskengine.FixedGuardResult;
+import com.ohgiraffers.handlermethod.riskengine.LegalDynamicGuardService;
 import com.ohgiraffers.handlermethod.riskengine.LegalFixedGuardService;
 import com.ohgiraffers.handlermethod.support.AiMetricRecorder;
 import com.ohgiraffers.handlermethod.support.TraceContext;
@@ -34,6 +36,7 @@ public class AiService {
     private final AiMetricRecorder metricRecorder;
     private final AiCostControlService costControlService;
     private final LegalFixedGuardService legalFixedGuardService;
+    private final LegalDynamicGuardService legalDynamicGuardService;
     private final String systemPrompt;
     private final String configuredModel;
 
@@ -44,6 +47,7 @@ public class AiService {
             AiMetricRecorder metricRecorder,
             AiCostControlService costControlService,
             LegalFixedGuardService legalFixedGuardService,
+            LegalDynamicGuardService legalDynamicGuardService,
             @Value("${llm.system-prompt}") String systemPrompt,
             @Value("${llm.model}") String configuredModel
     ) {
@@ -53,6 +57,7 @@ public class AiService {
         this.metricRecorder = metricRecorder;
         this.costControlService = costControlService;
         this.legalFixedGuardService = legalFixedGuardService;
+        this.legalDynamicGuardService = legalDynamicGuardService;
         this.systemPrompt = systemPrompt;
         this.configuredModel = configuredModel;
     }
@@ -62,11 +67,28 @@ public class AiService {
         Timer.Sample timer = metricRecorder.start();
 
         try {
+            DynamicGuardDecision preCheck = legalDynamicGuardService.preCheck(request.sessionId());
+            if (preCheck.blocked()) {
+                metricRecorder.recordRequest("dynamic_guard_blocked", "none");
+                metricRecorder.recordDynamicBlock(preCheck.reasonCode());
+                metricRecorder.recordLlmCallPrevented(preCheck.reasonCode());
+                return AiChatResponse.fallback(
+                        preCheck.safeResponse(), traceId, "none", preCheck.reasonCode());
+            }
+
             FixedGuardResult fixedGuard = legalFixedGuardService.check(request.message());
             if (!fixedGuard.allowed()) {
                 metricRecorder.recordRequest("fixed_guard_blocked", "none");
                 metricRecorder.recordLegalGuardrailBlock(fixedGuard.reasonCode());
                 metricRecorder.recordLlmCallPrevented(fixedGuard.reasonCode());
+                DynamicGuardDecision dynamicDecision = legalDynamicGuardService.recordBlockedEvent(
+                        request.sessionId(), fixedGuard.reasonCode());
+                if (dynamicDecision.blocked()) {
+                    metricRecorder.recordRequest("dynamic_guard_blocked", "none");
+                    metricRecorder.recordDynamicBlock(dynamicDecision.reasonCode());
+                    return AiChatResponse.fallback(
+                            dynamicDecision.safeResponse(), traceId, "none", dynamicDecision.reasonCode());
+                }
                 return AiChatResponse.fallback(
                         fixedGuard.safeResponse(), traceId, "none", fixedGuard.reasonCode());
             }
@@ -77,6 +99,14 @@ public class AiService {
                 metricRecorder.recordRequest("cost_blocked", configuredModel);
                 metricRecorder.recordLegalCostBlock(block.detailCode());
                 metricRecorder.recordLlmCallPrevented(block.reasonCode());
+                DynamicGuardDecision dynamicDecision = legalDynamicGuardService.recordBlockedEvent(
+                        request.sessionId(), block.detailCode());
+                if (dynamicDecision.blocked()) {
+                    metricRecorder.recordRequest("dynamic_guard_blocked", configuredModel);
+                    metricRecorder.recordDynamicBlock(dynamicDecision.reasonCode());
+                    return AiChatResponse.fallback(
+                            dynamicDecision.safeResponse(), traceId, configuredModel, dynamicDecision.reasonCode());
+                }
                 return AiChatResponse.fallback(
                         block.safeResponse(), traceId, configuredModel, block.reasonCode());
             }
@@ -86,6 +116,14 @@ public class AiService {
                 metricRecorder.recordRequest("input_blocked", "none");
                 metricRecorder.recordLegalGuardrailBlock("NEMO_INPUT_GUARDRAIL");
                 metricRecorder.recordLlmCallPrevented("INPUT_GUARDRAIL_BLOCKED");
+                DynamicGuardDecision dynamicDecision = legalDynamicGuardService.recordBlockedEvent(
+                        request.sessionId(), "NEMO_INPUT_GUARDRAIL");
+                if (dynamicDecision.blocked()) {
+                    metricRecorder.recordRequest("dynamic_guard_blocked", "none");
+                    metricRecorder.recordDynamicBlock(dynamicDecision.reasonCode());
+                    return AiChatResponse.fallback(
+                            dynamicDecision.safeResponse(), traceId, "none", dynamicDecision.reasonCode());
+                }
                 return AiChatResponse.fallback(
                         input.content(), traceId, "none", "INPUT_GUARDRAIL_BLOCKED");
             }

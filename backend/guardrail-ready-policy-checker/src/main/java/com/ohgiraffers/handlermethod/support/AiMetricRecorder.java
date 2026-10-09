@@ -82,6 +82,13 @@ public class AiMetricRecorder {
                 .increment();
     }
 
+    public void recordDynamicBlock(String reason) {
+        Counter.builder("legal.ai.dynamic.block.response")
+                .tag("reason", normalize(reason))
+                .register(meterRegistry)
+                .increment();
+    }
+
     public void recordLlmCallPrevented(String reason) {
         Counter.builder("legal.ai.llm.call.prevented")
                 .tag("reason", normalize(reason))
