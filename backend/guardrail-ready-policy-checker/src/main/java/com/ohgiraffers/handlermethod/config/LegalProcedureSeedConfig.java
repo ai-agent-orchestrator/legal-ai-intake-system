@@ -63,7 +63,7 @@ public class LegalProcedureSeedConfig {
                         "electronic-litigation",
                         LegalProcedureDomain.ELECTRONIC_LITIGATION,
                         "전자소송 이용 절차",
-                        "사용자 등록, 소 제기, 답변서 제출, 송달, 사건기록열람으로 이어지는 온라인 소송 이용 흐름입니다.",
+                        "사용자 등록, 사건 유형 선택, 문서 작성, 증거 첨부, 전자서명, 송달, 사건기록열람으로 이어지는 온라인 소송 이용 흐름입니다.",
                         "party-or-representative"
                 )
         );
@@ -73,24 +73,56 @@ public class LegalProcedureSeedConfig {
                 1,
                 "user-registration",
                 "사용자 등록",
-                "실지명의 확인 가능한 인증서로 본인을 확인하고 전자소송 사용자 정보를 등록합니다.",
-                "인증서 준비|사용자 정보 입력|전자소송 동의 여부 확인"
+                "실지명의 확인 가능한 인증수단으로 본인을 확인하고 전자소송 사용자 정보를 등록합니다.",
+                "인증수단 준비|사용자 정보 입력|전자소송 이용 동의 여부 확인|연락 가능한 주소와 연락처 확인"
         ));
         stepRepository.save(LegalProcedureStep.create(
                 electronicLitigation,
                 2,
-                "claim-filing",
-                "소 제기",
-                "원고는 전자소송 포털에서 소장을 작성하고 전자서명 후 제출합니다.",
-                "사건 유형 확인|소장 작성|증거자료 첨부|전자서명 후 제출"
+                "case-type-selection",
+                "사건 유형 선택",
+                "민사, 가사, 행정 등 제출하려는 사건 유형과 당사자 지위를 확인합니다.",
+                "사건 분야 확인|원고/피고/신청인 등 지위 확인|상대방 인적사항 확인|관할 법원 검토"
         ));
         stepRepository.save(LegalProcedureStep.create(
                 electronicLitigation,
                 3,
+                "claim-filing",
+                "문서 작성과 제출",
+                "소장, 신청서, 답변서 등 사건 유형에 맞는 문서를 작성하고 제출 정보를 입력합니다.",
+                "청구취지 또는 신청취지 정리|청구원인 또는 신청이유 작성|당사자 표시 확인|제출 문서 미리보기"
+        ));
+        stepRepository.save(LegalProcedureStep.create(
+                electronicLitigation,
+                4,
+                "evidence-attachment",
+                "증거자료 첨부",
+                "계약서, 입금내역, 대화자료, 공문서 등 제출할 증거 파일을 정리해 첨부합니다.",
+                "파일명 정리|증거와 주장 연결|개인정보 포함 여부 확인|원본 보관 여부 확인"
+        ));
+        stepRepository.save(LegalProcedureStep.create(
+                electronicLitigation,
+                5,
+                "electronic-signature-submit",
+                "전자서명과 제출",
+                "작성한 문서와 첨부자료를 확인한 뒤 전자서명하고 제출 결과를 확인합니다.",
+                "제출 전 문서 확인|전자서명 진행|접수번호 또는 사건번호 확인|제출 완료 화면 저장"
+        ));
+        stepRepository.save(LegalProcedureStep.create(
+                electronicLitigation,
+                6,
                 "record-review",
-                "사건기록열람",
-                "전자소송에 동의한 당사자는 진행 중인 사건 기록을 온라인으로 열람할 수 있습니다.",
-                "사건번호 확인|기록 열람|제출 서류와 송달 문서 확인"
+                "송달과 사건기록열람",
+                "전자소송에 동의한 당사자는 송달 문서와 진행 중인 사건 기록을 온라인으로 확인할 수 있습니다.",
+                "사건번호 확인|송달 문서 확인|기록 열람|제출 서류와 법원 문서 확인"
+        ));
+        stepRepository.save(LegalProcedureStep.create(
+                electronicLitigation,
+                7,
+                "supplementary-filing",
+                "보정명령과 추가 제출 대응",
+                "법원이 보정명령이나 추가 제출을 요구하면 기한과 보정 내용을 확인해 자료를 보완합니다.",
+                "보정명령 내용 확인|제출 기한 확인|누락 서류 보완|추가 제출 완료 여부 확인"
         ));
 
         formRepository.save(LegalFormTemplate.create(
@@ -99,6 +131,13 @@ public class LegalProcedureSeedConfig {
                 "전자소송 동의 관련 안내",
                 "portal-process",
                 "전자소송 포털에서 사건번호와 인증정보를 기준으로 동의 절차를 진행할 때 참고합니다."
+        ));
+        formRepository.save(LegalFormTemplate.create(
+                electronicLitigation,
+                "electronic-litigation-filing-checklist",
+                "전자소송 제출 전 체크리스트",
+                "checklist",
+                "전자소송으로 문서를 제출하기 전 당사자 정보, 문서 내용, 첨부파일, 전자서명, 사건번호 확인을 점검할 때 사용합니다."
         ));
 
         /*

@@ -138,6 +138,20 @@ POST /api/legal/intake/analyze
 
 This is not a deep legal knowledge graph. It is a lightweight ontology for law-firm help desk intake and procedure guidance.
 
+Electronic litigation is slightly deeper than the other categories because it is useful as a common entry path:
+
+```text
+user registration
+-> case type selection
+-> document drafting
+-> evidence attachment
+-> electronic signature and submission
+-> service / record review
+-> supplementary filing
+```
+
+The project still keeps legal content intentionally limited. The main focus remains security architecture, not legal-content expansion.
+
 ## Repository Contents
 
 ```text
