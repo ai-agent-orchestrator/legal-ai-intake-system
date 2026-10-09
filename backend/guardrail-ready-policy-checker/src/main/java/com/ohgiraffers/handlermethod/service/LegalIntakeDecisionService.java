@@ -5,6 +5,8 @@ import com.ohgiraffers.handlermethod.dto.LegalIntakeAnalyzeResponse;
 import com.ohgiraffers.handlermethod.entity.LegalIntakeHistory;
 import com.ohgiraffers.handlermethod.legal.LegalIntakeDecision;
 import com.ohgiraffers.handlermethod.legal.LegalIntakeSignal;
+import com.ohgiraffers.handlermethod.legal.LegalIntakeTemplate;
+import com.ohgiraffers.handlermethod.legal.LegalIntakeTemplateCatalog;
 import com.ohgiraffers.handlermethod.legal.LegalNextStep;
 import com.ohgiraffers.handlermethod.legal.LegalReadinessLevel;
 import com.ohgiraffers.handlermethod.repository.LegalIntakeHistoryRepository;
@@ -32,6 +34,12 @@ public class LegalIntakeDecisionService {
         LegalReadinessLevel level = decideLevel(score);
         LegalIntakeDecision decision = decide(signals, level);
         LegalNextStep nextStep = decideNextStep(signals, decision);
+        LegalIntakeTemplate template = LegalIntakeTemplateCatalog.match(
+                draft.caseType(),
+                draft.summary(),
+                draft.claimPurpose(),
+                draft.currentStage()
+        );
         String traceId = TraceContext.currentTraceId();
 
         LegalIntakeHistory history = legalIntakeHistoryRepository.save(
@@ -61,6 +69,13 @@ public class LegalIntakeDecisionService {
                 signals.stream().map(Enum::name).toList(),
                 nextStep.name(),
                 true,
+                template.caseType().name(),
+                template.domain() == null ? "UNKNOWN" : template.domain().name(),
+                template.procedureCode(),
+                template.displayName(),
+                template.requiredDocuments(),
+                template.intakeQuestions(),
+                template.nextSteps(),
                 history.getId(),
                 traceId
         );

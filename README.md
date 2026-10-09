@@ -101,6 +101,43 @@ legal harm refusal flow
 output safety flow
 ```
 
+## E-Court Based Intake Ontology
+
+The current draft uses the already collected court-procedure content as a small intake ontology.
+
+It is intentionally shallow and practical:
+
+```text
+domain
+-> CIVIL / CRIMINAL / FAMILY / ELECTRONIC_LITIGATION
+
+case type
+-> civil-litigation
+-> criminal-supplementary-investigation
+-> family-procedure-aid
+-> electronic-litigation
+
+intake output
+-> matched procedure
+-> required documents
+-> intake questions
+-> recommended next steps
+```
+
+The intake API now connects a user request to this template data:
+
+```text
+POST /api/legal/intake/analyze
+-> readiness decision
+-> matchedCaseType
+-> matchedProcedureCode
+-> requiredDocuments
+-> intakeQuestions
+-> procedureNextSteps
+```
+
+This is not a deep legal knowledge graph. It is a lightweight ontology for law-firm help desk intake and procedure guidance.
+
 ## Repository Contents
 
 ```text

@@ -9,6 +9,13 @@ public record LegalIntakeAnalyzeResponse(
         List<String> signals,
         String recommendedNextStep,
         boolean ontologyDraft,
+        String matchedCaseType,
+        String matchedDomain,
+        String matchedProcedureCode,
+        String matchedProcedureName,
+        List<String> requiredDocuments,
+        List<String> intakeQuestions,
+        List<String> procedureNextSteps,
         Long historyId,
         String traceId
 ) {
