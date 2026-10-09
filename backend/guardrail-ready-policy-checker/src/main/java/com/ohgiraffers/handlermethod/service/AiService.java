@@ -8,6 +8,8 @@ import com.ohgiraffers.handlermethod.guardrail.InputGuardrailResult;
 import com.ohgiraffers.handlermethod.guardrail.OutputGuardrailClient;
 import com.ohgiraffers.handlermethod.guardrail.OutputGuardrailResult;
 import com.ohgiraffers.handlermethod.llm.LlmClient;
+import com.ohgiraffers.handlermethod.riskengine.FixedGuardResult;
+import com.ohgiraffers.handlermethod.riskengine.LegalFixedGuardService;
 import com.ohgiraffers.handlermethod.support.AiMetricRecorder;
 import com.ohgiraffers.handlermethod.support.TraceContext;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,6 +33,7 @@ public class AiService {
     private final LlmClient llmClient;
     private final AiMetricRecorder metricRecorder;
     private final AiCostControlService costControlService;
+    private final LegalFixedGuardService legalFixedGuardService;
     private final String systemPrompt;
     private final String configuredModel;
 
@@ -40,6 +43,7 @@ public class AiService {
             LlmClient llmClient,
             AiMetricRecorder metricRecorder,
             AiCostControlService costControlService,
+            LegalFixedGuardService legalFixedGuardService,
             @Value("${llm.system-prompt}") String systemPrompt,
             @Value("${llm.model}") String configuredModel
     ) {
@@ -48,6 +52,7 @@ public class AiService {
         this.llmClient = llmClient;
         this.metricRecorder = metricRecorder;
         this.costControlService = costControlService;
+        this.legalFixedGuardService = legalFixedGuardService;
         this.systemPrompt = systemPrompt;
         this.configuredModel = configuredModel;
     }
@@ -57,9 +62,30 @@ public class AiService {
         Timer.Sample timer = metricRecorder.start();
 
         try {
+            FixedGuardResult fixedGuard = legalFixedGuardService.check(request.message());
+            if (!fixedGuard.allowed()) {
+                metricRecorder.recordRequest("fixed_guard_blocked", "none");
+                metricRecorder.recordLegalGuardrailBlock(fixedGuard.reasonCode());
+                metricRecorder.recordLlmCallPrevented(fixedGuard.reasonCode());
+                return AiChatResponse.fallback(
+                        fixedGuard.safeResponse(), traceId, "none", fixedGuard.reasonCode());
+            }
+
+            var pageLimitBlock = costControlService.checkInputPageLimit(request.message());
+            if (pageLimitBlock.isPresent()) {
+                AiCostControlService.CostLimitBlock block = pageLimitBlock.get();
+                metricRecorder.recordRequest("cost_blocked", configuredModel);
+                metricRecorder.recordLegalCostBlock(block.detailCode());
+                metricRecorder.recordLlmCallPrevented(block.reasonCode());
+                return AiChatResponse.fallback(
+                        block.safeResponse(), traceId, configuredModel, block.reasonCode());
+            }
+
             InputGuardrailResult input = checkInput(request.message());
             if (!input.allowed()) {
                 metricRecorder.recordRequest("input_blocked", "none");
+                metricRecorder.recordLegalGuardrailBlock("NEMO_INPUT_GUARDRAIL");
+                metricRecorder.recordLlmCallPrevented("INPUT_GUARDRAIL_BLOCKED");
                 return AiChatResponse.fallback(
                         input.content(), traceId, "none", "INPUT_GUARDRAIL_BLOCKED");
             }

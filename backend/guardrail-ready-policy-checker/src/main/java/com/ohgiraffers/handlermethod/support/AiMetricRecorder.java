@@ -67,4 +67,29 @@ public class AiMetricRecorder {
                 .register(meterRegistry)
                 .increment();
     }
+
+    public void recordLegalGuardrailBlock(String reason) {
+        Counter.builder("legal.ai.guardrail.block")
+                .tag("reason", normalize(reason))
+                .register(meterRegistry)
+                .increment();
+    }
+
+    public void recordLegalCostBlock(String reason) {
+        Counter.builder("legal.ai.cost.block")
+                .tag("reason", normalize(reason))
+                .register(meterRegistry)
+                .increment();
+    }
+
+    public void recordLlmCallPrevented(String reason) {
+        Counter.builder("legal.ai.llm.call.prevented")
+                .tag("reason", normalize(reason))
+                .register(meterRegistry)
+                .increment();
+    }
+
+    private String normalize(String value) {
+        return value == null || value.isBlank() ? "unknown" : value;
+    }
 }

@@ -20,6 +20,8 @@ public class AiCostControlService {
     private final BigDecimal inputUsdPer1kTokens;
     private final BigDecimal outputUsdPer1kTokens;
     private final int maxOutputTokens;
+    private final int maxInputPages;
+    private final int estimatedCharsPerPage;
     private final MeterRegistry meterRegistry;
 
     private BigDecimal reservedUsd = BigDecimal.ZERO;
@@ -30,12 +32,16 @@ public class AiCostControlService {
             @Value("${llm.cost.input-usd-per-1k-tokens}") BigDecimal inputUsdPer1kTokens,
             @Value("${llm.cost.output-usd-per-1k-tokens}") BigDecimal outputUsdPer1kTokens,
             @Value("${llm.max-output-tokens}") int maxOutputTokens,
+            @Value("${llm.cost.max-input-pages}") int maxInputPages,
+            @Value("${llm.cost.estimated-chars-per-page}") int estimatedCharsPerPage,
             MeterRegistry meterRegistry
     ) {
         this.monthlyBudgetUsd = monthlyBudgetUsd;
         this.inputUsdPer1kTokens = inputUsdPer1kTokens;
         this.outputUsdPer1kTokens = outputUsdPer1kTokens;
         this.maxOutputTokens = maxOutputTokens;
+        this.maxInputPages = maxInputPages;
+        this.estimatedCharsPerPage = estimatedCharsPerPage;
         this.meterRegistry = meterRegistry;
 
         Gauge.builder("ai.cost.budget.usd", this, control -> control.monthlyBudgetUsd.doubleValue())
@@ -47,6 +53,37 @@ public class AiCostControlService {
         Gauge.builder("ai.cost.actual.usd", this, AiCostControlService::actualAmount)
                 .description("Actual recorded AI cost for the current application period")
                 .register(meterRegistry);
+    }
+
+    public Optional<CostLimitBlock> checkInputPageLimit(String userMessage) {
+        int chars = userMessage == null ? 0 : userMessage.length();
+        int maxChars = Math.max(1, maxInputPages) * Math.max(1, estimatedCharsPerPage);
+
+        if (chars <= maxChars) {
+            return Optional.empty();
+        }
+
+        int estimatedPages = Math.max(1, (chars + estimatedCharsPerPage - 1) / estimatedCharsPerPage);
+        Counter.builder("ai.cost.blocked")
+                .tag("reason", "REQUEST_TOO_LONG")
+                .tag("model", "pre_llm")
+                .register(meterRegistry)
+                .increment();
+
+        return Optional.of(new CostLimitBlock(
+                "COST_LIMIT_BLOCKED",
+                "REQUEST_TOO_LONG",
+                estimatedPages,
+                maxInputPages,
+                """
+                        문서가 너무 길어 한 번에 처리할 수 없습니다.
+                        전자소송 제출 전 검토를 위해 아래 순서로 나누어 입력해 주세요.
+                        1. 문서 종류
+                        2. 제출 목적
+                        3. 핵심 쟁점
+                        4. 3~5개 주요 증거
+                        """
+        ));
     }
 
     public synchronized Optional<CostReservation> reserve(String systemPrompt,
@@ -142,5 +179,14 @@ public class AiCostControlService {
     }
 
     public record CostReservation(String model, BigDecimal estimatedUsd) {
+    }
+
+    public record CostLimitBlock(
+            String reasonCode,
+            String detailCode,
+            int estimatedPages,
+            int maxPages,
+            String safeResponse
+    ) {
     }
 }
