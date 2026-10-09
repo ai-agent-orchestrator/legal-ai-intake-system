@@ -1,0 +1,19 @@
+colang_version: "2.x"
+
+models:
+  - type: main
+    engine: openai
+    model: gpt-4o-mini
+
+tracing:
+  enabled: true
+  span_format: "opentelemetry"
+  enable_content_capture: false
+
+rails:
+  input:
+    flows:
+      - legal input policy
+  output:
+    flows:
+      - legal output policy

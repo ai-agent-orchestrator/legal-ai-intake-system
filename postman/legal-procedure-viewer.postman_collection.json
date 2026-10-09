@@ -1,0 +1,123 @@
+{
+  "info": {
+    "name": "Legal Procedure Viewer Assignment",
+    "description": "Postman checks for the Spring Boot and React integration assignment.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "procedureCode",
+      "value": "civil-litigation"
+    }
+  ],
+  "item": [
+    {
+      "name": "Login - receive JWT",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"user\",\n  \"password\": \"user123\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "login"]
+        }
+      }
+    },
+    {
+      "name": "Legal procedures - public GET",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/api/legal/procedures",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "legal", "procedures"]
+        }
+      }
+    },
+    {
+      "name": "Legal procedure detail",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/api/legal/procedures/{{procedureCode}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "legal", "procedures", "{{procedureCode}}"]
+        }
+      }
+    },
+    {
+      "name": "Supplementary investigation checklist",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/api/legal/criminal/checklist/supplementary-investigation",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "legal", "criminal", "checklist", "supplementary-investigation"]
+        }
+      }
+    },
+    {
+      "name": "AI API without JWT - expect 401",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"message\": \"내용증명 작성 절차를 알려줘\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/ai/chat",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "ai", "chat"]
+        }
+      }
+    },
+    {
+      "name": "AI API with JWT",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"message\": \"내용증명 작성 절차를 알려줘\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/ai/chat",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "ai", "chat"]
+        }
+      }
+    }
+  ]
+}

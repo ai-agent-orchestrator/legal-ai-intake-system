@@ -1,0 +1,21 @@
+:root {
+  --bg: #f6f7f9;
+  --panel: #ffffff;
+  --text: #182230;
+  --muted: #667085;
+  --line: #d0d5dd;
+  --blue: #175cd3;
+  --blue-soft: #eff8ff;
+  --green-soft: #ecfdf3;
+  --yellow-soft: #fffaeb;
+  --red-soft: #fff1f0;
+  --code: #101828;
+  --radius-control: 6px;
+  --radius-panel: 8px;
+  --radius-pill: 999px;
+  --space-xs: 6px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 18px;
+  --space-xl: 30px;
+}

@@ -1,0 +1,27 @@
+{
+  "color": {
+    "background": "#f6f7f9",
+    "surface": "#ffffff",
+    "text": "#182230",
+    "muted": "#667085",
+    "border": "#d0d5dd",
+    "primary": "#175cd3",
+    "primarySoft": "#eff8ff",
+    "successSoft": "#ecfdf3",
+    "warningSoft": "#fffaeb",
+    "dangerSoft": "#fff1f0",
+    "code": "#101828"
+  },
+  "radius": {
+    "control": "6px",
+    "panel": "8px",
+    "pill": "999px"
+  },
+  "space": {
+    "xs": "6px",
+    "sm": "8px",
+    "md": "12px",
+    "lg": "18px",
+    "xl": "30px"
+  }
+}
