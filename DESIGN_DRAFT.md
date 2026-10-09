@@ -1,5 +1,7 @@
 # Legal AI Intake Security Server - Design Draft
 
+Status: draft branch for later revision.
+
 ## 1. Project Identity
 
 This project is not a full legal advice chatbot.

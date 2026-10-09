@@ -1,5 +1,7 @@
 # Legal AI Intake Security Server
 
+> Draft branch: this repository is currently a design and migration draft, not a finished product.
+
 This repository is a Spring Java based Legal Intake and Guide System.
 
 It is not designed to replace legal consultation. Its goal is to improve the weak first-contact experience of a law firm help desk:
