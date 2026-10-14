@@ -69,7 +69,7 @@ Design the actual working screen.
 flowchart LR
     S01["01. Login"] --> R{"Role"}
 
-    R -- Client --> S02["02. Client Intake Start"]
+    R -- Client --> S02["02. Case Type Assistant / Ontology Guide"]
     S02 --> S03["03. Client Legal Intake Form"]
     S03 --> S04["04. Client AI Summary Result"]
     S04 --> S05["05. Lawyer Search Routing"]
@@ -92,7 +92,7 @@ flowchart LR
 | No | Screen Title | Role | Main Purpose |
 | ---: | --- | --- | --- |
 | 01 | Login | Common | JWT 로그인과 역할 기반 진입 |
-| 02 | Client Intake Start | Client | 문의 목적과 사건 유형 선택 |
+| 02 | Case Type Assistant / Ontology Guide | Client | 사건 유형과 소분류를 온톨로지 기반으로 1차 분류 |
 | 03 | Client Legal Intake Form | Client | 선택형 intake 입력 |
 | 04 | Client AI Summary Result | Client | 챗봇형 사건 요약과 준비자료 안내 |
 | 05 | Lawyer Search Routing | Client | 변호사 탐색 조건과 검색 결과 설명 |
@@ -130,7 +130,7 @@ flowchart LR
 ### Next Screen
 
 ```text
-Client Demo -> 02. Client Intake Start
+Client Demo -> 02. Case Type Assistant / Ontology Guide
 Attorney Demo -> 06. Attorney Intake Dashboard
 Admin Demo -> 09. Admin Overview Dashboard
 ```
@@ -157,11 +157,11 @@ Make the design clean, trustworthy, and practical.
 The screen should immediately show that this system has client, attorney, and admin roles.
 ```
 
-## 02. Client Intake Start
+## 02. Case Type Assistant / Ontology Guide
 
 ### Purpose
 
-고객이 긴 주관식 설명 전에 문의 목적과 사건 유형을 선택한다.
+고객이 자기 사건이 민사/형사/가사/전자소송 중 어디에 속하는지 몰라도, 선택형 온톨로지 가이드와 짧은 설명 입력을 통해 사건 유형과 소분류를 1차 분류한다.
 
 ### Required UI
 
@@ -172,12 +172,28 @@ The screen should immediately show that this system has client, attorney, and ad
   - 작성한 문서 검토
   - 변호사 선임/계약 검토
   - 전자소송 제출 안내
-- Case type segmented control
+- Legal ontology guide cards
   - 민사
+    - 대여금 / 계약 / 임대차 / 손해배상 / 지급명령 / 사기 피해 금전반환
   - 형사
+    - 사기 고소 / 폭행·상해 / 명예훼손·모욕 / 피고소인 조사 / 경찰 조사
   - 가사
+    - 이혼 / 양육비 / 상속 / 친권·양육권 / 재산분할
   - 전자소송
+    - 혼자 소송을 준비하고 있어요 / 소장 제출 / 답변서 제출 / 보정명령 대응 / 송달·사건조회
   - 잘 모르겠음
+    - 챗봇 도우미에게 사건을 한두 문장으로 적어 자동 분류 요청
+- Large chatbot helper input
+  - "무슨 일인지 한두 문장으로 적어주세요."
+  - examples:
+    - "사기를 당한 것 같아요. 돈을 보냈는데 연락이 안 됩니다."
+    - "돈을 빌려줬는데 못 받고 있습니다."
+    - "이혼과 양육비 문제가 같이 있습니다."
+- AI classification button
+- Classification result preview
+  - 추천 사건 유형
+  - 추천 소분류
+  - 준비하면 좋은 자료
 - Next button
 - Help text
 
@@ -190,27 +206,43 @@ Next -> 03. Client Legal Intake Form
 ### Design Prompt
 
 ```text
-Create a desktop wireframe for screen 02, "Client Intake Start".
+Create a desktop wireframe for screen 02, "Case Type Assistant / Ontology Guide".
 
 This is the first client-facing screen after login.
-The goal is to reduce free-text burden by letting the client choose inquiry purpose and case type.
+The goal is to help clients who do not know whether their issue is civil, criminal, family-related, or electronic-litigation-related.
+The screen should combine selectable legal ontology cards with a large chatbot helper input for users who are not sure.
 
 Include:
 - top progress indicator: "Step 1 of 4"
-- page title: "문의 목적과 사건 유형을 선택해 주세요"
+- page title: "사건 유형을 잘 모르셔도 괜찮습니다"
+- subtitle: "가까운 항목을 선택하거나, 아래에 사건을 한두 문장으로 적어 주세요."
 - inquiry purpose selection cards:
   1. 절차 안내
   2. 필요한 자료 확인
   3. 작성한 문서 검토
   4. 변호사 선임/계약 검토
   5. 전자소송 제출 안내
-- case type segmented control:
-  민사 / 형사 / 가사 / 전자소송 / 잘 모르겠음
-- short helper text explaining that the user does not need to know legal terminology
+- legal ontology guide cards:
+  1. 민사
+     - 대여금 / 계약 / 임대차 / 손해배상 / 지급명령 / 사기 피해 금전반환
+  2. 형사
+     - 사기 고소 / 폭행·상해 / 명예훼손·모욕 / 피고소인 조사 / 경찰 조사
+  3. 가사
+     - 이혼 / 양육비 / 상속 / 친권·양육권 / 재산분할
+  4. 전자소송
+     - 혼자 소송을 준비하고 있어요 / 소장 제출 / 답변서 제출 / 보정명령 대응 / 송달·사건조회
+  5. 잘 모르겠음
+     - 챗봇 도우미 요청: 사건을 한두 문장으로 적으면 자동 분류
+- large chatbot helper input:
+  placeholder: "예: 사기를 당한 것 같아요. 돈을 보냈는데 연락이 안 됩니다."
+- button: "AI가 사건 유형 분류하기"
+- classification preview card:
+  추천 사건 유형, 추천 소분류, 준비하면 좋은 자료
 - Next button fixed at the bottom right
 
 Use Korean UI labels.
-Make it feel like a guided intake kiosk, not a free-form chatbot.
+Make it feel like a guided legal ontology assistant, not a free-form chatbot and not a legal advice screen.
+The key product idea: the client does not need to know the legal category; the system converts the client's expression into an ontology structure.
 ```
 
 ## 03. Client Legal Intake Form
@@ -222,6 +254,10 @@ Make it feel like a guided intake kiosk, not a free-form chatbot.
 ### Required UI
 
 - Progress indicator: Step 2 of 4
+- Case type / dispute area confirmation
+  - Screen 2에서 선택 또는 자동 분류된 사건 유형
+  - Screen 2에서 선택 또는 자동 분류된 소분류/분쟁 영역
+  - 필요 시 수정 가능
 - Party position selection
 - Core facts form
   - 사건 발생일
@@ -251,6 +287,8 @@ Use selectable inputs, checkboxes, and short text fields.
 
 Include:
 - top progress indicator: "Step 2 of 4"
+- top confirmation strip:
+  사건 유형, 소분류/분쟁 영역, 수정 버튼
 - left section: party position selection
   피해자 / 피고소인 / 원고 / 피고 / 신청인 / 상대방 / 잘 모르겠음
 - middle section: core facts form
@@ -735,7 +773,7 @@ It is a legal intake and AI security architecture product.
 Create 12 numbered screens:
 
 01. Login
-02. Client Intake Start
+02. Case Type Assistant / Ontology Guide
 03. Client Legal Intake Form
 04. Client AI Summary Result
 05. Lawyer Search Routing

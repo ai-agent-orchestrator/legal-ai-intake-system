@@ -48,7 +48,7 @@ Admin / Marketing / Security Dashboard
 flowchart LR
     A[Login] --> B{Role}
 
-    B --> C1[Client Intake Start]
+    B --> C1[Case Type Assistant / Ontology Guide]
     C1 --> C2[Client Legal Intake Form]
     C2 --> C3[Client AI Summary Result]
     C3 --> C4[Lawyer Search Routing]
@@ -76,7 +76,7 @@ flowchart LR
 | No | Screen Name | Role | Main Function |
 | ---: | --- | --- | --- |
 | 1 | Login | Common | JWT 로그인, 역할 기반 진입 |
-| 2 | Client Intake Start | Client | 문의 목적과 사건 유형 선택 |
+| 2 | Case Type Assistant / Ontology Guide | Client | 사건 유형과 소분류를 온톨로지 기반으로 1차 분류 |
 | 3 | Client Legal Intake Form | Client | 선택형 intake 입력 |
 | 4 | Client AI Summary Result | Client | 챗봇형 사건 요약 및 준비자료 안내 |
 | 5 | Lawyer Search Routing | Client | 변호사 탐색 조건 및 검색 결과 설명 |
@@ -137,11 +137,11 @@ JWT 없음
 -> 403
 ```
 
-## Screen 2. Client Intake Start
+## Screen 2. Case Type Assistant / Ontology Guide
 
 ### Purpose
 
-고객이 긴 주관식 설명을 시작하기 전에 문의 목적과 사건 유형을 선택한다.
+고객이 자기 사건이 민사/형사/가사/전자소송 중 어디에 속하는지 몰라도, 선택형 온톨로지 가이드와 짧은 설명 입력을 통해 사건 유형과 소분류를 1차 분류한다.
 
 ### User
 
@@ -155,26 +155,45 @@ Client
   - 작성 문서 검토
   - 변호사 선임/계약 검토
   - 전자소송 제출 안내
-- Case type select
+- Legal ontology guide cards
   - 민사
+    - 대여금 / 계약 / 임대차 / 손해배상 / 지급명령 / 사기 피해 금전반환
   - 형사
+    - 사기 고소 / 폭행·상해 / 명예훼손·모욕 / 피고소인 조사 / 경찰 조사
   - 가사
+    - 이혼 / 양육비 / 상속 / 친권·양육권 / 재산분할
   - 전자소송
+    - 혼자 소송을 준비하고 있어요 / 소장 제출 / 답변서 제출 / 보정명령 대응 / 송달·사건조회
   - 잘 모르겠음
-- Next button
+    - 챗봇 도우미에게 사건을 한두 문장으로 적어 자동 분류 요청
+- Short description assistant
+  - "무슨 일인지 한두 문장으로 적어주세요."
+  - example: "사기를 당한 것 같아요. 돈을 보냈는데 연락이 안 됩니다."
+  - example: "돈을 빌려줬는데 못 받고 있습니다."
+  - example: "이혼과 양육비 문제가 같이 있습니다."
+- AI classify button
+  - 사건 유형 자동 분류
+- Classification result preview
+  - 추천 사건 유형
+  - 추천 소분류
+  - 준비하면 좋은 자료
+- Next button to detailed intake form
 
 ### Main Action
 
 ```text
-고객이 문의 목적과 사건 유형 선택
+고객이 사건 유형/소분류 선택 또는 짧은 설명 입력
+-> AI 또는 rule 기반 미니 법률 온톨로지 분류
+-> 추천 사건 유형과 소분류 preview
 -> Legal Intake Form으로 이동
 ```
 
 ### PM Value
 
 ```text
-고객은 법률 용어를 몰라도 선택할 수 있다.
-시스템은 선택값을 사건 구조로 바꿀 준비를 한다.
+고객은 민사/형사/가사/전자소송을 몰라도 시작할 수 있다.
+시스템은 고객 표현을 온톨로지 구조로 바꾼다.
+이 화면은 Legal Intake Form으로 들어가기 전의 1차 분류 assistant다.
 ```
 
 ## Screen 3. Client Legal Intake Form
@@ -189,6 +208,10 @@ Client
 
 ### Main UI Elements
 
+- Case type / dispute area confirmation
+  - Screen 2에서 선택 또는 자동 분류된 사건 유형
+  - Screen 2에서 선택 또는 자동 분류된 소분류/분쟁 영역
+  - 필요 시 수정 가능
 - Party position
   - 피해자
   - 피고소인
@@ -635,7 +658,7 @@ Audit 화면에서도 원본 개인정보를 그대로 노출하지 않는다.
 | Screen | Main Backend Module |
 | --- | --- |
 | Login | Spring Security / JWT |
-| Client Intake Start | React state / DTO |
+| Case Type Assistant / Ontology Guide | React state / DTO / mini ontology classification |
 | Client Legal Intake Form | LegalIntakeRecordController |
 | Client AI Summary Result | MinimalLegalIntakeService / AiService |
 | Lawyer Search Routing | LawyerSearchCondition / AiSearchRequest |
