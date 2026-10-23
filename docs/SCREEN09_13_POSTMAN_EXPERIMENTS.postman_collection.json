@@ -29,6 +29,12 @@
       "key": "riskHistoryId",
       "value": "",
       "type": "string"
+    },
+    {
+      "key": "adminAccessToken",
+      "value": "",
+      "type": "string",
+      "description": "C01 로그인 후 P01에서 ROLE_ADMIN 확인한 accessToken. 실제 토큰을 공유/커밋하지 않음."
     }
   ],
   "auth": {
@@ -50,7 +56,14 @@
             ],
             "url": "{{baseUrl}}/api/admin/dashboard/summary",
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminAccessToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "C12 · AdminDashboardController.summary()\nParams 없음; Body 없음\nNo Auth\n200 JSON"
           },
@@ -83,7 +96,14 @@
             ],
             "url": "{{baseUrl}}/api/admin/dashboard/marketing-funnel",
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminAccessToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "C13 · MarketingDashboardController.funnel()\nParams 없음; Body 없음\nNo Auth\n200 JSON"
           },
@@ -116,7 +136,14 @@
             ],
             "url": "{{baseUrl}}/api/admin/dashboard/security-events",
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminAccessToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "C14 · AdminDashboardController.securityEvents()\nParams 없음; Body 없음\nNo Auth\n200 JSON"
           },
@@ -144,7 +171,14 @@
             ],
             "url": "{{baseUrl}}/api/agent/risk/summary",
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminAccessToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "C15 · AgentRiskHistoryController.summary()\nParams 없음; Body 없음\nNo Auth\n200 JSON"
           },
@@ -217,7 +251,14 @@
             ],
             "url": "{{baseUrl}}/api/agent/risk/history",
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminAccessToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "C17 · AgentRiskHistoryController.history()\nBody 없음; Params 선택: riskLevel=HIGH 또는 decision=HIGH_RISK_AGENT_BEHAVIOR\nNo Auth\n200 JSON"
           },
@@ -245,7 +286,14 @@
             ],
             "url": "{{baseUrl}}/api/agent/risk/history?riskLevel=HIGH",
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminAccessToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "C17 · AgentRiskHistoryController.history()\nBody 없음; Params 선택: riskLevel=HIGH 또는 decision=HIGH_RISK_AGENT_BEHAVIOR\nNo Auth\n200 JSON"
           },
@@ -273,7 +321,14 @@
             ],
             "url": "{{baseUrl}}/api/agent/risk/history?decision=HIGH_RISK_AGENT_BEHAVIOR",
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminAccessToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "C17 · AgentRiskHistoryController.history()\nBody 없음; Params 선택: riskLevel=HIGH 또는 decision=HIGH_RISK_AGENT_BEHAVIOR\nNo Auth\n200 JSON"
           },
@@ -301,7 +356,14 @@
             ],
             "url": "{{baseUrl}}/api/agent/risk/history?riskLevel=HIGH&decision=SAFE",
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminAccessToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "C17 · AgentRiskHistoryController.history()\nBody 없음; Params 선택: riskLevel=HIGH 또는 decision=HIGH_RISK_AGENT_BEHAVIOR\nNo Auth\n200 JSON"
           },
@@ -329,7 +391,14 @@
             ],
             "url": "{{baseUrl}}/api/incidents",
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminAccessToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "C18 · RiskIncidentController.findRecent()\nParams 없음; Body 없음; 응답의 id에서 incidentId 선택\nNo Auth\n200 JSON"
           },
@@ -363,7 +432,14 @@
             ],
             "url": "{{baseUrl}}/api/incidents/{{incidentId}}/ack",
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminAccessToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "C19 · RiskIncidentController.acknowledge()\nPath incidentId={{incidentId}}; Params 없음; Body none\nNo Auth\n200 JSON"
           },
@@ -403,7 +479,14 @@
             ],
             "url": "{{baseUrl}}/api/incidents/{{incidentId}}/resolve",
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminAccessToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "C20 · RiskIncidentController.resolve()\nPath incidentId={{incidentId}}; Params 없음; Body none\nNo Auth\n200 JSON"
           },
@@ -443,7 +526,14 @@
             ],
             "url": "{{baseUrl}}/api/incidents",
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminAccessToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "C18 · RiskIncidentController.findRecent()\nParams 없음; Body 없음; 응답의 id에서 incidentId 선택\nNo Auth\n200 JSON"
           },
@@ -471,7 +561,14 @@
             ],
             "url": "{{baseUrl}}/api/admin/dashboard/summary",
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminAccessToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "C12 · AdminDashboardController.summary()\nParams 없음; Body 없음\nNo Auth\n200 JSON"
           },
@@ -544,7 +641,14 @@
             ],
             "url": "{{baseUrl}}/api/agent/risk/history",
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminAccessToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "C17 · AgentRiskHistoryController.history()\nBody 없음; Params 선택: riskLevel=HIGH 또는 decision=HIGH_RISK_AGENT_BEHAVIOR\nNo Auth\n200 JSON"
           },

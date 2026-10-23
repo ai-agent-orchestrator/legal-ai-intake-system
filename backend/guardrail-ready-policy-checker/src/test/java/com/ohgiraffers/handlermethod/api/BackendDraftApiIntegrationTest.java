@@ -176,7 +176,7 @@ class BackendDraftApiIntegrationTest {
         mvc.perform(patch("/api/intakes/{id}/status", first).header("Authorization", "Bearer " + tokens.createToken("admin", "ROLE_ADMIN")).contentType(MediaType.APPLICATION_JSON)
                         .content("{\"status\":\"CONSULTATION_READY\"}"))
                 .andExpect(status().isOk());
-        mvc.perform(get("/api/admin/dashboard/marketing-funnel"))
+        mvc.perform(get("/api/admin/dashboard/marketing-funnel").header("Authorization", "Bearer " + tokens.createToken("admin", "ROLE_ADMIN")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.submittedIntakeCount").value(2))
                 .andExpect(jsonPath("$.searchRequestCount").value(2))
@@ -191,7 +191,7 @@ class BackendDraftApiIntegrationTest {
 
     @Test
     void emptyDatabaseReturnsZeroMeasuredCountsAndEmptyDistributions() throws Exception {
-        mvc.perform(get("/api/admin/dashboard/marketing-funnel"))
+        mvc.perform(get("/api/admin/dashboard/marketing-funnel").header("Authorization", "Bearer " + tokens.createToken("admin", "ROLE_ADMIN")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.submittedIntakeCount").value(0))
                 .andExpect(jsonPath("$.searchRequestedIntakeCount").value(0))

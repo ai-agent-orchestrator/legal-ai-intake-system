@@ -1,5 +1,5 @@
 /* Screen01 uses the existing office asset and shared brand, controls and feedback. */
-.intake-app.screen01{--lu:1px;position:relative;isolation:isolate;min-height:100vh;padding:0;background:url('./assets/intake-office.png') center/cover fixed;color:#08234f}
+.intake-app.screen01,.operator-auth.screen01{--lu:1px;position:relative;isolation:isolate;min-height:100vh;padding:0;background:url('./assets/intake-office.png') center/cover fixed;color:#08234f}
 .screen01:before{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,#fff0 0%,#fff0 10%,#f7fbffbd 12%,#f7fbffdb 32%,#fff0 36%,#fff0 68%,#f7fbffe6 73%,#f7fbfff0 100%);mask-image:linear-gradient(#0000 0px,#000 150px,#000 650px,#0000 820px)}
 .login-layout{position:relative;z-index:1;display:grid;grid-template-columns:minmax(0,320fr) minmax(0,532fr) minmax(0,350fr);gap:60px;width:calc(100% - 100px);max-width:1380px;min-height:100vh;margin:auto;padding:80px 0 60px;align-items:start}
 .login-introduction{padding-top:150px}

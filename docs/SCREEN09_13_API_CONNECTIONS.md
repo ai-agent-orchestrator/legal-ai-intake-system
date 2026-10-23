@@ -1,5 +1,7 @@
 # 화면09~13 · API 연결표
 
+> 2026-10-23 운영자 권한 완료: C12~C15·C17~C20 업무8개 API는 ADMIN Bearer JWT 필수다. React 관리자 로그인·P01 확인·로그아웃·인증 실패 시 자료 제거를 연결했다. C16·guardtimeseries는 ADMIN Basic 유지. 아래 공개 접근 판정은 당시 검수 기록으로 읽는다. [최신 인증 계약·225/46 및 실제 브라우저 검증](OPERATOR_ADMIN_AUTH_REVIEW_2026-10-23.md).
+
 2026-10-22 · 화면13 추가 · AI·Guardrail 역할 표기 정리. 운영 설명은 화면13에 통합했으며 화면14는 폐지했다. 실제 시계열용 보조 Actuator API1개가 추가되었다.
 
 Postman의 메서드·URL·Params·Body·인증 입력과 정확한 Controller 메서드는 [화면01~13 전체 매핑표](SCREEN_API_CONTROLLER_MAPPING.md#3-운영자-화면0913-매핑--postman-실험-입력)에서 확인한다. [가져오기용 운영자 Postman 컬렉션](SCREEN09_13_POSTMAN_EXPERIMENTS.postman_collection.json)과 [ID별 입력 가이드](ID_SCREEN_API_POSTMAN_GUIDE.md)를 함께 제공한다.

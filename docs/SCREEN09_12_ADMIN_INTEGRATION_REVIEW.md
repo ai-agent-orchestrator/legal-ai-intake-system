@@ -1,5 +1,9 @@
 # 화면 09~12 운영자 통합 검수
 
+> 2026-10-23 운영자 권한 완료: C12~C15·C17~C20 업무8개 API는 ADMIN Bearer JWT 필수다. React 관리자 로그인·P01 확인·로그아웃·인증 실패 시 자료 제거를 연결했다. C16·guardtimeseries는 ADMIN Basic 유지. 아래 공개 접근 판정은 당시 검수 기록으로 읽는다. [최신 인증 계약·225/46 및 실제 브라우저 검증](OPERATOR_ADMIN_AUTH_REVIEW_2026-10-23.md).
+
+> 2026-10-23 후속 완료: C17 userInput 원문은 DTO/JSON에서 제거했다. C19/C20 없는 숫자 ID는404·INCIDENT_NOT_FOUND, 잘못된 ID형식400이다. 아래 원문 노출/없는 ID500은 이전 회차 발견 기록이며 해당2건은 해결했다. ADMIN 인가와 상태 역행은 미완료다. [구현·검수](FOUR_HARDENING_REVIEW_2026-10-23.md).
+
 후속 화면 13 Observability 구현·검수는 [SCREEN13_OBSERVABILITY_REVIEW.md](SCREEN13_OBSERVABILITY_REVIEW.md)에 기록했다. 후속 운영자 자동 검사 총 26개·빌드 97모듈·브라우저 21개가 통과했으며 화면 11 공통 인증창도 회귀 확인했다. 아래 20개·57개·93모듈은 화면 09~12 검수 당시의 증거로 보존한다.
 
 2026-10-21 · Asia/Seoul. 기존 API·요청/응답·ID·인증 대조에 **React 공통 구현, 빌드, 실제 브라우저, 입력 검증, 로딩·빈 결과·오류·복구 검수**를 통합했다. 첨부 표와 흐름도는 확인할 범위의 기준으로 사용했으며 실행 증거와 구분했다.

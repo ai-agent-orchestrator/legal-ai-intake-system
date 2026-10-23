@@ -32,7 +32,9 @@ public record LegalIntakeResponse(
         List<IntakeDocumentResponse> uploadedDocuments,
         @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
         String assignedLawyerUsername,
-        IntakePermissions permissions
+        IntakePermissions permissions,
+        /* 화면07 동시 수정 감지용. 상태 변경·메모 요청에 expectedVersion으로 다시 보낸다. */
+        long version
 ) {
     public record IntakePermissions(boolean canManage, boolean canAssign) {}
 }

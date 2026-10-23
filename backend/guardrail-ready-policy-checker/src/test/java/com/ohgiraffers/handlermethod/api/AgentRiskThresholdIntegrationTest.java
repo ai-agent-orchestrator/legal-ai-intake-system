@@ -23,6 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Transactional
 class AgentRiskThresholdIntegrationTest {
     @Autowired MockMvc mvc;
+    @Autowired com.ohgiraffers.handlermethod.security.JwtTokenProvider tokens;
 
     private String body(boolean policy, boolean external, boolean error, boolean approval, boolean db, int retries) {
         return """
@@ -61,7 +62,7 @@ class AgentRiskThresholdIntegrationTest {
     void historyReturnsTheActualPartsEvenWhenTheTotalWasCapped() throws Exception {
         var response = analyze(body(true, true, true, true, true, 4), UUID.randomUUID().toString());
         assertThat(response.get("riskScore")).isEqualTo(100);
-        var result = mvc.perform(get("/api/agent/risk/history")).andExpect(status().isOk()).andReturn();
+        var result = mvc.perform(get("/api/agent/risk/history").header("Authorization", "Bearer " + tokens.createToken("admin", "ROLE_ADMIN"))).andExpect(status().isOk()).andReturn();
         List<Map<String,Object>> rows = JsonPath.read(result.getResponse().getContentAsString(), "$");
         var row = rows.stream().filter(r -> r.get("id").toString().equals(response.get("historyId").toString())).findFirst().orElseThrow();
         Map<?,?> breakdown = (Map<?,?>) row.get("scoreBreakdown");
@@ -75,7 +76,7 @@ class AgentRiskThresholdIntegrationTest {
         String trace = UUID.randomUUID().toString();
         var first = analyze(body(true, true, true, true, true, 1), trace);
         var second = analyze(body(true, true, true, true, true, 2), trace);
-        var result = mvc.perform(get("/api/agent/risk/history")).andExpect(status().isOk()).andReturn();
+        var result = mvc.perform(get("/api/agent/risk/history").header("Authorization", "Bearer " + tokens.createToken("admin", "ROLE_ADMIN"))).andExpect(status().isOk()).andReturn();
         List<Map<String,Object>> rows = JsonPath.read(result.getResponse().getContentAsString(), "$");
         var targetIds = List.of(first.get("historyId").toString(), second.get("historyId").toString());
         assertThat(rows.stream().filter(row -> targetIds.contains(row.get("id").toString())).toList())

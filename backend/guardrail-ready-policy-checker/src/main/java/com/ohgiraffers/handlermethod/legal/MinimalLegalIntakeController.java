@@ -1,5 +1,6 @@
 package com.ohgiraffers.handlermethod.legal;
 
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -17,7 +18,7 @@ public class MinimalLegalIntakeController {
     }
 
     @PostMapping("/minimal")
-    public ResponseEntity<MinimalLegalIntakeResponse> analyze(@RequestBody MinimalLegalIntakeRequest request) {
+    public ResponseEntity<MinimalLegalIntakeResponse> analyze(@Valid @RequestBody MinimalLegalIntakeRequest request) {
         return ResponseEntity.ok(minimalLegalIntakeService.analyze(request));
     }
 }

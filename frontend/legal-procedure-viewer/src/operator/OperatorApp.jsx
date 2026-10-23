@@ -5,6 +5,7 @@ import { AuditPage, MarketingPage, ObservabilityPage, OverviewPage, PageRefresh,
 import { readOperatorRoute } from './operatorRoute.js';
 import Icon from './Icon.jsx';
 import BrandMark from './BrandMark.jsx';
+import OperatorAuthGate from './OperatorAuthGate.jsx';
 
 const pages = [
   { id: 'overview', n: '09', name: '운영 요약', icon: 'home', sub: 'Overview', title: '운영 현황을 한눈에 확인하세요.', description: '안전하고 투명한 법률 상담 운영을 위한 주요 지표입니다.' },
@@ -16,10 +17,14 @@ const pages = [
 const defaultBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
 export default function OperatorApp() {
+  return <OperatorAuthGate defaultBase={defaultBase}>{props => <OperatorWorkspace key={`${props.base}:${props.user?.revision || 'preview'}`} {...props} />}</OperatorAuthGate>;
+}
+
+function OperatorWorkspace({ base: initialBase, user, preview, logout, reconnect, requireLogin }) {
   const [hash, setHash] = useState(() => location.hash);
   const { route, riskId: requestedRiskId } = readOperatorRoute(hash);
-  const [baseInput, setBaseInput] = useState(defaultBase);
-  const [base, setBase] = useState(defaultBase);
+  const [baseInput, setBaseInput] = useState(initialBase);
+  const base = initialBase;
   const [baseRevision, setBaseRevision] = useState(0);
   const [settings, setSettings] = useState(false);
   const [error, setError] = useState(null);
@@ -52,7 +57,7 @@ export default function OperatorApp() {
       if (target === base) {
         if (route === 'overview') summary.reload();
         else setBaseRevision(value => value + 1);
-      } else setBase(target);
+      } else reconnect(target);
       setSettings(false);
     } catch (cause) { setError(cause.message); }
   }
@@ -64,8 +69,8 @@ export default function OperatorApp() {
       <div className="sidebar-bottom"><a href="./" aria-disabled={locked} onClick={event => { if (locked) event.preventDefault(); }}>법률 절차 Previewer ↗</a></div>
     </aside>
     <main>
-      <header className="topbar"><details className="operator-menu"><summary><Icon name="user" /><span>관리자</span><Icon name="chevron-down" /></summary><div className="operator-menu-content"><p>운영자 워크스페이스</p><small>기본 서버에 자동으로 연결합니다.</small><button className="quiet-button" disabled={locked} aria-expanded={settings} onClick={() => setSettings(!settings)}>고급 설정 · 서버 주소</button></div></details></header>
-      {settings && <section className="settings"><form onSubmit={connect}><label htmlFor="api-base">Spring Boot API 서버</label><div className="input-row"><input id="api-base" type="url" required value={baseInput} disabled={locked} onChange={event => setBaseInput(event.target.value)} /><button className="primary" disabled={locked}>연결</button></div></form><p>현재 업무 API는 서버 설정상 공개 접근입니다. 운영자 메뉴 자체가 관리자 권한을 부여하지 않습니다. 지표 조회는 별도 ADMIN Basic 인증을 사용합니다.</p></section>}
+      <header className="topbar"><details className="operator-menu"><summary><Icon name="user" /><span>{preview ? '모의 화면' : `${user.username} · 관리자`}</span><Icon name="chevron-down" /></summary><div className="operator-menu-content"><p>운영자 워크스페이스</p><small>{preview ? '서버 자료를 조회하지 않는 모의 화면입니다.' : '관리자 계정으로 연결되어 있습니다.'}</small><button className="quiet-button" disabled={locked} aria-expanded={settings} onClick={() => setSettings(!settings)}>고급 설정 · 서버 주소</button><button className="quiet-button" onClick={logout}>{preview ? '관리자 로그인' : '로그아웃'}</button></div></details></header>
+      {settings && <section className="settings"><form onSubmit={connect}><label htmlFor="api-base">Spring Boot API 서버</label><div className="input-row"><input id="api-base" type="url" required value={baseInput} disabled={locked} onChange={event => setBaseInput(event.target.value)} /><button className="primary" disabled={locked}>연결</button></div></form><p>업무 API는 ADMIN JWT, 지표 조회는 별도 ADMIN Basic 인증을 사용합니다. 서버를 변경하면 다시 로그인합니다.</p></section>}
       <div className="content">
         {error && <div className="notice error" role="alert">{error}</div>}
         {page ? <>{!['marketing', 'security', 'audit', 'observability'].includes(route) && <div className="page-heading" key={page.id}><div><div className="eyebrow">{route === 'overview' ? '운영 대시보드' : `운영자 · ${page.n}`}</div><h1 tabIndex="-1">{page.title}</h1><p>{page.description}</p></div>{route === 'overview' && <PageRefresh item={summary} />}</div>}
@@ -73,7 +78,7 @@ export default function OperatorApp() {
           {route === 'marketing' && <MarketingPage key={`${base}:${baseRevision}`} base={base} />}
           {route === 'security' && <SecurityPage key={`${base}:${baseRevision}`} base={base} />}
           {route === 'audit' && <AuditPage key={`${base}:${baseRevision}`} base={base} refreshSummary={summary.reload} setLocked={setLocked} requestedRiskId={requestedRiskId} />}
-          {route === 'observability' && <ObservabilityPage key={`${base}:${baseRevision}`} base={base} />}
+          {route === 'observability' && <ObservabilityPage key={`${base}:${baseRevision}`} base={base} onRequireLogin={preview ? requireLogin : undefined} />}
         </> : <section className="panel"><h1>페이지를 찾을 수 없습니다.</h1><p>운영자 메뉴에서 화면을 선택해 주세요.</p><a className="text-button" href="#/overview">운영 요약으로 이동 →</a></section>}
         <footer><span>LEGAL INTAKE / OPERATOR WORKSPACE</span><span>저장 기록·서버 지표 기반</span></footer>
       </div>

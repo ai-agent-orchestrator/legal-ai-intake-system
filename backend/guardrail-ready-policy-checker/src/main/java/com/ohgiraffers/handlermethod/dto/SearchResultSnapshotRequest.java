@@ -2,6 +2,8 @@ package com.ohgiraffers.handlermethod.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Positive;
+import com.ohgiraffers.handlermethod.validation.HttpResultUrl;
 
 public record SearchResultSnapshotRequest(
         @NotBlank
@@ -14,11 +16,12 @@ public record SearchResultSnapshotRequest(
 
         @NotBlank
         @Size(max = 1000)
+        @HttpResultUrl
         String url,
 
         @Size(max = 1000)
         String snippet,
 
-        Integer displayOrder
+        @Positive Integer displayOrder
 ) {
 }

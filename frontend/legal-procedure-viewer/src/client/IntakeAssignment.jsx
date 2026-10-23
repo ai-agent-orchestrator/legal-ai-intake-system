@@ -17,7 +17,7 @@ export default function IntakeAssignment({ api, intake, reload, onSaved }) {
       setUsername(result.assignedLawyerUsername || '');
       setNotice(result.assignedLawyerUsername ? '담당 변호사를 배정했습니다.' : '담당 배정을 해제했습니다.');
       onSaved?.(result); reload();
-    } catch (failure) { if (!controller.signal.aborted) setError(failure); }
+    } catch (failure) { if (!controller.signal.aborted) { setError(failure); if ([401, 403].includes(failure.status)) reload(); } }
     finally { if (!controller.signal.aborted) { active.current = null; setPending(false); } }
   }
   return <section className="detail-card intake-assignment"><h2><Icon name="user"/>담당 변호사 배정 <small>관리자 전용</small></h2>

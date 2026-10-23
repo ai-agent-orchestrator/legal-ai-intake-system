@@ -69,6 +69,8 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/login").permitAll()
+                        .requestMatchers("/api/admin/**", "/api/agent/risk/history", "/api/agent/risk/summary",
+                                "/api/incidents", "/api/incidents/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/intakes/classify-preview").permitAll()
                         .requestMatchers("/api/intakes", "/api/intakes/**", "/api/legal-intake/minimal").authenticated()
                         .requestMatchers("/api/me", "/api/intakes/*/documents/**").authenticated()

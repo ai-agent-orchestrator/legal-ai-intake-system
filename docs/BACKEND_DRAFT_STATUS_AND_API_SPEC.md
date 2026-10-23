@@ -1,5 +1,9 @@
 # API 기능서 flow 및 기능mapping표
 
+> **2026-10-23 D01/D02 완료:** 새 버전·요청 키·복합 UNIQUE를 ERD/API 표에 반영하고 실제 MySQL 대상 컬럼8개/UNIQUE2개 이행 및 백업 복원을 확인했다. 앱8080은 기존 데이터를 보존한 최신 파일 H2 실행본이다. 아래 과거의 ‘MySQL 미검증/구버전 서버’ 기록은 [현재 DB·실행본 검수서](DB_DEPLOYMENT_REVIEW_2026-10-23.md)로 갱신한다.
+
+> 2026-10-23 운영자 권한 완료: C12~C15·C17~C20 업무8개 API는 ADMIN Bearer JWT 필수다. React 관리자 로그인·P01 확인·로그아웃·인증 실패 시 자료 제거를 연결했다. C16·guardtimeseries는 ADMIN Basic 유지. 아래 공개 접근 판정은 당시 검수 기록으로 읽는다. [최신 인증 계약·225/46 및 실제 브라우저 검증](OPERATOR_ADMIN_AUTH_REVIEW_2026-10-23.md).
+
 > **2026-10-23 문의 권한 현행 계약:** 기존 번호 API37개에 **C21 담당자 배정**을 더해38개다. 보조 `GET /actuator/guardtimeseries`는 별도다. C03/C04 및 저장 문의 경로는 JWT 필수, 조회/검색/파일은 소유자·배정 LAWYER·ADMIN, C10/C11은 배정 담당자·ADMIN만 허용한다. C21 `PATCH /api/intakes/{id}/assignment`는 ADMIN Bearer와 `{"assignedLawyerUsername":"lawyer"}` 또는 null을 받아 갱신된 문의 DTO를 반환한다(IntakeAssignmentController.assign → LegalIntakeRecordService.assignLawyer). 의뢰인 JSON에서 내부 메모를 제외하고 `permissions`를 추가했다. DB는 담당자/작성자 nullable 컬럼2개 추가이며 실제 MySQL 적용은 미검증이다. 아래 과거 회차의 공개/익명 정책과 API/Controller 수치는 당시 기록으로 읽는다. [최신 전체 매핑](SCREEN_API_CONTROLLER_MAPPING.md) · [권한 구현·검증](SCREEN04_08_ACCESS_CONTROL_REVIEW.md).
 
 
@@ -3623,3 +3627,6 @@ S05 분석 결과 → RiskIncidentService.createIfNeeded
 | P06 | 행동 이벤트 기록 | [IntakeEventController.record()](C:/myLectureWs/legal-ai-intake-security-server/backend/guardrail-ready-policy-checker/src/main/java/com/ohgiraffers/handlermethod/api/IntakeEventController.java:18) | S.record() |
 
 <!-- BRANCH_MERGE_APPENDIX_END -->
+# 2026-10-23 현행 DB·쓰기 계약 보완
+
+현재 C03/C11은 Idempotency-Key와 Idempotent-Replayed를 지원하며, C05 version을 C10/C11 expectedVersion으로 전달한다. C10 응답 version·C11 intakeVersion으로 다음 저장 버전을 갱신하고409는 code/details로 복구한다. 현재 React 화면07=상태·메모, 화면08=상세다. 아래 초안의 반대 번호·선택 JWT·공개 업무 API·버전 없는 본문은 당시 기록이며 현행 기준은 [최신 매핑](SCREEN_API_CONTROLLER_MAPPING.md)과 [D01/D02 실제 DB·배포 검수](DB_DEPLOYMENT_REVIEW_2026-10-23.md)다.

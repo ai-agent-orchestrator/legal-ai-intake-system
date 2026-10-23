@@ -34,17 +34,22 @@ export function canChangeIncident(incident, action) {
 }
 export async function changeIncidentAndReload({ base, incident, action, signal, refreshIncidents, refreshSummary }) {
   if (!canChangeIncident(incident, action)) throw new Error('최신 Incident 상태를 확인한 후 처리하세요.');
-  let saved = false, error = null;
+  let saved = false, error = null, failure = null;
   try {
     const result = await (action === 'ack' ? ackIncident : resolveIncident)(base, incident.id, signal);
     if (String(result.id) !== String(incident.id) || result.status !== (action === 'ack' ? 'ACKNOWLEDGED' : 'RESOLVED')) {
       throw new Error('상태 변경 응답의 ID 또는 상태가 요청과 다릅니다.');
     }
     saved = true;
-  } catch (cause) { error = cause.message; }
+  } catch (cause) { error = cause.message; failure = cause; }
   if (signal?.aborted) return { cancelled: true };
   // A lost PATCH response may follow a committed write. Read both views, never replay PATCH.
   const reads = await Promise.allSettled([refreshIncidents(), refreshSummary()]);
   if (signal?.aborted) return { cancelled: true };
-  return { saved, error, refreshed: reads.every(read => read.status === 'fulfilled' && read.value?.ok) };
+  const result = { saved, error, refreshed: reads.every(read => read.status === 'fulfilled' && read.value?.ok),
+    incidentsRefreshed: reads[0].status === 'fulfilled' && reads[0].value?.ok === true,
+    summaryRefreshed: reads[1].status === 'fulfilled' && reads[1].value?.ok === true };
+  if (failure?.status) result.status = failure.status;
+  if (failure?.code) result.code = failure.code;
+  return result;
 }

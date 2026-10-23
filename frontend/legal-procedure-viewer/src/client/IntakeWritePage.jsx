@@ -3,6 +3,7 @@ import { CASE_TYPES, CURRENT_STAGES, DOCUMENT_OPTIONS, INTAKE_FIELDS, NEXT_STEPS
 import { Button, Feedback, Steps } from './components.jsx';
 import IntakeReference from './IntakeReference.jsx';
 import Icon from './Icon.jsx';
+import { prepareWriteAttempt } from '../shared/writeContracts.js';
 
 function Field({ name, label, required, error, icon, children, className = '' }) {
   return <div className={`write-field ${className}`}>
@@ -12,11 +13,14 @@ function Field({ name, label, required, error, icon, children, className = '' })
   </div>;
 }
 
-export default function IntakeWritePage({ api, draft, preview, form, setForm, onCreated }) {
+export default function IntakeWritePage({ api, draft, preview, form, setForm, onCreated, attemptRef, identity = 'anonymous' }) {
+  const localAttempt = useRef(null);
+  const attempt = attemptRef || localAttempt;
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const [fieldErrors, setFieldErrors] = useState({});
   const [searchOpen, setSearchOpen] = useState(false);
+  const [review, setReview] = useState(false);
   const request = useRef(null);
   const formElement = useRef(null);
   const caseTypeField = useRef(null);
@@ -52,16 +56,24 @@ export default function IntakeWritePage({ api, draft, preview, form, setForm, on
     event.preventDefault();
     if (request.current) return;
     let payload;
-    try { payload = intakePayload(draft, preview, form); }
-    catch (failure) { setFieldErrors(failure.fieldErrors || {}); setError(failure); focusError(failure.fieldErrors || {}); return; }
+    try {
+      payload = intakePayload(draft, preview, form);
+      attempt.current = prepareWriteAttempt(attempt.current, identity, payload);
+    }
+    catch (failure) { setFieldErrors(failure.fieldErrors || {}); setError(failure); if (failure.code === 'UNCERTAIN_WRITE_CHANGED') setReview(true); focusError(failure.fieldErrors || {}); return; }
     const controller = new AbortController();
     request.current = controller;
     setBusy(true); setError(null); setFieldErrors({});
     try {
-      const data = await api.create(payload, controller.signal);
-      if (!controller.signal.aborted) onCreated(data.id);
+      const current = attempt.current;
+      // Cancellation may happen after commit, so a remount keeps this key.
+      current.uncertain = true;
+      const data = await api.create(payload, controller.signal, { idempotencyKey: current.key });
+      if (!controller.signal.aborted) { attempt.current = null; setReview(false); onCreated(data.id); }
     } catch (failure) {
       if (!controller.signal.aborted) {
+        if (failure.status && failure.status < 500) attempt.current.uncertain = failure.code === 'IDEMPOTENCY_KEY_REUSED';
+        setReview(!failure.status || failure.status >= 500 || failure.code === 'IDEMPOTENCY_KEY_REUSED');
         const errors = {};
         Object.keys(failure.fieldErrors || {}).forEach(key => {
           if (INTAKE_FIELDS[key]) errors[key] = `${INTAKE_FIELDS[key][1]} 항목을 다시 확인해 주세요.`;
@@ -116,6 +128,7 @@ export default function IntakeWritePage({ api, draft, preview, form, setForm, on
           <fieldset className="write-documents"><legend>보유 자료 <small>(보유하고 있는 자료를 선택해 주세요. 여러 개 선택 가능)</small></legend><div>{documentOptions.map(document => <label key={document} className={form.documents.includes(document) ? 'selected' : ''}><input name="documents" type="checkbox" checked={form.documents.includes(document)} onChange={event => documentChanged(document, event.target.checked)}/><span>{document}</span></label>)}</div>{fieldErrors.documents && <small id="error-documents" className="write-error">{fieldErrors.documents}</small>}</fieldset>
         </fieldset>
         {error && <Feedback error={error}/ >}
+        {review && <div className="write-resubmit-notice" role="alert"><p>저장 여부가 불확실하면 같은 내용으로 다시 접수할 때 기존 요청 번호를 사용합니다. 내용을 바꿔 새로 접수하기 전에는 기존 문의를 확인해 주세요.</p><a href="#/lawyer/intakes">내 문의에서 저장 여부 확인</a><Button type="button" className="secondary" disabled={busy} onClick={() => { attempt.current = null; setReview(false); setError(null); }}>기존 문의 확인 후 새 접수로 진행</Button></div>}
         <div className="write-footer"><p className="write-privacy"><Icon name="lock"/><span>입력한 정보는 법률 상담과 안내를 위해 사용됩니다.<br/><small>주민등록번호·계좌번호 등 불필요한 민감 정보는 입력하지 마세요.</small></span></p><div><Button type="button" className="secondary" disabled={busy} onClick={() => { window.location.hash = '/intake/type'; }}>이전</Button><Button type="submit" disabled={busy} busy={busy}><Icon name="document"/ >{busy ? '문의 접수 중' : '문의 접수하기'}</Button></div></div>
       </form>
     </section></div>

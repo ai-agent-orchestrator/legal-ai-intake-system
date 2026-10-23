@@ -1,8 +1,10 @@
-# 백엔드 ERD · 데이터 관계도 — 2026-10-16
+# 백엔드 ERD · 데이터 관계도 — 2026-10-23
+
+> 2026-10-23 D01/D02: 문의 version·updated_at·idempotency_key·request_hash, 메모 request_key·content_hash와 복합 UNIQUE 두 개를 반영했다. 기존 권한 컬럼까지 로컬 MySQL에 추가 적용했으며, H2 실제 자료의 백업·복원·행 해시 대조와 파일 DB 전환을 검증했다. 화면13 지표 때문에 추가된 컬럼은 아니다. [DB 이행·실행본 검수](DB_DEPLOYMENT_REVIEW_2026-10-23.md).
 
 > 2026-10-22 권한 적용: `legal_intake.assigned_lawyer_username`, `consultation_memo.created_by` 두 nullable 컬럼을 추가했다. 새 문의는 JWT 소유자 필수, 기존 소유자 없는 문의는 관리자 전용이다. 기존 메모 작성자는 추정해 채우지 않는다. 관계·테이블 수는 유지한다. [권한 통합 검수](SCREEN04_08_ACCESS_CONTROL_REVIEW.md) · [MySQL 수동 이전 SQL](../backend/guardrail-ready-policy-checker/src/main/resources/db/manual/2026-10-22-intake-permissions-mysql.sql).
 
-기준: 현재 Entity·Repository·Service와 마지막 자동 테스트가 출력한 Hibernate/H2 DDL. 오늘 버전 36개 API의 Middle 학습에서 **어떤 데이터가 어떤 ID로 연결되는지** 확인하기 위한 자료다. API 처리 순서는 [백엔드 흐름도](C:/myLectureWs/legal-ai-intake-security-server/docs/diagrams/02A_BACKEND_FLOW.md), 요청·메서드 연결은 [API 정리서](C:/myLectureWs/legal-ai-intake-security-server/docs/API_STATUS_SPEC.md)와 함께 본다.
+기준: 현재 Entity·Repository·Service 및 2026-10-23 최신 스키마로 초기화·복원한 H2의 데이터 제외 DDL. 현재 번호 API38개(기존37+C21)의 데이터 연결을 이해하는 자료다. API 처리 순서는 [백엔드 흐름도](C:/myLectureWs/legal-ai-intake-security-server/docs/diagrams/02A_BACKEND_FLOW.md), 요청·메서드 연결은 [최신 화면/API 매핑](SCREEN_API_CONTROLLER_MAPPING.md)과 함께 본다.
 
 핵심 접수·검색·파일·행동 데이터 **8개 테이블**을 본문에, 실제 외래키가 있는 법률 Reference **3개 테이블**을 별도 도표에 정리했다. 기존 Agent·감사·수업용 테이블을 전부 펼친 전체 DB 도표는 아니다.
 
@@ -17,7 +19,7 @@
 | 점선 관계선 | Mermaid ER의 비식별 관계 표기. 점선 자체가 ‘FK 없음’을 뜻하지 않으며 아래 관계표와 FK 표시로 구분 |
 | `timestamp_tz` | 도표에서 H2의 timestamp with time zone을 줄여 쓴 타입 |
 
-도표는 주요 컬럼을 표시한다. 전체 컬럼·길이·NULL·PK·UK·FK는 테스트 로그에서 추출한 [현재 H2 DDL](C:/myLectureWs/legal-ai-intake-security-server/docs/BACKEND_ERD_SCHEMA_EVIDENCE.sql)을 기준으로 확인한다. 이 SQL은 생성 결과의 기록이며 운영 DB 마이그레이션은 아니다.
+도표는 주요 컬럼을 표시한다. 전체 컬럼·길이·NULL·PK·UK·FK는 [현재 H2 DDL](C:/myLectureWs/legal-ai-intake-security-server/docs/BACKEND_ERD_SCHEMA_EVIDENCE.sql)에서 확인한다. 이 파일은 데이터·사용자 자격 증명을 제외한 현재 전체20개 테이블의 스키마 기록이며 MySQL 이행 SQL과 구분한다.
 
 **2. 핵심 업무 ERD — 8개 테이블, 관계는 모두 논리 ID 참조**
 
@@ -38,6 +40,10 @@ erDiagram
         varchar session_id "NOT NULL; not an auth identity"
         varchar owner_username "legacy nullable; new intake JWT owner"
         varchar assigned_lawyer_username "nullable; one assigned LAWYER account"
+        bigint version "NOT NULL; optimistic version; legacy 0"
+        timestamp updated_at "nullable for legacy records"
+        varchar idempotency_key "nullable; UK with owner_username"
+        varchar request_hash "nullable; SHA-256 of submission fields"
         varchar case_type
         varchar core_statement "original text"
         varchar desired_next_step
@@ -70,7 +76,15 @@ erDiagram
         bigint condition_id "logical reference; NOT NULL"
         varchar search_purpose
         varchar source_policy
-        varchar status "PREVIEW_READY"
+        varchar status "PREVIEW_READY QUEUED RUNNING COMPLETED PARTIAL FAILED"
+        varchar execution_id "nullable; execution UUID, not an FK"
+        varchar execution_lease "nullable; execution ownership token"
+        varchar execution_stage
+        varchar generated_query
+        varchar execution_error
+        varchar source_warning_code
+        timestamp execution_started_at
+        timestamp execution_finished_at
         timestamp created_at
     }
     search_result_snapshot {
@@ -80,6 +94,8 @@ erDiagram
         varchar title
         varchar url
         varchar snippet
+        varchar execution_id "nullable; execution provenance"
+        varchar explanation "nullable; LLM explanation"
         int display_order
         timestamp created_at
     }
@@ -88,6 +104,8 @@ erDiagram
         bigint intake_id "logical reference; NOT NULL"
         varchar content "original text; internal only"
         varchar created_by "nullable for legacy; JWT author for new notes"
+        varchar request_key "nullable; UK with intake_id"
+        varchar content_hash "nullable; SHA-256 of memo content and followups"
         varchar follow_up_items "stored as one delimited string"
         timestamp created_at
     }
@@ -148,15 +166,16 @@ API ID의 URL·DTO·실제 메서드 링크는 [API_STATUS_SPEC.md](C:/myLecture
 **5. 저장 구조를 읽을 때 구분할 점**
 
 - **자료 종류와 파일:** 최초 문의 등록의 documents는 자료 종류 문자열이다. 업로드한 행에는 original_filename·content_type·size_bytes·file_content가 추가된다. 자료 종류만 있는 행은 다운로드할 수 없으며, 실제 업로드 메타데이터는 uploadedDocuments 배열로 응답한다. 파일 저장소를 따로 구축한 모델이 아니라 현재 DB BLOB 저장이다.
+- **재전송과 동시 수정:** legal_intake는 `(owner_username,idempotency_key)`, consultation_memo는 `(intake_id,request_key)`의 복합 UNIQUE를 가진다. 각 컬럼이 단독 UNIQUE인 것은 아니다. NULL 키는 기존 행/키 없는 호출을 허용한다. version은 문의 상태·메모·담당자 변경의 동시 수정 기준이며 created_at과 별도다. 기존 updated_at·해시·키는 NULL로 보존하고 작성 시각이나 요청을 추정해 채우지 않는다.
 - **조건과 요청:** 현재 생성 API가 조건을 1개 만든다는 사실과 DB가 문의당 1개로 강제한다는 것은 다르다. intake_id에는 UNIQUE가 없고 Repository는 최신 조건을 고른다. 같은 조건으로 여러 검색 요청을 생성할 수 있다.
-- **검색문과 결과:** search_query는 조건 테이블에 있고 요청은 condition_id를 참조한다. 결과 스냅샷은 요청 ID를 참조한다. 현재 결과는 호출자가 직접 전달한 기록이며 외부 검색 실행·자동 수집은 Day 9~10 구현 예정이다.
+- **검색문과 결과:** search_query는 조건 테이블, generated_query·실행 단계/소유권/오류는 검색 요청, 수집 결과·explanation은 결과 스냅샷에 저장한다. 수동 C08과 구현된 P03 자동 수집을 구분한다. 실행 UUID는 출처 추적 정보이며 별도 DB FK가 아니다.
 - **메모의 후속 조치:** API에서는 배열이지만 DB에서는 중복 제거 후 구분자로 합친 varchar(200) 하나에 저장한다. 후속 조치용 별도 자식 테이블은 없다.
 - **개인정보:** 문의·메모·업로드 원본은 현재 원문을 저장한다. 기존 지정 필드의 응답 마스킹은 Service에서 DTO로 바꾸는 단계다. 원문 저장과 출력 마스킹은 서로 다른 처리다.
 - **행동과 도메인 이벤트:** intake_event는 클라이언트가 명시적으로 보내는 VISIT/INTAKE_STARTED/SUMMARY_VIEWED 기록이다. Event Bus나 Outbox가 아니다. event_id PK가 동일 요청의 중복 저장을 막고, 같은 ID의 다른 내용은 Service에서 409로 거절한다.
 - **세션과 사용자:** session_id는 PK·로그인 사용자 FK가 아니다. 여러 문의·이벤트가 같은 문자열을 가질 수 있다. owner_username과 다운로드 username도 현재 개발용 인증 사용자명을 기록한 문자열이며 사용자 테이블 FK가 아니다.
 - **마케팅 읽기 모델:** MarketingFunnelResponse 전용 테이블은 없다. 문의·검색 요청·이벤트의 서로 다른 수를 조회 시 집계한다. 보고된 행동 이벤트 수와 문의 수를 같은 모수의 전환율로 해석하지 않는다.
 - **저장하지 않는 상태:** Chat Fixed/Dynamic/Cost 처리 전체를 이 ERD에 연결하지 않는다. 현재 Dynamic 세션·예산·예약은 서버 메모리, 관측값은 Metric이며 별도 영속 비용 장부는 없다.
-- **DB 수명:** 기본 H2는 메모리 + create-drop으로 재시작 시 DB 데이터가 초기화된다. 별도 `mysql` 프로필은 사용자의 root 계정과 프로젝트 전용 `legal_intake_lab` DB·update 설정을 사용한다. [MySQL 연결 준비서](MYSQL_CONNECTION_CHECK.md)에서 실제 연결 확인 상태를 구분한다. 이 도표와 첨부 DDL의 생성 근거는 H2이며, 운영 DB 마이그레이션을 구현했다는 뜻은 아니다.
+- **DB 수명:** 기본 프로필의 H2 메모리/create-drop은 유지한다. 현재8080은 명시적인 `local-persistent` 프로필의 파일 H2/validate로 전환해 기존 데이터를 보존했다. MySQL은 별도 `legal_intake_lab`이며 이번 추가 컬럼·제약 이행/복원 검증과 실제8080 DB 선택은 다르다. [실행·복구 절차](DB_DEPLOYMENT_REVIEW_2026-10-23.md)를 확인한다.
 
 **6. 실제 DB FK가 있는 Reference ERD — 별도 경계**
 
@@ -217,7 +236,7 @@ erDiagram
 
 ID 숫자가 우연히 같아도 서로 다른 테이블의 키다. 예를 들어 intakeId=1, conditionId=1, searchRequestId=1은 같은 객체를 뜻하지 않는다. 각 생성 응답에서 받은 이름별 변수를 구분한다.
 
-H2 Console에서 확인할 읽기 전용 예시다. 숫자 1은 실제 생성 ID로 바꾼다. 파일 원본 대신 메타데이터를 조회한다.
+DB 클라이언트에서 사용할 읽기 전용 예시다. 현재 파일 H2 프로필은 웹 H2 Console을 열지 않는다. 숫자1은 실제 생성 ID로 바꾼다. 파일 원본 대신 메타데이터를 조회한다.
 
 ```sql
 select id, intake_id, document_type, original_filename, size_bytes
@@ -260,7 +279,7 @@ order by table_name, constraint_type;
 - 연결·존재 확인: [LegalIntakeRecordService](C:/myLectureWs/legal-ai-intake-security-server/backend/guardrail-ready-policy-checker/src/main/java/com/ohgiraffers/handlermethod/service/LegalIntakeRecordService.java), [IntakeAccessService](C:/myLectureWs/legal-ai-intake-security-server/backend/guardrail-ready-policy-checker/src/main/java/com/ohgiraffers/handlermethod/service/IntakeAccessService.java), [IntakeDocumentService](C:/myLectureWs/legal-ai-intake-security-server/backend/guardrail-ready-policy-checker/src/main/java/com/ohgiraffers/handlermethod/service/IntakeDocumentService.java), [IntakeEventService](C:/myLectureWs/legal-ai-intake-security-server/backend/guardrail-ready-policy-checker/src/main/java/com/ohgiraffers/handlermethod/service/IntakeEventService.java).
 - 조회 기준: 각 Repository의 intakeId·conditionId·searchRequestId 조회와 최신순 정렬.
 - Reference FK: [LegalProcedureStep](C:/myLectureWs/legal-ai-intake-security-server/backend/guardrail-ready-policy-checker/src/main/java/com/ohgiraffers/handlermethod/entity/LegalProcedureStep.java), [LegalFormTemplate](C:/myLectureWs/legal-ai-intake-security-server/backend/guardrail-ready-policy-checker/src/main/java/com/ohgiraffers/handlermethod/entity/LegalFormTemplate.java).
-- 물리 스키마: 마지막 자동 테스트의 Hibernate DDL에서 11개 CREATE TABLE과 Reference FK 두 개를 추출했다. 문서 갱신을 위해 서버·테스트를 새로 실행하거나 Entity·DB 제약을 바꾸지 않았다.
+- 물리 스키마: 2026-10-23 D01/D02 실행에서 최신 전체20개 테이블의 데이터 제외 H2 스키마를 다시 추출했다. MySQL 이행과 H2 백업·복원·실행 검수는 별도 보고서에 기록한다.
 - Postman 수동 결과는 [API 정리서의 기록표](C:/myLectureWs/legal-ai-intake-security-server/docs/API_STATUS_SPEC.md)에 실제 실행 후 남긴다. ERD의 관계 확인과 36개 API의 수동 통과는 별도다.
 
-외부 검색 실행과 SSE 정산 예외 보완의 일정·보류 상태는 유지한다. 이 ERD에는 아직 구현되지 않은 검색 실행 Job·비용 장부·사용자 테이블을 현재 테이블처럼 추가하지 않았다.
+P03·SSE 비용 정산 구현은 완료된 기존 기능이며 실제 공급자 검증은 별도다. 이 부분 ERD에 비용 원장이나 사용자 테이블을 새 영속 기능처럼 추가하지 않았다.

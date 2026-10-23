@@ -1,5 +1,7 @@
 # 화면13 · React·실제 Prometheus 시계열·모의 검수
 
+> 2026-10-23 운영자 권한 완료: C12~C15·C17~C20 업무8개 API는 ADMIN Bearer JWT 필수다. React 관리자 로그인·P01 확인·로그아웃·인증 실패 시 자료 제거를 연결했다. C16·guardtimeseries는 ADMIN Basic 유지. 아래 공개 접근 판정은 당시 검수 기록으로 읽는다. [최신 인증 계약·225/46 및 실제 브라우저 검증](OPERATOR_ADMIN_AUTH_REVIEW_2026-10-23.md).
+
 2026-10-22 최종 갱신. 화면12 배너·남색 메뉴·흰 패널과 두 트랙 구성을 유지했다. 상태 배지는 이름 옆, 이력 링크는 제목 줄, 건수·요청 점수는 그래프 왼쪽에 모았다. 그래프는82px 높이의 선 그래프로 넓혔다. 화면14는 폐지하고 운영 설명은 화면13에서 펼친다.
 
 ![화면13 · 명시적으로 선택한 모의 자료](../output/obs13-prometheus/screen13-preview.png)
@@ -29,7 +31,7 @@
 
 | 동작 | API·입력·인증 | 응답·사용 |
 |---|---|---|
-| 패턴 건수·요청 점수 | **C17** `GET /api/agent/risk/history` · Body/Params 없음 · 현재 공개 정책 | `id, signals, riskScore, recommendedAction, scoreBreakdown`. userInput 원문은 화면에 렌더링하지 않는다. |
+| 패턴 건수·요청 점수 | **C17** `GET /api/agent/risk/history` · Body/Params 없음 · 현재 공개 정책 | `id, signals, riskScore, recommendedAction, scoreBreakdown`. 2026-10-23부터 userInput 원문은 서버 응답 DTO/JSON에서도 제외한다. |
 | 현재 누적 지표 | **C16** `GET /actuator/prometheus` · ADMIN Basic · Body/Params 없음 | 현재 Micrometer 텍스트. 시간 이력 조회 API가 아니다. |
 | 실제 시계열 | **보조 Actuator API 신규** `GET /actuator/guardtimeseries` · ADMIN Basic · Body/Params 없음 | `start,end,stepSeconds=15,windowSeconds=300,query,series[{metric,values}],warnings`. `metric.signal`로 각 카드에 배치. values는 Unix초·문자열 값 쌍. |
 | 서버→Prometheus | `GET /api/v1/query_range` · 서버 설정 주소·job으로 고정 | query/start/end/step/timeout/limit. 클라이언트가 URL·PromQL·기간을 주입할 수 없다. ADMIN Basic은 Prometheus 조회로 전달하지 않는다. |

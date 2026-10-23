@@ -1,6 +1,6 @@
 # Security-Aware Legal AI Intake System
 
-> **2026-10-23 베타:** 화면01~13과 P03·SSE·권한 처리를 포함한 로컬 시연용 소스입니다. 실제 외부 호출·청구 검증 및 운영자 API 권한 등 보완은 남아 있습니다. [베타 실행/Claude 인수인계](docs/BETA_HANDOFF_2026-10-23.md) · [남은 작업](docs/SCREEN01_12_REMAINING_TASKS.md).
+> **2026-10-23 베타:** 화면01~13과 P03·SSE·권한 처리를 포함한 로컬 시연용 소스입니다. 운영자 ADMIN 인가까지 적용했으며 실제 외부 호출·청구 검증과 재전송·상태 처리3건의 보완이 남아 있습니다. [베타 실행/Claude 인수인계](docs/BETA_HANDOFF_2026-10-23.md) · [남은 작업](docs/SCREEN01_12_REMAINING_TASKS.md).
 
 **2026-10-22 현행 반영:** P03 실행·화면05 연결 구현, 운영자 React 화면09~13 구현. 화면13은 기존 C16/C17 재사용이며 새 API 번호·DB 테이블을 추가하지 않았다. 구현 API는 37개다. 외부 LLM·네이버 실제 키 호출·청구 검증은 아직 별도다.
 
@@ -741,3 +741,6 @@ Dashboard Enhancement
 최근 기업용 AI에서는 모델 활용과 함께 정책에 따른 사용 통제, 개인정보 보호, 비용 관리와 운영 관측을 중요하게 다루고 있습니다. [OpenAI의 보안·운영 구성](https://learn.chatgpt.com/docs/enterprise/security-cookbook)과 [Claude의 관리자 분석·비용 관리 기능](https://claude.com/resources/articles/giving-admins-more-visibility-and-control-over-claude-usage-and-spend)에서도 이러한 방향을 확인할 수 있습니다.
 
 이번 프로젝트에서는 Fixed Guard, Dynamic Guard, Privacy Output Guard, Cost Control을 모듈로 나누고, reasonCode·Metric·운영 조회 API로 처리 결과를 확인할 수 있도록 설계·구현했습니다. 법률 문의 서비스에 이 구조를 적용하면서, 기업용 AI에서 중요하게 다루는 통제와 관측의 기초 구조를 직접 설계하고 구현해본 데 의미가 있습니다.
+# 2026-10-23 로컬 DB·실행본 갱신
+
+현재8080은 최신 SHA별 JAR와 `local-persistent` 파일 H2/validate로 실행한다. 기존 문의3건을 포함한 전체20개 테이블의 원래 데이터 복원·해시 대조와 실제 재시작 보존을 확인했다. 로컬 MySQL의 별도 스키마에도 버전·요청 키/유니크를 이행했다. [D01/D02 검수·기동·복구](docs/DB_DEPLOYMENT_REVIEW_2026-10-23.md).

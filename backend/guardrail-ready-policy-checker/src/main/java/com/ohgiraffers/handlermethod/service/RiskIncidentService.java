@@ -5,10 +5,13 @@ import com.ohgiraffers.handlermethod.entity.RiskIncident;
 import com.ohgiraffers.handlermethod.incident.IncidentStatus;
 import com.ohgiraffers.handlermethod.repository.RiskIncidentRepository;
 import com.ohgiraffers.handlermethod.risk.RecommendedAction;
+import com.ohgiraffers.handlermethod.support.ApiConflictException;
+import com.ohgiraffers.handlermethod.support.IncidentNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class RiskIncidentService {
@@ -53,16 +56,30 @@ public class RiskIncidentService {
 
     @Transactional
     public RiskIncidentResponse acknowledge(Long incidentId) {
-        RiskIncident incident = findIncident(incidentId);
-        incident.acknowledge();
-        return RiskIncidentResponse.from(riskIncidentRepository.save(incident));
+        return changeStatus(incidentId, IncidentStatus.ACKNOWLEDGED);
     }
 
     @Transactional
     public RiskIncidentResponse resolve(Long incidentId) {
-        RiskIncident incident = findIncident(incidentId);
-        incident.resolve();
-        return RiskIncidentResponse.from(riskIncidentRepository.save(incident));
+        return changeStatus(incidentId, IncidentStatus.RESOLVED);
+    }
+
+    /*
+     * 화면12: 같은 상태 재요청은 200(변경 없음), 종결 건을 확인됨으로 되돌리는 요청은 409.
+     * 409 응답의 details.currentStatus로 화면이 버튼 상태를 바로 맞출 수 있다.
+     */
+    private RiskIncidentResponse changeStatus(Long incidentId, IncidentStatus next) {
+        RiskIncident incident = riskIncidentRepository.findForUpdate(incidentId)
+                .orElseThrow(IncidentNotFoundException::new);
+        IncidentStatus current = incident.getStatus();
+        if (!current.canChangeTo(next)) {
+            throw new ApiConflictException(
+                    current.isTerminal() ? "INCIDENT_ALREADY_RESOLVED" : "INCIDENT_STATUS_TRANSITION_NOT_ALLOWED",
+                    "Cannot change incident status from " + current + " to " + next,
+                    Map.of("incidentId", incidentId, "currentStatus", current.name(), "requestedStatus", next.name()));
+        }
+        incident.changeStatus(next);
+        return RiskIncidentResponse.from(incident);
     }
 
     @Transactional(readOnly = true)
@@ -76,8 +93,4 @@ public class RiskIncidentService {
                 || RecommendedAction.CREATE_INCIDENT.name().equals(recommendedAction);
     }
 
-    private RiskIncident findIncident(Long incidentId) {
-        return riskIncidentRepository.findById(incidentId)
-                .orElseThrow(() -> new IllegalArgumentException("Risk incident not found: " + incidentId));
-    }
 }

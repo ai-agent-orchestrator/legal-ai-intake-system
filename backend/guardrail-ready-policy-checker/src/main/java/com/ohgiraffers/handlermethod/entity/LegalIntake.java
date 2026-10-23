@@ -7,12 +7,19 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.Version;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "legal_intake")
+@Table(name = "legal_intake",
+        uniqueConstraints = @UniqueConstraint(name = LegalIntake.IDEMPOTENCY_CONSTRAINT,
+                columnNames = {"owner_username", "idempotency_key"}))
 public class LegalIntake {
+
+    /* 화면03 재전송 유니크 제약 이름. 동시 재전송 충돌을 다른 무결성 오류와 구분할 때 쓴다. */
+    public static final String IDEMPOTENCY_CONSTRAINT = "uk_legal_intake_owner_idempotency";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -28,7 +35,12 @@ public class LegalIntake {
     private String assignedLawyerUsername;
 
     public String getAssignedLawyerUsername() { return assignedLawyerUsername; }
-    public void assignLawyer(String username) { assignedLawyerUsername = username; }
+    public void assignLawyer(String username) {
+        if (!java.util.Objects.equals(assignedLawyerUsername, username)) {
+            assignedLawyerUsername = username;
+            touch();
+        }
+    }
 
     @Column(length = 100)
     private String clientName;
@@ -80,6 +92,21 @@ public class LegalIntake {
 
     @Column(nullable = false)
     private LocalDateTime createdAt;
+
+    /* 화면07 동시 수정 충돌 감지용. 상태 변경·메모 추가·배정 변경마다 1씩 증가한다. */
+    @Version
+    @Column(nullable = false)
+    private long version;
+
+    @Column
+    private LocalDateTime updatedAt;
+
+    /* 화면03 재전송 판별용. 같은 사용자 + 같은 키는 한 건만 저장된다. */
+    @Column(name = "idempotency_key", length = 120)
+    private String idempotencyKey;
+
+    @Column(name = "request_hash", length = 64)
+    private String requestHash;
 
     protected LegalIntake() {
     }
@@ -241,11 +268,40 @@ public class LegalIntake {
         return status;
     }
 
+    public long getVersion() {
+        return version;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public String getIdempotencyKey() {
+        return idempotencyKey;
+    }
+
+    public String getRequestHash() {
+        return requestHash;
+    }
+
+    public void recordSubmission(String idempotencyKey, String requestHash) {
+        this.idempotencyKey = idempotencyKey;
+        this.requestHash = requestHash;
+    }
+
+    /* 상태 외의 변경(메모 추가 등)도 버전을 올려 다른 상담자의 화면이 오래된 것임을 알 수 있게 한다. */
+    public void touch() {
+        updatedAt = LocalDateTime.now();
+    }
+
     public void changeStatus(IntakeStatus next) {
         if (!IntakeStatus.valueOf(status).canChangeTo(next)) {
             throw new IllegalStateException("Cannot change intake status from " + status + " to " + next);
         }
-        status = next.name();
+        if (!status.equals(next.name())) {
+            status = next.name();
+            touch();
+        }
     }
 
     public LocalDateTime getCreatedAt() {

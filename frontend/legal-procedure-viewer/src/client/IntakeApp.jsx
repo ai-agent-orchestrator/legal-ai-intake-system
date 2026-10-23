@@ -25,6 +25,8 @@ export default function IntakeApp() {
   const [loginOpen, setLoginOpen] = useState(false);
   const [listFilters, setListFilters] = useState(EMPTY_LIST_FILTERS);
   const token = useRef('');
+  const submissionAttempt = useRef(null);
+  const sessionOwner = useRef('');
   const previousClassification = useRef(null);
   const api = useMemo(() => createIntakeApi({
     base: import.meta.env.VITE_INTAKE_API_BASE || '',
@@ -46,6 +48,7 @@ export default function IntakeApp() {
   }, [route]);
 
   function created(id) {
+    submissionAttempt.current = null;
     setDraft(INITIAL_DRAFT); setIntakeForm(INITIAL_INTAKE_FORM); setPreview(null);
     previousClassification.current = null;
     window.location.hash = '/intake/' + id;
@@ -61,14 +64,19 @@ export default function IntakeApp() {
     setIntakeForm(current => ({ ...current, ...changed }));
     previousClassification.current = source;
   }
-  function logout() { token.current = ''; setUser(null); setDraft(INITIAL_DRAFT); setIntakeForm(INITIAL_INTAKE_FORM); setPreview(null); }
+  function logout() { token.current = ''; sessionOwner.current = ''; submissionAttempt.current = null; setUser(null); setDraft(INITIAL_DRAFT); setIntakeForm(INITIAL_INTAKE_FORM); setPreview(null); }
   function signedIn(data, redirect = false) {
+    if (sessionOwner.current && sessionOwner.current !== data.username) {
+      submissionAttempt.current = null; setDraft(INITIAL_DRAFT); setIntakeForm(INITIAL_INTAKE_FORM); setPreview(null);
+    }
+    sessionOwner.current = data.username;
     token.current = data.accessToken;
     setUser({ username: data.username, role: data.role });
     setLoginOpen(false);
     if (redirect) window.location.hash = loginDestination(data.role);
   }
   function newInquiry() {
+    submissionAttempt.current = null;
     setDraft(INITIAL_DRAFT); setIntakeForm(INITIAL_INTAKE_FORM); setPreview(null);
     previousClassification.current = null;
     window.location.hash = '/intake/type';
@@ -88,7 +96,7 @@ export default function IntakeApp() {
         : route.name === 'lawyer-detail' ? <IntakeDetailPage key={route.id} api={api} id={route.id} user={user} onLogin={() => setLoginOpen(true)} onReady={showReady}/>
         : route.name === 'consultation' ? <IntakeConsultationPage key={route.id} api={api} id={route.id} onReady={showReady}/>
         : route.name === 'classify' ? <ClassificationPage api={api} draft={draft} setDraft={setDraft} preview={preview} setPreview={classified}/>
-        : route.name === 'write' ? <IntakeWritePage api={api} draft={draft} preview={preview} form={intakeForm} setForm={setIntakeForm} onCreated={created}/>
+        : route.name === 'write' ? <IntakeWritePage api={api} draft={draft} preview={preview} form={intakeForm} setForm={setIntakeForm} onCreated={created} attemptRef={submissionAttempt} identity={user?.username || sessionOwner.current || 'anonymous'}/>
           : route.name === 'receipt' ? <IntakeReceiptPage key={route.id} api={api} id={route.id} onNewInquiry={newInquiry}/>
             : route.name === 'review' ? <IntakeReviewPage key={route.id} api={api} id={route.id} onNewInquiry={newInquiry}/>
               : route.name === 'search' ? <IntakeSearchPage key={route.id} api={api} id={route.id} requestId={route.searchRequestId} user={user} onLogin={() => setLoginOpen(true)}/>

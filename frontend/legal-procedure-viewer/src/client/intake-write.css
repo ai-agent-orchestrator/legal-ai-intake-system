@@ -177,3 +177,5 @@
   .selected-form .form-sheet { width: 60px; height: 82px; }
   .selected-form h3 { font-size: 14px; }
 }
+.write-resubmit-notice{padding:14px 16px;margin:12px 0;border:1px solid #d2dff4;border-radius:8px;background:#f1f6ff;color:#365984;font-size:13px;line-height:1.8}
+.write-resubmit-notice p{margin:0 0 8px}.write-resubmit-notice a{display:inline-block;text-decoration:underline;margin-right:14px}.write-resubmit-notice .intake-button{margin-top:8px}

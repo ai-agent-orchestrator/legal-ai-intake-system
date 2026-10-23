@@ -19,6 +19,8 @@ public interface LegalIntakeRepository extends JpaRepository<LegalIntake, Long> 
 
     long countByStatus(String status);
 
+    java.util.Optional<LegalIntake> findByOwnerUsernameAndIdempotencyKey(String ownerUsername, String idempotencyKey);
+
     @Query("select i.caseType as bucket, count(i) as total from LegalIntake i group by i.caseType order by i.caseType")
     List<IntakeDistribution> countByCaseType();
 

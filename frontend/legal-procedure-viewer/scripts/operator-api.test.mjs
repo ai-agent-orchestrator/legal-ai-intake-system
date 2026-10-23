@@ -6,10 +6,13 @@ const emptyRisk = { total: 0, high: 0, medium: 0, low: 0, decisionCounts: {}, re
 const emptySummary = { agentRunCount: 0, riskHistoryCount: 0, securityEventCount: 0, openIncidentCount: 0, riskSummary: emptyRisk };
 
 async function withServer(handler, run) {
-  const server = createServer(handler);
+  const server = createServer((req, res) => {
+    if (req.url === '/api/auth/login' || req.url === '/api/me') { res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify({ username: 'qa-admin', role: 'ROLE_ADMIN', ...(req.url.endsWith('login') ? { accessToken: 'qa-admin-token' } : {}) })); }
+    else handler(req, res);
+  });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
-  try { await run(`http://127.0.0.1:${server.address().port}`); }
-  finally { server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); }
+  try { const base = `http://127.0.0.1:${server.address().port}`; await api.loginOperator(base, 'qa-admin', 'test-password'); await run(base); }
+  finally { api.clearOperatorSession(); server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); }
 }
 
 test('incident writes preserve the selected ID, use PATCH and omit a JSON body', async () => {
@@ -22,8 +25,8 @@ test('incident writes preserve the selected ID, use PATCH and omit a JSON body',
     assert.equal((await api.ackIncident(base, 42)).status, 'ACKNOWLEDGED');
     assert.equal((await api.resolveIncident(base, 42)).status, 'RESOLVED');
     assert.deepEqual(calls, [
-      { url: '/api/incidents/42/ack', method: 'PATCH', body: '', auth: undefined },
-      { url: '/api/incidents/42/resolve', method: 'PATCH', body: '', auth: undefined },
+      { url: '/api/incidents/42/ack', method: 'PATCH', body: '', auth: 'Bearer qa-admin-token' },
+      { url: '/api/incidents/42/resolve', method: 'PATCH', body: '', auth: 'Bearer qa-admin-token' },
     ]);
     assert.throws(() => api.ackIncident(base, '../wrong'), /유효한/);
   });
@@ -38,7 +41,7 @@ test('C16 sends Basic only for the metrics request; normal API calls do not inhe
   }, async base => {
     assert.match(await api.getPrometheusMetrics(base, 'test-admin', 'test-password'), /0.012/);
     await api.getAdminDashboardSummary(base);
-    assert.deepEqual(calls, [['/actuator/prometheus', `Basic ${btoa('test-admin:test-password')}`], ['/api/admin/dashboard/summary', undefined]]);
+    assert.deepEqual(calls, [['/actuator/prometheus', `Basic ${btoa('test-admin:test-password')}`], ['/api/admin/dashboard/summary', 'Bearer qa-admin-token']]);
   });
 });
 
@@ -57,6 +60,7 @@ test('401 and 403 remain distinct and expose a trace reference without a respons
     res.setHeader('X-Trace-Id', 'test-trace'); res.end('sensitive internal response');
   }, async base => {
     await assert.rejects(api.getRiskSummary(base), error => error.status === 401 && /인증/.test(error.message) && /test-trace/.test(error.message) && !/sensitive/.test(error.message));
+    await api.loginOperator(base, 'qa-admin', 'test-password');
     await assert.rejects(api.getIncidents(base), error => error.status === 403 && /접근 권한/.test(error.message));
   });
 });

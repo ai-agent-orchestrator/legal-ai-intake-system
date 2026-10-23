@@ -767,16 +767,86 @@ const listRows = () => [
 const setListFilter = async (tree, name, value) => act(async () => field(tree, name).props.onChange({ target: { name, value } }));
 const detailLinks = tree => tree.root.findAllByType('a').filter(node => /^문의 \d+ 상세 보기$/.test(node.props['aria-label'] || ''));
 
+test('Screen03 retry keeps its request key across navigation and lands on the original saved ID', async t => {
+  const keys=[];let attempts=0;
+  const {tree,navigate}=await mountAsStaff(t,(url,init)=>{
+    if(url==='/api/intakes'&&init.method==='POST'){keys.push(init.headers['Idempotency-Key']);if(++attempts===1)throw new TypeError('response lost after commit');return response({id:42},201);}
+  });
+  await classify(tree);await act(async()=>button(tree,'다음: 문의 작성').props.onClick());await fillRequired(tree);
+  await act(async()=>tree.root.findByType('form').props.onSubmit({preventDefault(){}}));
+  assert.match(text(tree.root),/저장 여부가 불확실/);assert.equal(attempts,1);
+  await navigate('/intake/type');await act(async()=>button(tree,'다음: 문의 작성').props.onClick());
+  await act(async()=>tree.root.findByType('form').props.onSubmit({preventDefault(){}}));
+  assert.equal(keys.length,2);assert.equal(keys[0],keys[1]);assert.ok(keys[0]);assert.equal(window.location.hash,'#/intake/42');
+});
+
+test('Screen03 uncertain edited payload is not silently sent under a new key',async t=>{
+  const keys=[];const {tree}=await mountAsStaff(t,(url,init)=>{if(url==='/api/intakes'&&init.method==='POST'){keys.push(init.headers['Idempotency-Key']);throw new TypeError('response lost');}});
+  await classify(tree);await act(async()=>button(tree,'다음: 문의 작성').props.onClick());await fillRequired(tree);
+  const submit=()=>act(async()=>tree.root.findByType('form').props.onSubmit({preventDefault(){}}));
+  await submit();await change(tree,'clientName','새로 수정한 가상 이름');await submit();
+  assert.equal(keys.length,1);assert.match(text(tree.root),/기존 문의를 확인/);
+  await act(async()=>button(tree,'기존 문의 확인 후 새 접수로 진행').props.onClick());await submit();
+  assert.equal(keys.length,2);assert.notEqual(keys[0],keys[1]);
+});
+
 function consultationStore() {
-  const state = { status: 'SUBMITTED', memos: [] };
+  const state = { status: 'SUBMITTED', memos: [], version: 0 };
   return { state, handler(url, init) {
-    if (url === '/api/intakes/42') return response(testIntake(42, { status: state.status, consultationMemos: state.memos }));
-    if (url === '/api/intakes/42/status') { const previousStatus = state.status; state.status = JSON.parse(init.body).status; return response({ id: 42, previousStatus, status: state.status, changed: previousStatus !== state.status }); }
-    if (url === '/api/intakes/42/memo') { const body = JSON.parse(init.body); const memo = testMemo(42, 300 + state.memos.length, { followUpItems: body.followUpItems }); state.memos.unshift(memo); return response(memo, 201); }
+    if (url === '/api/intakes/42') return response(testIntake(42, { status: state.status, version: state.version, consultationMemos: state.memos }));
+    if (url === '/api/intakes/42/status') { const previousStatus = state.status; state.status = JSON.parse(init.body).status; if (previousStatus !== state.status) state.version++; return response({ id: 42, previousStatus, status: state.status, changed: previousStatus !== state.status, version: state.version }); }
+    if (url === '/api/intakes/42/memo') { const body = JSON.parse(init.body); const memo = testMemo(42, 300 + state.memos.length, { followUpItems: body.followUpItems, intakeVersion: ++state.version }); state.memos.unshift(memo); return response(memo, 201); }
   } };
 }
 const consultationForm = (tree, kind) => tree.root.findAllByType('form').find(form => form.findAllByProps({ name: kind === 'status' ? 'nextStatus' : 'memoContent' }).length);
 const submitConsultation = (tree, kind) => act(async () => { await consultationForm(tree, kind).props.onSubmit({ preventDefault() {} }); });
+
+test('Screen07 conflict preserves memo/checklist, locks writes until confirmation, then sends the refreshed version',async t=>{
+  const store=consultationStore();let writes=0;
+  const {tree,calls,navigate}=await mountAsStaff(t,(url,init)=>{
+    if(url.endsWith('/status')&&++writes===1){store.state.version=3;store.state.status='REVIEWED';return response({code:'INTAKE_VERSION_CONFLICT',details:{currentVersion:3,currentStatus:'REVIEWED'}},409);}
+    return store.handler(url,init);
+  });
+  await navigate('/lawyer/intakes/42/consultation');await change(tree,'memoContent','충돌 후 보존할 메모');
+  await act(async()=>tree.root.findAllByType('input').find(node=>node.props.value==='REQUEST_DOCUMENTS').props.onChange());
+  await change(tree,'nextStatus','NEED_MORE_INFO');await submitConsultation(tree,'status');
+  assert.equal(writes,1);assert.match(text(tree.root),/다른 담당자/);assert.equal(field(tree,'memoContent').props.value,'충돌 후 보존할 메모');
+  assert.equal(button(tree,'메모 추가 저장').props.disabled,true);assert.equal(tree.root.findAllByType('input').find(node=>node.props.value==='REQUEST_DOCUMENTS').props.checked,true);
+  await act(async()=>button(tree,'확인 후 편집 계속').props.onClick());await submitConsultation(tree,'status');
+  const requests=calls.filter(call=>call.url.endsWith('/status')).map(call=>JSON.parse(call.init.body));
+  assert.deepEqual(requests.map(body=>body.expectedVersion),[0,3]);assert.equal(writes,2);
+});
+
+test('Screen07 lost memo replay uses the same key; a new identical memo has a new key',async t=>{
+  const store=consultationStore(),keys=[];let first=true;
+  const {tree,navigate}=await mountAsStaff(t,(url,init)=>{
+    if(url.endsWith('/memo')){
+      const key=init.headers['Idempotency-Key'];keys.push(key);
+      if(first){first=false;store.handler(url,init);throw new TypeError('lost after commit');}
+      if(keys[0]===key)return new Response(JSON.stringify({...store.state.memos[0],intakeVersion:store.state.version}),{status:201,headers:{'Content-Type':'application/json','Idempotent-Replayed':'true'}});
+    }
+    return store.handler(url,init);
+  });
+  await navigate('/lawyer/intakes/42/consultation');await change(tree,'memoContent','동일 내용의 메모');await submitConsultation(tree,'memo');
+  await act(async()=>button(tree,'저장 결과 조회').props.onClick());await act(async()=>button(tree,'확인 후 편집 계속').props.onClick());
+  await submitConsultation(tree,'memo');assert.equal(keys[0],keys[1]);assert.equal(store.state.memos.length,1);assert.match(text(tree.root),/중복으로 추가하지 않았습니다/);
+  await change(tree,'memoContent','동일 내용의 메모');await submitConsultation(tree,'memo');assert.notEqual(keys[1],keys[2]);assert.equal(store.state.memos.length,2);
+});
+
+test('Screen07 successful write keeps its returned version even if follow-up GET fails',async t=>{
+  const store=consultationStore();let reads=0;
+  const {tree,calls,navigate}=await mountAsStaff(t,(url,init)=>url==='/api/intakes/42'&&++reads===2?response({},500):store.handler(url,init));
+  await navigate('/lawyer/intakes/42/consultation');await change(tree,'nextStatus','REVIEWED');await submitConsultation(tree,'status');
+  assert.match(text(tree.root),/저장은 완료됐지만/);await change(tree,'memoContent','후속 조회 실패 후 메모');await submitConsultation(tree,'memo');
+  assert.equal(JSON.parse(calls.find(call=>call.url.endsWith('/memo')).init.body).expectedVersion,1);
+});
+
+test('Screen07 missing server version locks editing instead of inventing version zero',async t=>{
+  const {tree,calls,navigate}=await mountAsStaff(t,url=>url==='/api/intakes/42'?response(testIntake(42,{version:undefined})):undefined);
+  await navigate('/lawyer/intakes/42/consultation');assert.match(text(tree.root),/버전 정보를 확인하지 못해/);
+  assert.equal(button(tree,'상태 변경 저장').props.disabled,true);assert.equal(button(tree,'메모 추가 저장').props.disabled,true);
+  await submitConsultation(tree,'memo');assert.ok(!calls.some(call=>call.url.endsWith('/memo')));
+});
 
 test('Screen07 React: detail links real ID to consultation; status and protected memo writes refresh C05 independently', async t => {
   const store = consultationStore();

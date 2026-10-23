@@ -30,6 +30,7 @@ Thumbs.db
 **/application-local.properties
 *.pem
 *.key
+**/.local/
 /output/**
 !/output/intake-permissions/
 !/output/intake-permissions/verification.json

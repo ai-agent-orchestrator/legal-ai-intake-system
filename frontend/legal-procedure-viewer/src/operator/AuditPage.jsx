@@ -68,7 +68,11 @@ export default function AuditPage({ base, refreshSummary, setLocked, requestedRi
     try {
       const result = await changeIncidentAndReload({ base, incident, action, signal: controller.signal, refreshIncidents: incidents.reload, refreshSummary });
       if (result.cancelled) return;
-      setNotice({ error: !result.saved || !result.refreshed, text: result.saved ? result.refreshed ? `${incidentId(incident.id)} ${action === 'ack' ? '확인' : '해결'} 처리가 저장됐습니다. Incident 목록과 운영 요약을 갱신했습니다.` : '상태 변경은 저장됐지만 일부 재조회에 실패했습니다. 새로고침으로 최신 상태를 확인하세요.' : `${result.error} 저장 여부를 단정할 수 없어 목록과 운영 요약을 재조회했습니다.${result.refreshed ? ' 최신 상태를 확인한 후 다시 처리하세요.' : ' 재조회에도 실패했습니다. 새로고침 후 최신 상태를 확인하세요.'}` });
+      const refreshText = result.refreshed ? 'Incident 목록과 운영 요약을 갱신했습니다.'
+        : `최신 조회 확인: Incident 목록 ${result.incidentsRefreshed ? '완료' : '실패'}, 운영 요약 ${result.summaryRefreshed ? '완료' : '실패'}. 새로고침으로 다시 확인해 주세요.`;
+      const actionText = result.saved ? `${incidentId(incident.id)} ${action === 'ack' ? '확인' : '해결'} 처리가 저장됐습니다.`
+        : result.status && result.status < 500 ? result.error : `${result.error} 저장 여부를 단정할 수 없어 재조회했습니다.`;
+      setNotice({ error: !result.saved || !result.refreshed, text: `${actionText} ${refreshText}` });
     } catch (error) { if (!controller.signal.aborted) setNotice({ error: true, text: error.message }); }
     finally { if (!controller.signal.aborted) { mutation.current = null; setPending(null); setLocked(false); } }
   }

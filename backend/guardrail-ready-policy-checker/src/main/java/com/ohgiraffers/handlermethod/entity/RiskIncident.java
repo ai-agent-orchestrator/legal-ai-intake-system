@@ -98,14 +98,28 @@ public class RiskIncident {
         );
     }
 
-    public void acknowledge() {
-        this.status = IncidentStatus.ACKNOWLEDGED;
-        this.updatedAt = LocalDateTime.now();
+    public boolean acknowledge() {
+        return changeStatus(IncidentStatus.ACKNOWLEDGED);
     }
 
-    public void resolve() {
-        this.status = IncidentStatus.RESOLVED;
+    public boolean resolve() {
+        return changeStatus(IncidentStatus.RESOLVED);
+    }
+
+    /**
+     * 허용된 전이만 반영한다. 같은 상태면 updatedAt도 그대로 두고 false를 돌려준다.
+     * 종결(RESOLVED)된 건을 확인됨(ACKNOWLEDGED)으로 되돌리는 등 역방향 전이는 IllegalStateException.
+     */
+    public boolean changeStatus(IncidentStatus next) {
+        if (status == next) {
+            return false;
+        }
+        if (!status.canChangeTo(next)) {
+            throw new IllegalStateException("Cannot change incident status from " + status + " to " + next);
+        }
+        this.status = next;
         this.updatedAt = LocalDateTime.now();
+        return true;
     }
 
     public Long getId() {

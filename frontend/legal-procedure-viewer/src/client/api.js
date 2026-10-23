@@ -4,14 +4,17 @@ import { consultationMemoPayload, FOLLOW_UP_ITEMS, isIntakeStatus } from './cons
 import { documentMime, documentPath, validDocumentName } from './intakeDetailModel.js';
 import { searchResultPayload, SEARCH_STAGES } from './searchModel.js';
 import { AUTH_ROLES, loginCredentials } from './authModel.js';
+import { serverProblem, validVersion, writeOptions } from '../shared/writeContracts.js';
 
 export class ApiError extends Error {
-  constructor(message, status = 0, fieldErrors = {}, traceId = '') {
+  constructor(message, status = 0, fieldErrors = {}, traceId = '', code = '', details = {}) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
     this.fieldErrors = fieldErrors;
     this.traceId = traceId;
+    this.code = code;
+    this.details = details;
   }
 }
 
@@ -35,6 +38,7 @@ const isId = value => typeof value === 'number'
   ? Number.isSafeInteger(value) && value > 0
   : typeof value === 'string' && /^[1-9]\d*$/.test(value);
 const isIntake = value => isObject(value) && isId(value.id)
+  && (value.version === undefined || validVersion(value.version))
   && ['caseType', 'caseTypeLabel', 'inquiryPurpose', 'partyPosition', 'coreStatementMasked', 'desiredNextStep', 'clientGuideMessage', 'privacyNotice', 'status'].every(key => typeof value[key] === 'string')
   && (value.permissions === undefined || (isObject(value.permissions) && typeof value.permissions.canManage === 'boolean' && typeof value.permissions.canAssign === 'boolean'))
   && CASE_TYPES.some(type => type.value === value.caseType)
@@ -57,6 +61,7 @@ const isSearch = value => isObject(value) && ['id', 'intakeId', 'conditionId'].e
     && (value.execution.sourceWarningCode == null || ['KBA_SEARCH_UNAVAILABLE', 'GENERAL_SEARCH_UNAVAILABLE'].includes(value.execution.sourceWarningCode))
     && (value.execution.errorCode == null || (typeof value.execution.errorCode === 'string' && /^[A-Z_]+$/.test(value.execution.errorCode)))));
 const isMemo = (value, intakeId) => isObject(value) && isId(value.id) && String(value.intakeId) === String(intakeId)
+  && (value.intakeVersion == null || validVersion(value.intakeVersion))
   && typeof value.contentMasked === 'string' && validIntakeTime(value.createdAt)
   && Array.isArray(value.followUpItems) && value.followUpItems.length <= 4
   && value.followUpItems.every(code => FOLLOW_UP_ITEMS.some(item => item.value === code))
@@ -72,7 +77,7 @@ const isUploadedDocument = (value, intakeId) => isObject(value) && isId(value.id
 
 export function createIntakeApi({ base = '', getToken = () => '', onUnauthorized = () => {}, timeoutMs = 15000 } = {}) {
   const apiBase = normalizeBase(base);
-  async function request(path, { method = 'GET', body, signal, authenticated = false, accessToken, binary = false, validate = isObject } = {}) {
+  async function request(path, { method = 'GET', body, signal, authenticated = false, accessToken, binary = false, validate = isObject, idempotencyKey } = {}) {
     const controller = new AbortController();
     const abort = () => controller.abort();
     signal?.addEventListener('abort', abort, { once: true });
@@ -83,7 +88,7 @@ export function createIntakeApi({ base = '', getToken = () => '', onUnauthorized
     try {
       const response = await fetch(`${apiBase}${path}`, {
         method, signal: controller.signal, cache: 'no-store', credentials: 'omit',
-        headers: { Accept: binary ? '*/*' : 'application/json', ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}), ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        headers: { Accept: binary ? '*/*' : 'application/json', ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}), ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {}) },
         ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
       });
       const data = await (binary && response.ok ? response.blob() : response.json()).catch(error => {
@@ -98,11 +103,17 @@ export function createIntakeApi({ base = '', getToken = () => '', onUnauthorized
           403: '이 요청에 대한 접근 권한이 없습니다.', 404: '요청한 정보를 찾을 수 없습니다.',
           409: '요청 상태가 변경되었습니다. 다시 확인해 주세요.', 429: '요청이 많습니다. 잠시 후 다시 시도해 주세요.',
         };
-        throw new ApiError(messages[response.status] || '서버에서 요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.', response.status,
+        const problem = serverProblem(data, response.status);
+        throw new ApiError(problem.message || messages[response.status] || '서버에서 요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.', response.status,
           isObject(data?.fieldErrors) ? Object.fromEntries(Object.entries(data.fieldErrors).filter(([, value]) => typeof value === 'string')) : {},
-          response.headers.get('X-Trace-Id') || (typeof data?.traceId === 'string' ? data.traceId : ''));
+          response.headers.get('X-Trace-Id') || (typeof data?.traceId === 'string' ? data.traceId : ''), problem.code, problem.details);
       }
       if (!validate(data)) throw new ApiError('서버 응답 형식을 확인할 수 없습니다. 다시 시도해 주세요.');
+      if (idempotencyKey) {
+        const replayed = response.headers.get('Idempotent-Replayed');
+        if (replayed !== null && !['true', 'false'].includes(replayed)) throw new ApiError('서버의 재전송 확인 응답 형식을 확인할 수 없습니다.');
+        if (replayed !== null) return { ...data, replayed: replayed === 'true' };
+      }
       return data;
     } catch (error) {
       if (timedOut) throw new ApiError('응답 대기 시간(15초)을 넘었습니다. 다시 시도해 주세요.');
@@ -146,7 +157,10 @@ export function createIntakeApi({ base = '', getToken = () => '', onUnauthorized
         validate: data => isObject(data) && typeof data.username === 'string' && !!data.username.trim() && Object.hasOwn(AUTH_ROLES, data.role),
       });
     },
-    create: (body, signal) => request('/api/intakes', { method: 'POST', body, signal, authenticated: true, validate: data => isObject(data) && isId(data.id) }),
+    create: (body, signal, options) => {
+      const { idempotencyKey } = writeOptions(options);
+      return request('/api/intakes', { method: 'POST', body, signal, idempotencyKey, authenticated: true, validate: data => isObject(data) && isId(data.id) });
+    },
     intake: (id, signal) => {
       if (!isId(id)) throw new Error('유효한 문의 번호가 필요합니다.');
       return request(`/api/intakes/${encodeURIComponent(id)}`, { signal, authenticated: true, validate: data => isIntake(data) && String(data.id) === String(id) });
@@ -189,18 +203,21 @@ export function createIntakeApi({ base = '', getToken = () => '', onUnauthorized
         validate: data => data instanceof Blob && data.size === file.sizeBytes && documentMime(data.type) === documentMime(file.contentType),
       });
     },
-    updateStatus: (id, status, signal) => {
+    updateStatus: (id, status, signal, options) => {
       if (!isId(id) || !isIntakeStatus(status)) throw new Error('문의 번호와 변경할 상태를 확인해 주세요.');
-      return request(`/api/intakes/${encodeURIComponent(id)}/status`, { method: 'PATCH', body: { status }, signal, authenticated: true,
+      const { expectedVersion } = writeOptions(options);
+      return request(`/api/intakes/${encodeURIComponent(id)}/status`, { method: 'PATCH', body: { status, ...(expectedVersion !== undefined ? { expectedVersion } : {}) }, signal, authenticated: true,
         validate: data => isObject(data) && String(data.id) === String(id) && data.status === status
+          && (expectedVersion === undefined ? data.version === undefined || validVersion(data.version) : validVersion(data.version) && data.version >= expectedVersion)
           && isIntakeStatus(data.previousStatus) && typeof data.changed === 'boolean'
           && data.changed === (data.previousStatus !== data.status),
       });
     },
-    createMemo: (id, content, followUpItems, signal) => {
+    createMemo: (id, content, followUpItems, signal, options) => {
       if (!isId(id)) throw new Error('유효한 문의 번호가 필요합니다.');
-      return request(`/api/intakes/${encodeURIComponent(id)}/memo`, { method: 'POST', body: consultationMemoPayload(content, followUpItems), signal, authenticated: true,
-        validate: data => isMemo(data, id),
+      const { idempotencyKey, expectedVersion } = writeOptions(options);
+      return request(`/api/intakes/${encodeURIComponent(id)}/memo`, { method: 'POST', body: { ...consultationMemoPayload(content, followUpItems), ...(expectedVersion !== undefined ? { expectedVersion } : {}) }, signal, idempotencyKey, authenticated: true,
+        validate: data => isMemo(data, id) && (expectedVersion === undefined || validVersion(data.intakeVersion) && data.intakeVersion >= expectedVersion),
       });
     },
     minimal: (intake, signal) => {

@@ -1,7 +1,7 @@
 // Synthetic DTOs used by source tests and the separate QA server only.
 export function testIntake(id = 42, overrides = {}) {
   return {
-    id, sessionId: 'qa-session', caseType: 'CIVIL', caseTypeLabel: '민사 사건', inquiryPurpose: '문서 검토',
+    id, version: 0, sessionId: 'qa-session', caseType: 'CIVIL', caseTypeLabel: '민사 사건', inquiryPurpose: '문서 검토',
     partyPosition: '원고', coreStatementMasked: '검수 상황', desiredNextStep: '검수 안내 확인',
     clientGuideMessage: '검수 안내', privacyNotice: '검수 고지', status: 'SUBMITTED', createdAt: '2026-10-21T10:00:00',
     incidentDate: null, counterpartMasked: null, amountOrDamage: null, currentStage: null,
@@ -25,7 +25,7 @@ export function testSearch(intakeId = 42, id = 81, overrides = {}) {
     searchQuery: '검수 검색어', results: [], createdAt: '2026-10-21T10:00:00', ...overrides };
 }
 export function testMemo(intakeId = 42, id = 301, overrides = {}) {
-  return { id, intakeId, contentMasked: '검수용 보호된 상담 메모', followUpItems: ['REQUEST_DOCUMENTS'], createdAt: '2026-10-21T11:00:00', ...overrides };
+  return { id, intakeId, intakeVersion: 1, contentMasked: '검수용 보호된 상담 메모', followUpItems: ['REQUEST_DOCUMENTS'], createdAt: '2026-10-21T11:00:00', ...overrides };
 }
 export function testDocument(intakeId = 42, id = 401, overrides = {}) {
   return { id, intakeId, documentType: '계약서', originalFilename: '검수.txt', contentType: 'text/plain', sizeBytes: 4,

@@ -4,6 +4,7 @@ public record LegalIntakeStatusResponse(
         Long id,
         String previousStatus,
         String status,
-        boolean changed
+        boolean changed,
+        long version
 ) {
 }

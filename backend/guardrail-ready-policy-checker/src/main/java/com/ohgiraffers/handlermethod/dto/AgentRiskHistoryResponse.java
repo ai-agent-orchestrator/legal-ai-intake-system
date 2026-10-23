@@ -8,7 +8,6 @@ import java.util.List;
 
 public record AgentRiskHistoryResponse(
         Long id,
-        String userInput,
         String toolName,
         String decision,
         int riskScore,
@@ -28,7 +27,6 @@ public record AgentRiskHistoryResponse(
     public static AgentRiskHistoryResponse from(AgentRiskHistory history, Integer retryCount) {
         return new AgentRiskHistoryResponse(
                 history.getId(),
-                history.getUserInput(),
                 history.getToolName(),
                 history.getDecision(),
                 history.getRiskScore(),

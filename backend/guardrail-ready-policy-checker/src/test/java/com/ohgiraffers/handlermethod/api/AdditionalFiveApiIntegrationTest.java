@@ -232,7 +232,7 @@ class AdditionalFiveApiIntegrationTest {
         mvc.perform(post("/api/intake-events").contentType(MediaType.APPLICATION_JSON)
                 .content("{\"eventId\":\"event-3\",\"eventType\":\"SUMMARY_VIEWED\",\"sessionId\":\"event-session\",\"intakeId\":" + intakeId + "}"))
                 .andExpect(status().isCreated());
-        mvc.perform(get("/api/admin/dashboard/marketing-funnel")).andExpect(status().isOk())
+        mvc.perform(get("/api/admin/dashboard/marketing-funnel").header("Authorization", "Bearer " + tokens.createToken("admin", "ROLE_ADMIN"))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.eventCounts.VISIT").value(1))
                 .andExpect(jsonPath("$.eventCounts.INTAKE_STARTED").value(1))
                 .andExpect(jsonPath("$.eventCounts.SUMMARY_VIEWED").value(1))

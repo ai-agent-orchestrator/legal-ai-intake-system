@@ -1,4 +1,5 @@
 import test from 'node:test';
+import { loginOperator, clearOperatorSession } from '../src/operator/operatorApi.js';
 import assert from 'node:assert/strict';
 import { patternSeries, linePath, scrapeState } from '../src/operator/prometheusChart.js';
 import { operatorRiskPatterns } from '../src/operator/observabilityMetrics.js';
@@ -34,14 +35,15 @@ test('real matrix keeps fractional increase, observed zero, labels and gaps with
 test('range endpoint sends Basic only to Actuator, validates its response and keeps an empty matrix empty', async () => {
   const calls=[];
   const data={start:100,end:190,stepSeconds:15,windowSeconds:300,query:'fixed query',series:[],warnings:[]};
-  const server=createServer((req,res)=>{calls.push({path:req.url,auth:req.headers.authorization});res.setHeader('Content-Type','application/json');res.end(JSON.stringify(req.url.includes('guardtimeseries')?data:[]));});
+  const server=createServer((req,res)=>{if(req.url==='/api/auth/login'||req.url==='/api/me'){res.setHeader('Content-Type','application/json');res.end(JSON.stringify({username:'qa-admin',role:'ROLE_ADMIN',...(req.url.endsWith('login')?{accessToken:'qa-admin-token'}:{})}));return;}calls.push({path:req.url,auth:req.headers.authorization});res.setHeader('Content-Type','application/json');res.end(JSON.stringify(req.url.includes('guardtimeseries')?data:[]));});
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
   try{
     const base=`http://127.0.0.1:${server.address().port}`;
     assert.deepEqual((await getGuardTimeSeries(base,'test','only-local')).series,[]);
+    await loginOperator(base,'qa-admin','test-password');
     await getRiskHistory(base);
-    assert.equal(calls[0].path,'/actuator/guardtimeseries');assert.match(calls[0].auth,/^Basic /);assert.equal(calls[1].auth,undefined);
+    assert.equal(calls[0].path,'/actuator/guardtimeseries');assert.match(calls[0].auth,/^Basic /);assert.equal(calls[1].auth,'Bearer qa-admin-token');
     data.series=[{metric:{signal:'policy'},values:[[100,{}]]}];
     await assert.rejects(getGuardTimeSeries(base,'test','only-local'),/응답 필드/);
-  }finally{server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}
+  }finally{clearOperatorSession();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}
 });

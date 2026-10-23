@@ -31,7 +31,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
         api.setAllowedOriginPatterns(List.of("*"));
         api.setAllowedMethods(List.of("GET", "POST", "PATCH", "OPTIONS"));
         api.setAllowedHeaders(List.of("*"));
-        api.setExposedHeaders(List.of("Content-Disposition", "X-Trace-Id"));
+        api.setExposedHeaders(List.of("Content-Disposition", "X-Trace-Id", "Idempotent-Replayed"));
 
         CorsConfiguration actuator = new CorsConfiguration(api);
         actuator.setAllowedMethods(List.of("GET", "OPTIONS"));

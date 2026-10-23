@@ -1,3 +1,5 @@
+import { serverProblem } from '../shared/writeContracts.js';
+
 export function normalizeApiBase(value) {
   const url = new URL(value.trim());
   if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || url.search || url.hash) {
@@ -6,8 +8,30 @@ export function normalizeApiBase(value) {
   return url.href.replace(/\/+$/, '');
 }
 
-async function request(base, path, { signal, method = 'GET', authorization, text = false, list = false } = {}) {
+// JWT lives only in memory and is scoped to one exact API base, never browser storage.
+let session = null;
+let authRevision = 0;
+const sessionListeners = new Set();
+const protectedRequests = new Set();
+export const operatorSession = base => session?.base === normalizeApiBase(base) ? session : null;
+export const subscribeOperatorSession = listener => { sessionListeners.add(listener); return () => sessionListeners.delete(listener); };
+export function clearOperatorSession(reason = '') {
+  authRevision += 1; session = null;
+  for (const request of protectedRequests) request.abort();
+  protectedRequests.clear();
+  for (const listener of sessionListeners) listener(reason);
+}
+
+async function request(base, path, { signal, method = 'GET', authorization, text = false, list = false, body: requestBody, publicRequest = false } = {}) {
+  base = normalizeApiBase(base);
+  const protectedRequest = path.startsWith('/api/') && !publicRequest;
+  const capturedSession = protectedRequest && !authorization ? operatorSession(base) : null;
+  if (protectedRequest && !authorization && !capturedSession) {
+    const error = new Error('관리자 로그인이 필요합니다.'); error.status = 401; throw error;
+  }
+  if (capturedSession) authorization = `Bearer ${capturedSession.accessToken}`;
   const controller = new AbortController();
+  if (capturedSession) protectedRequests.add(controller);
   const abort = () => controller.abort();
   signal?.addEventListener('abort', abort, { once: true });
   if (signal?.aborted) controller.abort();
@@ -15,15 +39,22 @@ async function request(base, path, { signal, method = 'GET', authorization, text
   try {
     const response = await fetch(`${base}${path}`, {
       method, signal: controller.signal, cache: 'no-store',
-      headers: { Accept: text ? 'text/plain' : 'application/json', ...(authorization ? { Authorization: authorization } : {}) },
+      headers: { Accept: text ? 'text/plain' : 'application/json', ...(authorization ? { Authorization: authorization } : {}), ...(requestBody ? { 'Content-Type': 'application/json' } : {}) },
+      ...(requestBody ? { body: JSON.stringify(requestBody) } : {}),
     });
     if (!response.ok) {
+      const problem = serverProblem(await response.json().catch(() => null), response.status);
+      if (capturedSession && session === capturedSession && [401, 403].includes(response.status)) {
+        clearOperatorSession(response.status === 401 ? '로그인이 만료되었습니다. 다시 로그인해 주세요.' : '관리자 접근 권한을 확인하고 다시 로그인해 주세요.');
+      }
       const hint = response.status === 401 ? '인증 정보를 확인하세요.' : response.status === 403 ? '접근 권한을 확인하세요.' : '서버 응답을 확인하세요.';
       const trace = response.headers.get('X-Trace-Id');
-      const error = new Error(`HTTP ${response.status} · ${hint}${trace ? ` (Trace: ${trace})` : ''}`);
+      const error = new Error(`HTTP ${response.status} · ${problem.message || hint}${trace ? ` (Trace: ${trace})` : ''}`);
       error.status = response.status;
+      error.code = problem.code; error.details = problem.details;
       throw error;
     }
+    if (capturedSession && session !== capturedSession) throw new Error('이전 로그인 요청이 취소되었습니다.');
     if (text) {
       const body = await response.text();
       if (/^\s*</.test(body)) throw new Error('Prometheus 텍스트 대신 HTML이 반환되었습니다. 서버 주소를 확인하세요.');
@@ -41,7 +72,25 @@ async function request(base, path, { signal, method = 'GET', authorization, text
   } finally {
     clearTimeout(timeout);
     signal?.removeEventListener('abort', abort);
+    protectedRequests.delete(controller);
   }
+}
+
+export async function loginOperator(base, username, password, signal) {
+  base = normalizeApiBase(base);
+  if (!username?.trim() || !password?.trim()) throw new Error('아이디와 비밀번호를 입력해 주세요.');
+  const revision = ++authRevision;
+  const login = await request(base, '/api/auth/login', { method: 'POST', body: { username: username.trim(), password }, signal, publicRequest: true });
+  if (typeof login.accessToken !== 'string' || !login.accessToken.trim() || login.role !== 'ROLE_ADMIN' || typeof login.username !== 'string') {
+    throw new Error('관리자 계정으로 로그인해 주세요.');
+  }
+  const profile = await request(base, '/api/me', { authorization: `Bearer ${login.accessToken}`, signal });
+  signal?.throwIfAborted();
+  if (profile.role !== 'ROLE_ADMIN' || profile.username !== login.username) throw new Error('로그인 계정 정보를 확인할 수 없습니다.');
+  if (revision !== authRevision) throw new Error('이전 로그인 요청이 취소되었습니다.');
+  session = { base, username: profile.username, role: profile.role, accessToken: login.accessToken, revision };
+  for (const listener of sessionListeners) listener('');
+  return session;
 }
 
 const isRecord = value => value !== null && typeof value === 'object' && !Array.isArray(value);

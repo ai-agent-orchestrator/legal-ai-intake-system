@@ -1,0 +1,13 @@
+/* Screen01 and the operator gate share LoginLayout and intake-login.css. */
+.operator-auth .intake-icon{width:22px;height:22px;flex-shrink:0}
+.operator-auth .login-role-title{margin:18px 0 8px;font-size:20px;color:#082656;letter-spacing:-.5px}
+.operator-auth .login-input input{height:auto;border-radius:0;box-shadow:none}
+.operator-auth .login-form-page>.intake-button{display:block;cursor:pointer}
+.operator-auth .login-security{display:block;border:0;padding:0;letter-spacing:normal}
+.operator-auth .login-security p{font-weight:400}
+.operator-auth .operator-login-error{margin:0;padding:12px 14px;border-radius:8px;background:#ffedf0;color:#c82840;font-size:13px;line-height:1.7}
+.operator-login-server{margin-top:20px;color:#65799c;font-size:12px}
+.operator-login-server summary{cursor:pointer;min-height:28px;line-height:28px}
+.operator-login-server label{display:grid;gap:7px;margin-top:10px}
+.operator-login-server input{width:100%;font-size:13px}
+.operator-login-back{display:block;margin-top:20px;text-align:center;font-size:12px;color:#476b9c;text-decoration:underline;text-underline-offset:3px}

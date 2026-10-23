@@ -14,6 +14,10 @@ erDiagram
         varchar session_id "NOT NULL; not an auth identity"
         varchar owner_username "legacy nullable; new intake JWT owner"
         varchar assigned_lawyer_username "nullable; one assigned LAWYER account"
+        bigint version "NOT NULL; optimistic version; legacy 0"
+        timestamp updated_at "nullable for legacy records"
+        varchar idempotency_key "nullable; UK with owner_username"
+        varchar request_hash "nullable; SHA-256 of submission fields"
         varchar case_type
         varchar core_statement "original text"
         varchar desired_next_step
@@ -46,7 +50,15 @@ erDiagram
         bigint condition_id "logical reference; NOT NULL"
         varchar search_purpose
         varchar source_policy
-        varchar status "PREVIEW_READY"
+        varchar status "PREVIEW_READY QUEUED RUNNING COMPLETED PARTIAL FAILED"
+        varchar execution_id "nullable; execution UUID, not an FK"
+        varchar execution_lease "nullable; execution ownership token"
+        varchar execution_stage
+        varchar generated_query
+        varchar execution_error
+        varchar source_warning_code
+        timestamp execution_started_at
+        timestamp execution_finished_at
         timestamp created_at
     }
     search_result_snapshot {
@@ -56,6 +68,8 @@ erDiagram
         varchar title
         varchar url
         varchar snippet
+        varchar execution_id "nullable; execution provenance"
+        varchar explanation "nullable; LLM explanation"
         int display_order
         timestamp created_at
     }
@@ -64,6 +78,8 @@ erDiagram
         bigint intake_id "logical reference; NOT NULL"
         varchar content "original text; internal only"
         varchar created_by "nullable for legacy; JWT author for new notes"
+        varchar request_key "nullable; UK with intake_id"
+        varchar content_hash "nullable; SHA-256 of memo content and followups"
         varchar follow_up_items "stored as one delimited string"
         timestamp created_at
     }

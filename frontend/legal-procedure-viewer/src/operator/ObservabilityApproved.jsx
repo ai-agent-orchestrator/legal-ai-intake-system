@@ -35,7 +35,7 @@ function OperationsGuide() {
   </section>;
 }
 
-export default function ObservabilityApproved({ base }) {
+export default function ObservabilityApproved({ base, onRequireLogin }) {
   const [mock, setMock] = useState(() => new URLSearchParams(location.search).get('mock') === '1' ? createObservabilityMock() : null);
   const liveHistory = useResource(api.getRiskHistory, base, { enabled: !mock });
   const history = mock?.history || liveHistory;
@@ -83,6 +83,7 @@ export default function ObservabilityApproved({ base }) {
   }
   function disconnect() { active.current?.abort(); baseline.current = null; setAuth(null); setMetrics({ status: 'idle', data: null, previous: null }); setTimeline({ status: 'idle', data: null }); active.current = null; setSettings(false); }
   function toggleMock() {
+    if (mock && onRequireLogin) { onRequireLogin(); return; }
     disconnect();
     const next = !mock;
     setMock(next ? createObservabilityMock() : null);
