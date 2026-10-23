@@ -1,0 +1,20 @@
+flowchart LR
+    Request["S03 Input Guardrail 단독 검사<br/>POST /api/legal/guardrail/input"]
+    Request --> Case1["01 · 유효한 message + NeMo PASSED 또는 MODIFIED"]
+    Case1 --> Response1["200 OK<br/>allowed=true · status · content · rail"]
+    Request --> Case2["02 · 유효한 message + NeMo 불허 결과"]
+    Case2 --> Response2["200 OK<br/>allowed=false · status · rail"]
+    Request --> Case3["03 · message 공백 또는 누락"]
+    Case3 --> Response3["400 Bad Request<br/>INVALID_REQUEST · fieldErrors"]
+    Request --> Case4["04 · 토큰 없음 또는 무효"]
+    Case4 --> Response4["401 Unauthorized"]
+    Request --> Case5["05 · NeMo 연결 실패·오류 응답·빈 응답"]
+    Case5 --> Response5["500 예상<br/>외부 예외 미변환 · 수동 확인 필요"]
+    Request --> Case6["06 · 전체·일일·세션 예산 부족"]
+    Case6 --> Response6["200 OK<br/>allowed=false · COST_LIMIT_BLOCKED<br/>detailCode=한도별 세부 사유"]
+    classDef request fill:#eaf2ff,stroke:#3465a4
+    classDef ok fill:#edf8ed,stroke:#38803c
+    classDef error fill:#fff0ee,stroke:#bc4b40
+    class Request request
+    class Response1,Response2 ok
+    class Response3,Response4,Response5,Response6 error

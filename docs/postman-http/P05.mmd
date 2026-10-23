@@ -1,0 +1,16 @@
+flowchart LR
+    Request["P05 파일 다운로드<br/>GET /api/intakes/{intakeId}/documents/{documentId}/download"]
+    Request --> Case1["01 · 허용된 문의 + 실제 업로드 documentId"]
+    Case1 --> Response1["200 OK<br/>원본 파일 바이트<br/>Content-Disposition: attachment"]
+    Request --> Case2["02 · 토큰 없음/무효"]
+    Case2 --> Response2["401 Unauthorized"]
+    Request --> Case3["03 · 일반 사용자 + 다른 소유자의 문의"]
+    Case3 --> Response3["403 Forbidden"]
+    Request --> Case4["04 · 없는 파일 · 자료 종류만 있는 ID<br/>또는 접근 가능한 다른 문의와 파일 불일치"]
+    Case4 --> Response4["404 Not Found"]
+    classDef request fill:#eaf2ff,stroke:#3465a4
+    classDef ok fill:#edf8ed,stroke:#38803c
+    classDef error fill:#fff0ee,stroke:#bc4b40
+    class Request request
+    class Response1 ok
+    class Response2,Response3,Response4 error

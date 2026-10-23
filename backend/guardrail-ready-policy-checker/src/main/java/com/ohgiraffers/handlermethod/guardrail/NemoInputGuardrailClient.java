@@ -7,6 +7,9 @@ import io.micrometer.core.instrument.Timer;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
+import java.net.http.HttpClient;
+import java.time.Duration;
 
 import java.util.List;
 
@@ -19,9 +22,13 @@ public class NemoInputGuardrailClient implements InputGuardrailClient {
     public NemoInputGuardrailClient(
             RestClient.Builder builder,
             @Value("${guardrails.base-url}") String baseUrl,
-            MeterRegistry meterRegistry
+            MeterRegistry meterRegistry,
+            @Value("${guardrails.request-timeout-ms:30000}") long timeoutMs
     ) {
-        this.restClient = builder.baseUrl(baseUrl).build();
+        var factory = new JdkClientHttpRequestFactory(HttpClient.newBuilder()
+                .connectTimeout(Duration.ofMillis(timeoutMs)).build());
+        factory.setReadTimeout(Duration.ofMillis(timeoutMs));
+        this.restClient = builder.baseUrl(baseUrl).requestFactory(factory).build();
         this.meterRegistry = meterRegistry;
     }
 
@@ -45,7 +52,7 @@ public class NemoInputGuardrailClient implements InputGuardrailClient {
                     .tag("rail", response.rail() == null ? "none" : response.rail())
                     .register(meterRegistry)
                     .increment();
-            return new InputGuardrailResult(response.status(), response.content(), response.rail());
+            return new InputGuardrailResult(response.status(), response.content(), response.rail(), response.usage());
         } catch (RuntimeException exception) {
             Counter.builder("ai.input.rail.errors")
                     .tag("type", exception.getClass().getSimpleName())
@@ -65,6 +72,6 @@ public class NemoInputGuardrailClient implements InputGuardrailClient {
     private record NemoMessage(String role, String content) {
     }
 
-    private record NemoCheckResponse(String status, String content, String rail) {
+    private record NemoCheckResponse(String status, String content, String rail, GuardrailUsage usage) {
     }
 }

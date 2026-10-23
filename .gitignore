@@ -8,6 +8,7 @@ dist/
 .vite/
 
 .env
+.mysql-local.properties
 .env.*
 !.env.example
 
@@ -18,6 +19,23 @@ dist/
 *.log
 *.tmp
 *.bak
+monitoring/.runtime/
 
 Thumbs.db
 .DS_Store
+
+# Local scratch files, provider logs, runtime credentials and generated captures.
+/tmp/
+/frontend/legal-procedure-viewer/tmp/
+**/application-local.properties
+*.pem
+*.key
+/output/**
+!/output/intake-permissions/
+!/output/intake-permissions/verification.json
+!/output/intake-permissions/browser-verification.json
+!/output/intake-permissions/admin-assignment.png
+!/output/intake-permissions/lawyer-internal-memo.png
+!/output/intake-permissions/client-detail-no-internal.png
+!/output/beta-ready/
+!/output/beta-ready/verification.json

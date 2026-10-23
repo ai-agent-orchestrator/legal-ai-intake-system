@@ -1,5 +1,7 @@
 # Project Ground Rule
 
+The current presentation schedule and upcoming module order are defined in the [12-day project plan](docs/PROJECT_12_DAY_PLAN.md).
+
 ## 1. Technical PM Positioning
 
 This project is not designed only as a developer-oriented feature implementation task.

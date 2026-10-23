@@ -1,0 +1,177 @@
+{
+  "pass": true,
+  "checks": [
+    "Anonymous registration denied",
+    "JWT owner set; unassigned lawyer denied",
+    "ADMIN UI assignment grants same-parent access",
+    "LAWYER UI lists assigned cases only",
+    "Assigned lawyer memo saved with server-derived author",
+    "Screen04 receipt C05/C04 work with owner JWT",
+    "Screen05 owner creates and reads own search request",
+    "Owner wire response and UI exclude all internal notes and controls",
+    "Client detail mobile/desktop have no horizontal overflow",
+    "Owner cannot write notes; unrelated client cannot read",
+    "Reassignment revokes previous lawyer and grants next one",
+    "Revoked staff 403 clears previously displayed internal data",
+    "Logout removes protected page data",
+    "No browser errors or external search execution"
+  ],
+  "ids": {
+    "intakeId": 5,
+    "otherIntakeId": 6
+  },
+  "errors": [],
+  "traffic": [
+    {
+      "path": "/api/auth/login",
+      "method": "POST",
+      "auth": "none"
+    },
+    {
+      "path": "/api/me",
+      "method": "GET",
+      "auth": "Bearer"
+    },
+    {
+      "path": "/api/me",
+      "method": "GET",
+      "auth": "Bearer"
+    },
+    {
+      "path": "/api/intakes/5",
+      "method": "GET",
+      "auth": "Bearer"
+    },
+    {
+      "path": "/api/intakes/5/assignment",
+      "method": "PATCH",
+      "auth": "Bearer"
+    },
+    {
+      "path": "/api/intakes/5",
+      "method": "GET",
+      "auth": "Bearer"
+    },
+    {
+      "path": "/api/auth/login",
+      "method": "POST",
+      "auth": "none"
+    },
+    {
+      "path": "/api/me",
+      "method": "GET",
+      "auth": "Bearer"
+    },
+    {
+      "path": "/api/intakes",
+      "method": "GET",
+      "auth": "Bearer"
+    },
+    {
+      "path": "/api/intakes/5",
+      "method": "GET",
+      "auth": "Bearer"
+    },
+    {
+      "path": "/api/intakes/5",
+      "method": "GET",
+      "auth": "Bearer"
+    },
+    {
+      "path": "/api/intakes/5",
+      "method": "GET",
+      "auth": "Bearer"
+    },
+    {
+      "path": "/api/intakes/5/memo",
+      "method": "POST",
+      "auth": "Bearer"
+    },
+    {
+      "path": "/api/intakes/5",
+      "method": "GET",
+      "auth": "Bearer"
+    },
+    {
+      "path": "/api/auth/login",
+      "method": "POST",
+      "auth": "none"
+    },
+    {
+      "path": "/api/me",
+      "method": "GET",
+      "auth": "Bearer"
+    },
+    {
+      "path": "/api/legal/procedures",
+      "method": "GET",
+      "auth": "none"
+    },
+    {
+      "path": "/api/legal/procedures/electronic-litigation",
+      "method": "GET",
+      "auth": "none"
+    },
+    {
+      "path": "/api/intakes/5",
+      "method": "GET",
+      "auth": "Bearer"
+    },
+    {
+      "path": "/api/legal-intake/minimal",
+      "method": "POST",
+      "auth": "Bearer"
+    },
+    {
+      "path": "/api/legal/procedures",
+      "method": "GET",
+      "auth": "none"
+    },
+    {
+      "path": "/api/intakes/5/search-requests",
+      "method": "GET",
+      "auth": "Bearer"
+    },
+    {
+      "path": "/api/intakes/5",
+      "method": "GET",
+      "auth": "Bearer"
+    },
+    {
+      "path": "/api/intakes/5/search-requests",
+      "method": "POST",
+      "auth": "Bearer"
+    },
+    {
+      "path": "/api/intakes/5/search-requests",
+      "method": "GET",
+      "auth": "Bearer"
+    },
+    {
+      "path": "/api/intakes/search-requests/2",
+      "method": "GET",
+      "auth": "Bearer"
+    },
+    {
+      "path": "/api/intakes/5",
+      "method": "GET",
+      "auth": "Bearer"
+    },
+    {
+      "path": "/api/intakes/5/assignment",
+      "method": "PATCH",
+      "auth": "Bearer"
+    },
+    {
+      "path": "/api/intakes/5",
+      "method": "GET",
+      "auth": "Bearer"
+    },
+    {
+      "path": "/api/intakes/5/memo",
+      "method": "POST",
+      "auth": "Bearer"
+    }
+  ],
+  "paidProviderCalls": 0
+}

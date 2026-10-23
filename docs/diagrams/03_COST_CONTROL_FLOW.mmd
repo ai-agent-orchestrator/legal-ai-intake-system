@@ -1,0 +1,33 @@
+flowchart TD
+    Start["S01·S02: 입력 검사 → 답변 생성 → 출력 검사<br/>S03: 입력 검사만 · S04: 출력 검사만"] --> Estimate["이번 단계 예상 토큰·설정 단가로 비용 추정"]
+    Estimate --> DayReset["서버 날짜 변경 시 일일 카운터 초기화"]
+    DayReset --> Month{"전체 보고·추정 사용액 + 예약<br/>+ 이번 예상액이 전체 한도 이내?"}
+    Month -->|"아니요"| MB["MONTHLY_BUDGET_EXCEEDED"]
+    Month -->|"예"| Day{"일일 보고·추정 사용액 + 예약<br/>+ 이번 예상액이 일일 한도 이내?"}
+    Day -->|"아니요"| DB["DAILY_BUDGET_EXCEEDED"]
+    Day -->|"예"| Session{"세션 보고·추정 사용액 + 예약<br/>+ 이번 예상액이 세션 한도 이내?"}
+    Session -->|"아니요"| SB["SESSION_BUDGET_EXCEEDED"]
+    MB --> Prevent["다음 유료 단계 호출 방지<br/>이미 정산한 앞 단계 비용 유지"]
+    DB --> Prevent
+    SB --> Prevent
+    Session -->|"예"| Reserve["전체·일일·세션·단계별 예상액 예약"]
+    Reserve --> Dispatch{"유료 호출을 시작했는가?"}
+    Dispatch -->|"아직 시작 전 중단"| Release["예약만 해제 · 사용액 없음"]
+    Dispatch -->|"호출 시작"| Call["Guardrail Client / 답변 LLM 호출"]
+    Call --> Usage{"유효한 usage가 보고됐는가?"}
+    Usage -->|"예 · 0 포함"| Report["REPORTED<br/>보고 토큰 × 해당 단계 설정 단가"]
+    Usage -->|"누락·오류·SSE 중단으로 미확인"| Estimated["ESTIMATED<br/>해당 예약 추정액을 사용액으로 반영"]
+    Report --> Settle["예약 해제·사용액 누적<br/>동일 예약은 한 번만 정산"]
+    Estimated --> Settle
+    Settle --> Result{"단계 결과"}
+    Result -->|"검사 불허·기술 오류·중단"| Stop["안전 응답·오류 처리<br/>이미 실행한 단계 비용 유지"]
+    Result -->|"허용·생성 완료"| Next{"다음 유료 단계가 있는가?"}
+    Next -->|"예"| Estimate
+    Next -->|"아니요"| Response["S01·S02: Privacy 후 JSON / SSE<br/>S03·S04: 단독 검사 결과"]
+    Response --> Metric["C16: 단계별 지표와 전체 합계 관측"]
+    Stop --> Metric
+    Prevent --> Metric
+    Release --> Metric
+    Metric -. "후속 설계" .-> Future["영속 장부·다중 서버·달력 월 초기화<br/>실제 청구 대사·추정액 후속 보정"]
+    classDef planned fill:#fff4dc,stroke:#b7791f,stroke-dasharray:5 5
+    class Future planned

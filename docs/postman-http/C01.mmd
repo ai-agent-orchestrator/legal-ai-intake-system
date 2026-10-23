@@ -1,0 +1,14 @@
+flowchart LR
+    Request["C01 로그인<br/>POST /api/auth/login"]
+    Request --> Case1["01 · 정상 계정 · username/password 입력"]
+    Case1 --> Response1["200 OK<br/>accessToken · username · role"]
+    Request --> Case2["02 · username 또는 password 공백/누락"]
+    Case2 --> Response2["400 Bad Request<br/>INVALID_REQUEST · fieldErrors"]
+    Request --> Case3["03 · 잘못된 계정 또는 비밀번호"]
+    Case3 --> Response3["401 Unauthorized"]
+    classDef request fill:#eaf2ff,stroke:#3465a4
+    classDef ok fill:#edf8ed,stroke:#38803c
+    classDef error fill:#fff0ee,stroke:#bc4b40
+    class Request request
+    class Response1 ok
+    class Response2,Response3 error

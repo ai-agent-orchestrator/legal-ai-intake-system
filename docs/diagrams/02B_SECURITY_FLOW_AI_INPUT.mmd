@@ -1,0 +1,22 @@
+%%{init: {"themeVariables":{"fontSize":"20px"},"flowchart":{"useMaxWidth":false,"htmlLabels":true,"nodeSpacing":24,"rankSpacing":28,"padding":12}}}%%
+flowchart TD
+    Start["AI 질문 S01 / S02<br/>JWT·DTO 검증 후"] --> Session{"Dynamic: 이미 차단된 세션?"}
+    Session -->|"예"| Policy["정책 차단 응답<br/>reasonCode / detailCode"]
+    Session -->|"아니요"| Fixed{"Fixed Guard 허용?"}
+    Fixed -->|"불허"| Risk["위험 사유·점수 누적<br/>Dynamic 차단 여부 재판정"]
+    Fixed -->|"허용"| Length{"Cost 입력 길이 제한 통과?"}
+    Length -->|"초과"| Risk
+    Length -->|"통과"| InputCost{"입력 검사 예산 예약 가능?"}
+    InputCost -->|"불가"| Policy
+    InputCost -->|"예약 성공"| Input{"NeMo Input 검사·비용 정산<br/>검사 결과 허용?"}
+    Input -->|"불허"| Risk
+    Input -->|"기술 오류"| Technical["기술 fallback<br/>정책 차단과 구분"]
+    Input -->|"허용"| Reserve{"예산 검사·비용 예약 가능?"}
+    Reserve -->|"불가"| Policy
+    Reserve -->|"예약 성공"| Next["동기 / SSE 처리로 이동"]
+    Risk --> Policy
+    classDef main fill:#eaf2ff,stroke:#3465a4
+    classDef fail fill:#fff0ee,stroke:#bc4b40
+    classDef planned fill:#fff4dc,stroke:#b7791f,stroke-dasharray:5 5
+    class Start,Risk,Next main
+    class Policy,Technical fail

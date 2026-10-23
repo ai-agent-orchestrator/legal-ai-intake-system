@@ -1,0 +1,19 @@
+%%{init: {"themeVariables":{"fontSize":"20px"},"flowchart":{"useMaxWidth":false,"htmlLabels":true,"nodeSpacing":24,"rankSpacing":28,"padding":12}}}%%
+flowchart TD
+    Request["HTTP 요청"] --> Cors["경로별 CORS 처리"]
+    Cors -->|"preflight"| Preflight["허용 Origin·Method·Header 응답"]
+    Cors -->|"실제 요청"| Kind{"인증 경로"}
+    Kind -->|"application"| App{"공개 경로 또는 유효한 JWT?"}
+    App -->|"인증 필요 · 실패"| Unauthorized["401 · 업무 처리 전 중단"]
+    App -->|"통과"| DTO{"해당 DTO 입력 제약 통과?"}
+    DTO -->|"실패"| Invalid["400 INVALID_REQUEST"]
+    DTO -->|"통과·제약 없음"| Next["업무별 검사로 이동<br/>일반 업무 / AI / 단독 검사"]
+    Kind -->|"C16 Actuator"| Basic{"ADMIN Basic 인증?"}
+    Basic -->|"없음·무효"| Unauthorized
+    Basic -->|"USER 권한"| Forbidden["403 · 권한 부족"]
+    Basic -->|"허용"| Metric["200 · Prometheus 텍스트"]
+    classDef main fill:#eaf2ff,stroke:#3465a4
+    classDef fail fill:#fff0ee,stroke:#bc4b40
+    classDef planned fill:#fff4dc,stroke:#b7791f,stroke-dasharray:5 5
+    class Request,Cors,Preflight,Next,Metric main
+    class Unauthorized,Invalid,Forbidden fail

@@ -1,0 +1,11 @@
+flowchart LR
+    Request["C14 최근 보안 이벤트<br/>GET /api/admin/dashboard/security-events"]
+    Request --> Case1["01 · 보안 이벤트가 저장된 상태"]
+    Case1 --> Response1["200 OK<br/>최신순 최대 50개 배열"]
+    Request --> Case2["02 · 보안 이벤트 기록이 없음"]
+    Case2 --> Response2["200 OK<br/>빈 배열"]
+    classDef request fill:#eaf2ff,stroke:#3465a4
+    classDef ok fill:#edf8ed,stroke:#38803c
+    classDef error fill:#fff0ee,stroke:#bc4b40
+    class Request request
+    class Response1,Response2 ok

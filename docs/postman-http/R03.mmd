@@ -1,0 +1,14 @@
+flowchart LR
+    Request["R03 법률 절차 단계<br/>GET /api/legal/procedures/{code}/steps"]
+    Request --> Case1["01 · 존재하는 절차 + 단계 있음"]
+    Case1 --> Response1["200 OK<br/>stepOrder 순 단계 배열"]
+    Request --> Case2["02 · 존재하는 절차 + 저장된 단계 없음"]
+    Case2 --> Response2["200 OK<br/>빈 배열"]
+    Request --> Case3["03 · 존재하지 않는 절차 code"]
+    Case3 --> Response3["500 예상<br/>대상 없음 예외 미변환 · 수동 확인 필요"]
+    classDef request fill:#eaf2ff,stroke:#3465a4
+    classDef ok fill:#edf8ed,stroke:#38803c
+    classDef error fill:#fff0ee,stroke:#bc4b40
+    class Request request
+    class Response1,Response2 ok
+    class Response3 error

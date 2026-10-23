@@ -1,0 +1,18 @@
+flowchart LR
+    Request["P02 문의별 검색 이력<br/>GET /api/intakes/{intakeId}/search-requests"]
+    Request --> Case1["01 · 허용된 문의 · 검색 요청 있음"]
+    Case1 --> Response1["200 OK<br/>최신순 요청·결과 배열"]
+    Request --> Case2["02 · 허용된 문의 · 검색 요청 없음"]
+    Case2 --> Response2["200 OK<br/>빈 배열"]
+    Request --> Case3["03 · 토큰 없음/무효"]
+    Case3 --> Response3["401 Unauthorized"]
+    Request --> Case4["04 · 일반 사용자 + 다른 소유자의 문의"]
+    Case4 --> Response4["403 Forbidden"]
+    Request --> Case5["05 · 유효한 토큰 + 없는 intakeId"]
+    Case5 --> Response5["404 Not Found"]
+    classDef request fill:#eaf2ff,stroke:#3465a4
+    classDef ok fill:#edf8ed,stroke:#38803c
+    classDef error fill:#fff0ee,stroke:#bc4b40
+    class Request request
+    class Response1,Response2 ok
+    class Response3,Response4,Response5 error

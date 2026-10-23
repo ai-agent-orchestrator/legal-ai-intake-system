@@ -1,0 +1,18 @@
+flowchart LR
+    Request["P06 행동 이벤트 기록<br/>POST /api/intake-events"]
+    Request --> Case1["01 · 새 eventId + 정상 내용"]
+    Case1 --> Response1["201 Created<br/>created=true · receivedAt"]
+    Request --> Case2["02 · 같은 eventId + 같은 내용 재전송"]
+    Case2 --> Response2["200 OK<br/>created=false · 최초 receivedAt 유지"]
+    Request --> Case3["03 · 같은 eventId + 유효한 다른 내용<br/>예: VISIT을 INTAKE_STARTED로 변경"]
+    Case3 --> Response3["409 Conflict"]
+    Request --> Case4["04 · 필수값/타입 오류 · SUMMARY_VIEWED의 intakeId 누락<br/>또는 문의와 sessionId 불일치"]
+    Case4 --> Response4["400 Bad Request"]
+    Request --> Case5["05 · 존재하지 않는 intakeId 연결"]
+    Case5 --> Response5["404 Not Found"]
+    classDef request fill:#eaf2ff,stroke:#3465a4
+    classDef ok fill:#edf8ed,stroke:#38803c
+    classDef error fill:#fff0ee,stroke:#bc4b40
+    class Request request
+    class Response1,Response2 ok
+    class Response3,Response4,Response5 error

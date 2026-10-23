@@ -1,0 +1,14 @@
+flowchart LR
+    Request["C04 별도 간단 안내<br/>POST /api/legal-intake/minimal"]
+    Request --> Case1["01 · caseType · coreFact 등 정상 JSON"]
+    Case1 --> Response1["200 OK<br/>유형 · 권장 자료 · 안내"]
+    Request --> Case2["02 · 빈 JSON 객체 전송"]
+    Case2 --> Response2["200 OK<br/>기본값에 따른 안내"]
+    Request --> Case3["03 · Body 생략 또는 잘못된 JSON"]
+    Case3 --> Response3["400 Bad Request"]
+    classDef request fill:#eaf2ff,stroke:#3465a4
+    classDef ok fill:#edf8ed,stroke:#38803c
+    classDef error fill:#fff0ee,stroke:#bc4b40
+    class Request request
+    class Response1,Response2 ok
+    class Response3 error

@@ -1,0 +1,25 @@
+flowchart TD
+    Call["실패 실험은 정상 흐름을 확인한 뒤<br/>API별 필요한 조건을 하나씩 변경"] --> Auth{"해당 API가 인증 대상인가?"}
+    Auth -->|"JWT 대상 · 토큰 없음/무효"| E401["401<br/>내 정보·신규 파일/이력·AI 등"]
+    Auth -->|"공개 또는 인증 통과"| DTO{"해당 API에 DTO 제약이 있는가?"}
+    DTO -->|"제약 위반"| E400["400 INVALID_REQUEST<br/>fieldErrors 확인"]
+    DTO -->|"통과 또는 제약 없음"| Kind{"API에 맞는 업무 검사"}
+    Kind -->|"P02/P04/P05 · 다른 소유자"| E403["403<br/>소유자 또는 관리자만 접근"]
+    Kind -->|"접수·검색·파일 · 대상 없음"| E404["404<br/>잘못된 ID / 문의-파일 불일치"]
+    Kind -->|"C10 · 종료 후 재개 등"| E409["409<br/>금지 상태 전이"]
+    Kind -->|"C10 · 같은 상태 재요청"| Same["200 · changed=false<br/>정상 멱등 동작"]
+    Kind -->|"P06 · 동일 ID / 동일 내용"| Duplicate["200 · created=false<br/>중복 저장 없음"]
+    Kind -->|"P06 · 동일 ID / 다른 내용"| Conflict["409<br/>eventId 내용 충돌"]
+    Kind -->|"P06 · 문의/세션 불일치"| EventBad["400<br/>SUMMARY_VIEWED의 intakeId도 필수"]
+    Kind -->|"P04 · 빈 파일"| Empty["400"]
+    Kind -->|"P04 · 5 MiB 초과"| Large["413"]
+    Kind -->|"P04 · 확장자/내용/MIME 불일치"| Type["415"]
+    Kind -->|"S01/S02 정책 차단"| Policy["주로 HTTP 200<br/>blocked / fallback / reasonCode / detailCode"]
+    Kind -->|"기존 Reference·Incident 오류"| Legacy["현재 실제 응답을 기록<br/>모든 모듈의 오류 계약이 같다고 가정하지 않음"]
+    E400 --> Verify["저장·상태가 잘못 바뀌지 않았는지 재조회<br/>traceId·응답·DB·Metric 근거 기록"]
+    E403 --> Verify
+    E404 --> Verify
+    E409 --> Verify
+    Conflict --> Verify
+    Same --> Verify
+    Duplicate --> Verify

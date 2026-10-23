@@ -1,0 +1,14 @@
+flowchart LR
+    Request["P01 내 정보<br/>GET /api/me"]
+    Request --> Case1["01 · 유효한 Bearer 토큰"]
+    Case1 --> Response1["200 OK<br/>username · role"]
+    Request --> Case2["02 · 토큰 없음"]
+    Case2 --> Response2["401 Unauthorized"]
+    Request --> Case3["03 · 무효 또는 만료된 토큰"]
+    Case3 --> Response3["401 Unauthorized"]
+    classDef request fill:#eaf2ff,stroke:#3465a4
+    classDef ok fill:#edf8ed,stroke:#38803c
+    classDef error fill:#fff0ee,stroke:#bc4b40
+    class Request request
+    class Response1 ok
+    class Response2,Response3 error

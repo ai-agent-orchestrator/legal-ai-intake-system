@@ -84,4 +84,11 @@ public class AgentRunHistory {
     public Long getId() {
         return id;
     }
+
+    public String getTraceId() { return traceId; }
+    public String getUserInput() { return userInput; }
+    public String getToolName() { return toolName; }
+    public String getDecision() { return decision; }
+    public int getRiskScore() { return riskScore; }
+    public int getRetryCount() { return retryCount; }
 }

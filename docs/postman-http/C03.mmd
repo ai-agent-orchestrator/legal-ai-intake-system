@@ -1,0 +1,14 @@
+flowchart LR
+    Request["C03 문의 등록<br/>POST /api/intakes"]
+    Request --> Case1["01 · JWT + 필수 입력이 있는 정상 JSON"]
+    Case1 --> Response1["201 Created<br/>id=intakeId<br/>lawyerSearchCondition.id=conditionId"]
+    Request --> Case2["02 · JWT 없이 정상 JSON"]
+    Case2 --> Response2["201 Created<br/>id=intakeId<br/>이 문의의 신규 파일·이력은 관리자 사용"]
+    Request --> Case3["03 · 필수 입력 공백/누락 또는 필드 길이 초과"]
+    Case3 --> Response3["400 Bad Request<br/>INVALID_REQUEST · fieldErrors"]
+    classDef request fill:#eaf2ff,stroke:#3465a4
+    classDef ok fill:#edf8ed,stroke:#38803c
+    classDef error fill:#fff0ee,stroke:#bc4b40
+    class Request request
+    class Response1,Response2 ok
+    class Response3 error

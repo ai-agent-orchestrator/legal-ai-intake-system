@@ -1,0 +1,61 @@
+%%{init: {"theme":"base","themeVariables":{"fontSize":"20px"},"flowchart":{"useMaxWidth":false,"htmlLabels":true,"nodeSpacing":16,"rankSpacing":16,"padding":10}}}%%
+flowchart LR
+    subgraph Core["1열 · C 핵심 업무·운영"]
+        direction TB
+        C01["C01 · 로그인"]
+        C02["C02 · 분류 미리보기"]
+        C03["C03 · 문의 등록"]
+        C04["C04 · 간단 안내"]
+        C05["C05 · 문의 상세"]
+        C06["C06 · 검색 요청 생성"]
+        C07["C07 · 검색 요청 상세"]
+        C08["C08 · 결과 스냅샷 저장"]
+        C09["C09 · 문의 목록"]
+        C10["C10 · 상태 변경"]
+        C11["C11 · 상담 메모 추가"]
+        C12["C12 · 운영 요약"]
+        C13["C13 · 마케팅 집계"]
+        C14["C14 · 보안 이벤트"]
+        C15["C15 · 위험 집계"]
+        C16["C16 · Prometheus 지표"]
+        C17["C17 · 위험 이력"]
+        C18["C18 · Incident 목록"]
+        C19["C19 · Incident 확인"]
+        C20["C20 · Incident 종결"]
+        C01 ~~~ C02 ~~~ C03 ~~~ C04 ~~~ C05 ~~~ C06 ~~~ C07 ~~~ C08 ~~~ C09 ~~~ C10 ~~~ C11 ~~~ C12 ~~~ C13 ~~~ C14 ~~~ C15 ~~~ C16 ~~~ C17 ~~~ C18 ~~~ C19 ~~~ C20
+    end
+    subgraph ReferenceAI["2열 · R 법률정보 / S AI"]
+        direction TB
+        R01["R01 · 절차 목록"]
+        R02["R02 · 절차 상세"]
+        R03["R03 · 절차 단계"]
+        R04["R04 · 양식 목록"]
+        R05["R05 · 양식 상세"]
+        R06["R06 · 보완수사 체크리스트"]
+        S01["S01 · 동기 AI Chat"]
+        S02["S02 · SSE AI Chat"]
+        S03["S03 · Input 단독 검사"]
+        S04["S04 · Output 단독 검사"]
+        S05["S05 · Agent 위험 분석"]
+        R01 ~~~ R02 ~~~ R03 ~~~ R04 ~~~ R05 ~~~ R06 ~~~ S01 ~~~ S02 ~~~ S03 ~~~ S04 ~~~ S05
+    end
+    subgraph Extensions["3열 · P 공통·확장"]
+        direction TB
+        P01["P01 · 내 정보"]
+        P02["P02 · 문의별 검색 이력"]
+        P03["P03 · 외부 검색 실행 · 구현"]
+        P04["P04 · 파일 업로드"]
+        P05["P05 · 파일 다운로드"]
+        P06["P06 · 행동 이벤트 기록"]
+        P01 ~~~ P02 ~~~ P03 ~~~ P04 ~~~ P05 ~~~ P06
+    end
+    Core ~~~ ReferenceAI ~~~ Extensions
+    classDef core fill:#eaf2ff,stroke:#3465a4,color:#172b4d,font-size:20px
+    classDef reference fill:#edf8ed,stroke:#38803c,color:#173c20,font-size:20px
+    classDef ai fill:#f3edff,stroke:#7950b5,color:#36214f,font-size:20px
+    classDef extension fill:#fff6df,stroke:#b7791f,color:#5b3b12,font-size:20px
+    classDef planned fill:#fff4dc,stroke:#b7791f,stroke-dasharray:5 5,color:#5b3b12,font-size:20px
+    class C01,C02,C03,C04,C05,C06,C07,C08,C09,C10,C11,C12,C13,C14,C15,C16,C17,C18,C19,C20 core
+    class R01,R02,R03,R04,R05,R06 reference
+    class S01,S02,S03,S04,S05 ai
+    class P01,P02,P03,P04,P05,P06 extension

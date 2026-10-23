@@ -1,0 +1,19 @@
+%%{init: {"themeVariables":{"fontSize":"20px"},"flowchart":{"useMaxWidth":false,"htmlLabels":true,"nodeSpacing":24,"rankSpacing":28,"padding":12}}}%%
+flowchart TD
+    Request["API 요청"] --> Entry{"경로별 인증·입력 검사"}
+    Entry -->|"통과"| Kind{"일반 업무 / AI 질문"}
+    Entry -->|"실패"| Stop["경로별 거절·차단·실패 응답"]
+    Kind --> Business["일반 업무<br/>필요한 권한·대상·상태 확인"]
+    Business --> Response["검사 결과에 맞는 응답 반환"]
+    Kind --> Input["AI 입력 보안·비용 검사"]
+    Input -->|"허용"| LLM["LLM 답변 생성"]
+    Input -->|"차단"| Stop
+    LLM -->|"성공"| Output["출력 검사·개인정보 마스킹"]
+    LLM -->|"기술 실패"| Stop
+    Output -->|"허용"| Response
+    Output -->|"차단·실패"| Stop
+    Stop --> Response
+    classDef main fill:#eaf2ff,stroke:#3465a4
+    classDef stop fill:#fff0ee,stroke:#bc4b40
+    class Request,Business,Input,LLM,Output,Response main
+    class Stop stop

@@ -1,0 +1,16 @@
+flowchart LR
+    Request["C19 Incident 확인<br/>PATCH /api/incidents/{incidentId}/ack"]
+    Request --> Case1["01 · 존재하는 OPEN Incident 확인"]
+    Case1 --> Response1["200 OK<br/>status=ACKNOWLEDGED"]
+    Request --> Case2["02 · 이미 ACKNOWLEDGED 또는 RESOLVED인 Incident 확인"]
+    Case2 --> Response2["200 OK<br/>status=ACKNOWLEDGED"]
+    Request --> Case3["03 · 존재하지 않는 숫자 incidentId"]
+    Case3 --> Response3["500 예상<br/>대상 없음 예외 미변환 · 수동 확인 필요"]
+    Request --> Case4["04 · 숫자가 아닌 경로 ID"]
+    Case4 --> Response4["400 Bad Request"]
+    classDef request fill:#eaf2ff,stroke:#3465a4
+    classDef ok fill:#edf8ed,stroke:#38803c
+    classDef error fill:#fff0ee,stroke:#bc4b40
+    class Request request
+    class Response1,Response2 ok
+    class Response3,Response4 error

@@ -1,0 +1,16 @@
+flowchart TD
+    Request["새 요청 + sessionId"] --> Pre["preCheck<br/>세션 상태 조회"]
+    Pre --> Existing{"이미 차단된 세션인가?"}
+    Existing -->|"예"| Block["DYNAMIC_SESSION_BLOCKED<br/>현재 요청의 LLM 호출 중단"]
+    Existing -->|"아니요"| Score["현재 위험 점수 반환"]
+    Score --> Checks["기본 Fixed Guard 등 후속 검사"]
+    Checks -->|"누적 대상 차단 없음"| Next["다음 단계로 진행<br/>기존 위험 점수 유지"]
+    Checks -->|"Fixed·입력 길이·Input Guard 차단"| Event["recordBlockedEvent<br/>sessionId + 차단 사유"]
+    Event --> Accumulate["세션별 잠금으로 함께 갱신<br/>위험 점수·전체 횟수·사유 횟수 증가"]
+    Accumulate --> Metric["위험 이벤트 Metric 기록"]
+    Metric --> Threshold{"점수·반복·전체 횟수 중<br/>차단 조건에 도달했는가?"}
+    Threshold -->|"예 / 이미 차단"| Mark["세션 blocked=true<br/>최초 차단 전환만 Metric 기록"]
+    Mark --> Block
+    Threshold -->|"아니요"| Keep["세션은 계속 허용<br/>이번 요청은 원래 사유로 차단"]
+    Keep --> Later["다음 요청에서<br/>누적 상태로 다시 preCheck"]
+    Mark --> Later

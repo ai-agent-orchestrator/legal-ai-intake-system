@@ -1,0 +1,42 @@
+flowchart TD
+    Entry["별도 AI 보안·비용 실험<br/>JWT + NeMo/LLM 준비"] --> Chat["S01 POST /api/ai/chat<br/>S02 POST /api/ai/chat/stream"]
+    Chat --> DTO{"AiChatRequest<br/>message 필수 · 최대 30자"}
+    DTO -->|"실패"| E400["400 INVALID_REQUEST"]
+    DTO -->|"통과"| Dynamic{"Dynamic preCheck<br/>이미 차단된 세션?"}
+    Dynamic -->|"예"| Block["정책 응답/이벤트<br/>blocked=true / fallback=true<br/>reasonCode / detailCode"]
+    Dynamic -->|"아니요"| Fixed{"Fixed Guard"}
+    Fixed -->|"차단"| Risk["관련 위험 이력·점수 누적"]
+    Fixed -->|"통과"| Length{"Cost 입력 길이<br/>실험 기본 10자 이하?"}
+    Length -->|"초과"| Risk
+    Risk --> Block
+    Length -->|"통과"| InputCost{"입력 검사 예산 예약?"}
+    InputCost -->|"부족"| Block
+    InputCost -->|"예약 성공"| Input{"NeMo Input Guard<br/>검사 비용 보고/추정 정산"}
+    Input -->|"정책 차단"| Risk
+    Input -->|"기술 실패"| Fallback["기술 fallback<br/>blocked=false / fallback=true"]
+    Input -->|"허용"| Cost{"예산 검사·비용 예약<br/>전체 2 / 하루 1 / 세션 0.3 USD"}
+    Cost -->|"한도 초과"| Block
+    Cost -->|"예약 성공"| LLM["LLM 호출"]
+    LLM -->|"동기 호출 실패 · 추정 정산"| Fallback
+    LLM -->|"동기 성공"| Settle["usage 확인 여부에 따라<br/>REPORTED / ESTIMATED 집계"]
+    Settle --> SyncOutput{"출력 검사 예산 예약·검사·정산"}
+    SyncOutput -->|"예산 부족"| Block
+    SyncOutput -->|"허용/수정"| SyncPrivacy["Privacy 패턴 마스킹"]
+    SyncPrivacy --> SyncResponse["S01 JSON 응답"]
+    SyncOutput -->|"차단"| Block
+    SyncOutput -->|"기술 실패"| Fallback
+    LLM -->|"SSE 생성"| Buffer["원본 답변 전체 버퍼<br/>생성 중 본문 token 전송 없음"]
+    Buffer --> StreamSettle["생성 비용 보고/추정 정산"]
+    StreamSettle --> StreamOutput{"출력 검사 예산 예약·검사·정산"}
+    StreamOutput -->|"예산 부족"| Block
+    StreamOutput -->|"허용/수정"| StreamPrivacy["Privacy 패턴 마스킹"]
+    StreamPrivacy --> Tokens["마스킹된 token 이벤트"]
+    Tokens --> Done["S02 done<br/>usageAvailable / costSource"]
+    StreamOutput -->|"차단"| Block
+    Entry --> InputOnly["S03 POST /api/legal/guardrail/input<br/>JWT·DTO → 비용 예약 → 입력 검사·정산"]
+    Entry --> OutputOnly["S04 POST /api/legal/guardrail/output<br/>JWT·DTO → 로컬 정책 → 비용 예약 → 출력 검사·정산<br/>별도 Privacy 호출과 구분"]
+    Buffer -->|"오류·timeout·연결 종료"| Interrupted["미확인 생성 비용 추정 정산<br/>늦은 콜백·중복 정산 방지"]
+    Interrupted --> Fallback
+    Done -. "후속 검증·설계" .-> Deferred["날짜 경계 세부 검증·청구 대사<br/>추정액 보정·영속 장부"]
+    classDef planned fill:#fff4dc,stroke:#b7791f,stroke-dasharray:5 5
+    class Deferred planned

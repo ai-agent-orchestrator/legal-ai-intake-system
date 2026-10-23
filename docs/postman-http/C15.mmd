@@ -1,0 +1,13 @@
+flowchart LR
+    Request["C15 Agent 위험 집계<br/>GET /api/agent/risk/summary"]
+    Request --> Case1["01 · 위험 이력이 있는 상태"]
+    Case1 --> Response1["200 OK<br/>total · high · medium · low<br/>decisionCounts · recommendedActionCounts"]
+    Request --> Case2["02 · 위험 이력이 없음"]
+    Case2 --> Response2["200 OK<br/>total/high/medium/low=0<br/>집계 Map 빈 값"]
+    Request --> Case3["03 · S05 분석 1회 후 재조회"]
+    Case3 --> Response3["200 OK<br/>전체·해당 등급·결정 집계 반영"]
+    classDef request fill:#eaf2ff,stroke:#3465a4
+    classDef ok fill:#edf8ed,stroke:#38803c
+    classDef error fill:#fff0ee,stroke:#bc4b40
+    class Request request
+    class Response1,Response2,Response3 ok

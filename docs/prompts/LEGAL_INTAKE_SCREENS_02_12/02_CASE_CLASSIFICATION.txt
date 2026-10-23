@@ -1,0 +1,136 @@
+You are designing the next screen of an existing React product:
+Security-Aware Legal AI Intake System / Legal Intake.
+
+Generate ONE high-fidelity desktop UI mockup image for the screen requested below.
+Use Korean product UI text. The deliverable is a usable application screen.
+
+APPROVED VISUAL REFERENCES - THIS SUPERSEDES THE EARLIER GENERIC LOGIN CANDIDATE
+Use the user-approved desktop login and mobile login reference images attached
+to this conversation as STYLE REFERENCES, not as edit targets.
+Reference filenames: 01_LOGIN_DESKTOP_PREFERRED.png and 01_LOGIN_MOBILE_PREFERRED.png.
+The user prefers this warm, premium law-office atmosphere over the earlier
+flat neutral login mockup. Preserve that specific brand feeling across Screens 02-12.
+
+ATMOSPHERE AND BACKGROUND
+A bright contemporary legal consultation office: large daylight windows,
+a softly defocused city skyline, warm wood shelves, books, a desk, and a few plants.
+Combine cool natural window light with warm interior materials. The result should
+feel established, reassuring, polished, and human rather than sterile or flashy.
+Reuse one coherent office visual across the product; do not invent a different
+luxury interior or a new stock photo for every page.
+Place the office photo behind the application shell, at the page edges, or in
+a restrained header area. Use bright white overlays and soft background blur.
+Keep form surfaces, tables, charts, and detail drawers opaque or nearly opaque
+white; never place small text directly over shelves, books, windows, or plants.
+
+BRAND, COLOR AND TYPOGRAPHY
+Keep the reference's royal-blue shield/document mark and the product name
+Security-Aware Legal AI Intake System. A compact two-line brand lockup is suitable
+inside working screens; do not repeat the giant login title above every data table.
+Use deep navy #0B2148, royal blue #0B4AB8 / #1456C8, white #FFFFFF,
+pale blue #EDF4FF, cool borders #D6DFEC, and muted slate #63738B.
+Warm beige/wood tones belong mainly to the atmospheric background.
+Use an elegant serif for the English brand and occasional short display headings.
+Use highly readable Korean sans-serif for body text, form labels, numbers,
+table rows, controls, and longer Korean headings. Do not set every label in a serif.
+Primary buttons may use the reference's subtle navy-to-royal-blue gradient.
+Use blue line icons, soft circular icon backgrounds, thin borders, soft shadows,
+and 12-18px corner radii. Selection states use a pale-blue fill and clear blue border.
+Green indicates completion, amber review, and red errors, always with text labels.
+The dark API diagrams describe architecture; do not copy their dark theme into this UI.
+
+LAYOUT BY ROLE
+Desktop canvas: 1440px wide. Preserve generous spacing and a clear next action.
+Client screens 02-05: a welcoming law-office intake experience, four-step
+progress, comfortable white content panels, a quieter reference column.
+Attorney screens 06-08: keep the same brand and office atmosphere while using
+a compact header/sidebar and clean white work surfaces for real case review.
+Operator screens 09-12: a standalone professional workspace, a restrained navy
+sidebar, and legible white metric/table panels. Keep this shared sidebar:
+운영 요약 / 마케팅 집계 / 보안·비용 / 위험 이력·Incident.
+Use background photography more subtly on dense attorney/operator screens.
+Adapt the login's atmosphere, not its three-column promotional composition:
+working screens need room for forms and records, not a feature-list marketing rail.
+Keep the UI feasible with reusable React components, one background asset,
+CSS overlays, and a responsive grid.
+
+RESPONSIVE CONTINUITY
+The mobile reference establishes the same bright office, navy/blue brand,
+shield mark, white cards, and touch-friendly controls at a narrower width.
+Design the default deliverable as one flat desktop viewport. If a mobile version
+is requested later, make a separate approximately 390px viewport: stack cards,
+collapse navigation, keep comfortable touch targets and a clear primary action,
+and place wide tables in a readable responsive arrangement.
+Do not include the reference's physical phone frame, hand, camera island,
+status bar, or surrounding photographed device scene in the application UI image.
+
+DATA AND INTERACTION RULES
+Use only the fields and actions specified in the screen's API notes.
+API numbers, HTTP paths, DTO names, JWTs, and credentials belong in implementation
+handoff notes, not in the main customer interface. Operator technical details may
+appear where they help investigation. UI role separation does not prove server authorization.
+Distinguish unsaved drafts, stored records, loading, empty, unavailable, and error states.
+Missing metrics are unavailable, not zero. Design samples are fictional and should
+have one unobtrusive label, 디자인 예시 데이터. Production UI must use real responses.
+Keep generated IDs as read-only identifiers. Users select records; they do not invent IDs.
+Do not invent payments, appointments, messaging, editing, deleting, exports, automatic
+LLM execution, or extra backend fields. Keep planned actions visibly disabled.
+Treat privacy masking as field-specific; do not claim all content or attachments are anonymized.
+Preserve form input on failure and prevent duplicate submissions while a request is pending.
+The references define appearance, not new functionality: do not copy a password-reset
+link, language selector, JWT badge, or universal security guarantee into these screens
+unless the screen's supported workflow actually requires it.
+
+OUTPUT
+Render only the requested screen, showing a coherent main state with legible Korean labels.
+Do not regenerate Login or output all screens as a small collage. Preserve this visual system
+when the next numbered prompt arrives. Do not replace the requested image with a code listing.
+Use the API notes to make the design implementable; do not print those notes on the mockup.
+
+SCREEN 02 - 사건 분류·절차 안내 / Case Type and Procedure Guide
+
+SCREEN-SPECIFIC VISUAL DIRECTION
+Use the bright office scene around a spacious white classification panel. Keep the shield/document brand in the compact header. Use pale-blue category cards with restrained blue line icons and unmistakable selection borders. Place the short description and preview on a calm, high-contrast surface; the procedure reference panel is secondary. Let the office atmosphere welcome the client without becoming a marketing feature list.
+
+PURPOSE AND LAYOUT
+Help a client describe a situation without knowing legal categories.
+Use the client header and step 1 of 4:
+사건 유형 → 문의 작성 → 안내 확인 → 검색 요청.
+Heading: 사건 유형을 잘 모르셔도 괜찮습니다.
+Subtitle: 가까운 항목을 선택하거나 상황을 짧게 적어 주세요.
+
+MAIN CONTENT
+- A compact purpose selector: 절차 안내 / 필요한 자료 확인 / 문서 검토 /
+  변호사 선임·계약 검토 / 전자소송 제출 안내. Keep this in the local draft for Screen 03.
+- Five category options: 민사 / 형사 / 가사 / 전자소송 / 잘 모르겠어요.
+  Show a few example tags, such as 대여금·계약, 사기·경찰 조사, 이혼·양육비.
+- A short required description input with a visible character counter.
+  Example: 돈을 빌려줬는데 돌려받지 못하고 있어요.
+- Button: 사건 유형 확인하기.
+- A preview showing returned case type, dispute area, recommended documents,
+  and the guidance message. Let the client review the suggestion.
+- A secondary panel, 관련 절차 살펴보기: a procedure list and an expandable
+  selected procedure detail. Keep this reference material separate from classification.
+- Primary footer action: 다음: 문의 작성. Carry the draft and chosen values to Screen 03.
+
+STATES
+Show a selected CIVIL / 민사 example. Keep the preview distinct from a saved intake.
+Allow UNKNOWN / 미분류 with a helpful prompt to add context. Include loading,
+description validation, and an empty/error state for reference data.
+
+API HANDOFF - DO NOT DISPLAY ON THE PRODUCT SCREEN
+C02 POST /api/intakes/classify-preview
+  Request: required coreStatement, current max 300 characters; optional caseType.
+  Category values: CIVIL, CRIMINAL, FAMILY, ELECTRONIC_LITIGATION, UNKNOWN.
+  Response: caseType, caseTypeLabel, disputeArea, recommendedDocuments,
+  clientGuideMessage, classificationMethod, persisted.
+  Current behavior is RULE_BASED with persisted=false. It creates no intake ID
+  and does not make an external LLM call. Do not market it as a live LLM response.
+R01 GET /api/legal/procedures
+  Read supported procedure code/domain/title/summary/userRole values.
+R02 GET /api/legal/procedures/{code}
+  Use an actual code returned by R01. Show title, summary, steps, forms as reference.
+Purpose selection is not an extra C02 request property; retain it in client state.
+Shared P06 POST /api/intake-events can explicitly record VISIT and INTAKE_STARTED
+at appropriate client milestones. Use stable eventId values on retries; never
+infer that rendering a mockup or a React rerender automatically records an event.

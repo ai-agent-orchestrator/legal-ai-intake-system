@@ -1,0 +1,127 @@
+flowchart TD
+    Client["Client / React / Postman"] --> Security{"Spring Security<br/>경로별 인증 규칙"}
+    Security -->|"인증 필요한 경로에서 실패"| AuthError["401 / 403"]
+    Security --> Trace["TraceIdInterceptor<br/>/api 요청 traceId·시간·로그"]
+    Trace --> Routes["Controller / DTO<br/>해당 요청의 Validation"]
+
+    subgraph Login["인증"]
+        Routes --> Auth["AuthController<br/>POST /api/auth/login"]
+        Auth --> LoginCheck["AuthenticationManager"]
+        LoginCheck --> JWT["JWT 발급 응답"]
+    end
+
+    subgraph Intake["접수·변호사 검토"]
+        Routes --> Preview["분류 preview<br/>규칙 실행 / DB 저장 없음"]
+        Routes --> IntakeRecord["LegalIntakeRecordController<br/>생성·목록·상세"]
+        IntakeRecord --> RecordService["LegalIntakeRecordService"]
+        RecordService --> IntakeDB[("legal_intake<br/>intake_document<br/>lawyer_search_condition")]
+        Routes --> Status["LegalIntakeStatusController<br/>상태 변경"]
+        Status --> Transition["IntakeStatus 정책<br/>종료 후 재개 금지"]
+        Transition --> IntakeDB
+        Routes --> Memo["ConsultationMemoController<br/>상담 메모 저장"]
+        Memo --> MemoDB[("consultation_memo")]
+        IntakeDB --> IntakeRead["Intake DTO / 지정 필드 마스킹"]
+        MemoDB --> IntakeRead
+        Routes --> Minimal["MinimalLegalIntakeController<br/>규칙 기반 안내·마스킹<br/>DB 저장·LLM 호출 없음"]
+    end
+
+    subgraph Search["검색 요청·결과 기록"]
+        Routes --> SearchController["LegalIntakeRecordController<br/>Search Request 생성·조회·결과 추가"]
+        SearchController --> ConditionCheck["Intake·검색 조건 존재 확인"]
+        ConditionCheck --> SearchDB[("ai_search_request<br/>search_result_snapshot")]
+        SearchDB --> SearchDTO["검색 요청·검색문·결과 응답"]
+        SearchDB -. "설계중" .-> SearchExecution["실제 변호사 검색 실행<br/>실행 상태·출처 검증·자동 저장"]
+    end
+
+    subgraph AI["동기 AI Chat — 실제 코드 순서"]
+        Routes --> Chat["AiController / AiService<br/>POST /api/ai/chat"]
+        Chat --> Dynamic["Dynamic Guard preCheck<br/>기존 세션 차단 여부 확인"]
+        Dynamic --> Fixed["Fixed Guard"]
+        Fixed --> PageCost["입력 페이지·길이 제한"]
+        PageCost --> InputReserve["입력 검사 예산 확인·예약"]
+        InputReserve -->|"예약 성공"| NemoInput["NeMo Input Guardrail<br/>검사 결과·usage에 따라 비용 정산"]
+        InputReserve -->|"예산 부족"| Block
+        NemoInput -->|"허용"| Reserve["답변 생성 비용 예약<br/>전체·일일·세션 예산 확인"]
+        Reserve --> LLM["OpenAI-compatible LlmClient"]
+        LLM --> Usage["보고 usage 정산<br/>미확인은 예약 추정액 별도 집계"]
+        Usage --> OutputReserve["출력 로컬 정책·예산 확인·예약"]
+        OutputReserve -->|"통과·예약 성공"| NemoOutput["NeMo Output Guardrail<br/>검사 결과·usage에 따라 비용 정산"]
+        OutputReserve -->|"로컬 정책 차단"| Block
+        OutputReserve -->|"예산 부족"| Block
+        NemoOutput --> Privacy["Privacy Output Guard"]
+        Dynamic -->|"이미 차단된 세션"| Block["Fallback / 차단 응답<br/>reason·metric"]
+        Fixed -->|"차단"| RiskUpdate["세션 위험 점수 누적"]
+        PageCost -->|"차단"| RiskUpdate
+        NemoInput -->|"차단"| RiskUpdate
+        RiskUpdate --> Block
+        Reserve -->|"예약 불가"| Block
+        LLM -->|"기술 오류 / 미확인 비용 추정 정산"| Block
+        NemoInput -->|"기술 오류"| Block
+        NemoOutput -->|"정책 위반·기술 오류"| Block
+    end
+
+    subgraph Stream["SSE — 별도 구현 경로"]
+        Routes --> SSE["AiStreamingService"]
+        SSE --> StreamChecks["Dynamic preCheck → Fixed → 입력 길이 제한"]
+        StreamChecks --> StreamInput["입력 검사 예산 예약 → NeMo Input·정산<br/>허용 시 답변 생성 비용 예약"]
+        StreamChecks -->|"차단·위험 누적"| Block
+        StreamInput -->|"정책 차단·예산 초과"| Block
+        StreamInput --> StreamLLM["StreamingLlmClient"]
+        StreamLLM --> StreamBuffer["답변 전체를 서버에 버퍼링"]
+        StreamBuffer --> StreamUsage["답변 생성 비용 보고/추정 정산"]
+        StreamUsage --> StreamOutputReserve["출력 로컬 정책·예산 확인·예약"]
+        StreamOutputReserve -->|"통과·예약 성공"| ChunkGuard["전체 답변 Output Guard·검사 비용 정산"]
+        StreamOutputReserve -->|"로컬 정책 차단"| Block
+        StreamOutputReserve -->|"예산 부족"| Block
+        StreamLLM -->|"오류·timeout·연결 종료"| StreamUnknown["미확인 생성 비용 추정 정산<br/>늦은 콜백·중복 정산 방지"]
+        StreamUnknown --> Block
+        ChunkGuard --> StreamPrivacy["Privacy 패턴 마스킹<br/>완료 후 token 전송"]
+        StreamPrivacy --> Events["정상 완료 done<br/>meta는 먼저 전송 / 차단·오류는 별도"]
+        ChunkGuard -->|"정책 차단"| Block
+    end
+
+    Routes --> Standalone["S03 입력 단독 검사 · S04 출력 단독 검사<br/>JWT·필수 입력 → 비용 예약 → 검사·정산<br/>S04 로컬 출력 정책은 예약 전 적용"]
+    Standalone --> GuardResult["검사 결과·비용 차단·usage 출처<br/>S01·S02와 같은 USD 예산·장부 공유"]
+
+    subgraph Reference["법률 절차·기존 준비도 분석"]
+        Routes --> LegalRef["LegalProcedureController"]
+        LegalRef --> RefDB[("legal_procedure<br/>legal_procedure_step<br/>legal_form_template")]
+        Routes --> Legacy["LegalIntakeController<br/>기존 readiness 분석"]
+        Legacy --> HistoryDB[("legal_intake_history")]
+    end
+
+    subgraph RiskOps["Agent 위험·운영"]
+        Routes --> Risk["AgentRiskDecisionController<br/>위험 점수·권장 조치"]
+        Risk --> RiskDB[("agent_risk_history<br/>agent_run_history<br/>risk_incident")]
+        Routes --> Jobs["AgentJobController<br/>비동기 위험 분석·폴링"]
+        Jobs --> Risk
+        Jobs --> JobDB[("agent_job_history")]
+        Routes --> Audit["Risk History / Incident API<br/>조회·확인·종결"]
+        Audit --> RiskDB
+        Routes --> Admin["AdminDashboardController<br/>Agent·보안 현황"]
+        Admin --> RiskDB
+        Admin --> SecDB[("security_event_history")]
+        Routes --> Marketing["MarketingDashboardController<br/>제출·검색·현재 상담 준비 집계"]
+        Marketing --> IntakeDB
+        Marketing --> SearchDB
+        Routes --> Behavior["POST /api/intake-events<br/>중복 방지·문의/세션 연결"]
+        Behavior --> EventDB[("intake_event")]
+        EventDB --> Marketing
+        Marketing -. "후속" .-> Cohort["기간·코호트·이탈 분석"]
+    end
+
+    Routes --> Lab["기존 정책 검사·위험 패턴 실험<br/>메뉴·채팅·트랜잭션·N+1 학습 API"]
+    Security --> Actuator["Actuator 별도 체인<br/>health / info 공개<br/>metrics / prometheus ADMIN Basic"]
+    Privacy --> Metrics["Micrometer metric / trace 로그"]
+    Block --> Metrics
+    Events --> Metrics
+    Risk --> Metrics
+    Metrics --> Actuator
+    Routes --> Files["첨부파일 업로드·다운로드<br/>JWT·소유자/관리자·크기·유형"]
+    Files --> IntakeDB
+    JWT --> Me["GET /api/me"]
+    SearchController --> History["GET 문의별 검색 이력<br/>JWT·소유자/관리자"]
+    IntakeDB -. "설계중" .-> Persistent["운영 DB 영속화"]
+
+    classDef planned fill:#fff4dc,stroke:#c48918,stroke-dasharray:5 5
+    class SearchExecution,Cohort,Persistent planned

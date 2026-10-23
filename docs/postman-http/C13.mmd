@@ -1,0 +1,13 @@
+flowchart LR
+    Request["C13 마케팅 집계 조회<br/>GET /api/admin/dashboard/marketing-funnel"]
+    Request --> Case1["01 · 문의·검색·행동 기록이 있는 상태"]
+    Case1 --> Response1["200 OK<br/>문의/검색/현재 상태 수<br/>eventCounts · REPORTED_EVENT"]
+    Request --> Case2["02 · 행동 이벤트가 아직 없는 상태"]
+    Case2 --> Response2["200 OK<br/>해당 eventCounts=0<br/>dropOffMeasured=false"]
+    Request --> Case3["03 · P06 동일 이벤트 재전송 전후 비교"]
+    Case3 --> Response3["200 OK<br/>같은 eventId로 집계 수가 늘지 않음"]
+    classDef request fill:#eaf2ff,stroke:#3465a4
+    classDef ok fill:#edf8ed,stroke:#38803c
+    classDef error fill:#fff0ee,stroke:#bc4b40
+    class Request request
+    class Response1,Response2,Response3 ok

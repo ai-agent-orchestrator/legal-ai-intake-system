@@ -672,7 +672,6 @@ Make the screen business-oriented and useful for a lawyer who runs a small offic
 - Token usage chart
 - Session/daily budget
 - Top reasonCode chart
-- Strict mode status
 
 ### Next Screen
 
@@ -697,8 +696,6 @@ Include:
 - reasonCode chart:
   BLOCKED_JAILBREAK, BLOCKED_PROMPT_INJECTION, BLOCKED_LEGAL_HARM,
   BLOCKED_PRIVACY_RISK, COST_LIMIT_BLOCKED, DYNAMIC_SESSION_BLOCKED
-- strict mode status card:
-  NORMAL / STRICT / COST_SAVING / BLOCKED
 - recent security events table
 - link to Audit ReasonCode Log
 
@@ -744,7 +741,7 @@ Include:
 - filter bar:
   date range, reasonCode, sessionId, blocked only toggle
 - log table columns:
-  timestamp, sessionId, userId, requestType, allowed, reasonCode, policyProfile, estimatedTokens, actualTokens
+  timestamp, sessionId, userId, requestType, allowed, reasonCode, estimatedTokens, actualTokens
 - row detail drawer:
   sanitized input, policy decision, fallback response, related metric
 - warning:

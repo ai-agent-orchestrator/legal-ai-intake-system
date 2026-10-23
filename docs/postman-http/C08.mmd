@@ -1,0 +1,14 @@
+flowchart LR
+    Request["C08 결과 스냅샷 추가<br/>POST /api/intakes/search-requests/{searchRequestId}/results"]
+    Request --> Case1["01 · 존재하는 요청 + 정상 결과 JSON"]
+    Case1 --> Response1["201 Created<br/>추가 결과가 포함된 results<br/>PREVIEW_READY 유지"]
+    Request --> Case2["02 · sourceType/title/url 누락 또는 길이 초과"]
+    Case2 --> Response2["400 Bad Request<br/>INVALID_REQUEST · fieldErrors"]
+    Request --> Case3["03 · 존재하지 않는 searchRequestId"]
+    Case3 --> Response3["404 Not Found"]
+    classDef request fill:#eaf2ff,stroke:#3465a4
+    classDef ok fill:#edf8ed,stroke:#38803c
+    classDef error fill:#fff0ee,stroke:#bc4b40
+    class Request request
+    class Response1 ok
+    class Response2,Response3 error

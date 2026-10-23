@@ -1,0 +1,87 @@
+%%{init: {"theme":"base","themeVariables":{"fontFamily":"Malgun Gothic, Arial, sans-serif","fontSize":"28px","darkMode":false,"background":"#ffffff","primaryTextColor":"#102544","secondaryTextColor":"#102544","tertiaryTextColor":"#102544","textColor":"#102544","lineColor":"#000000","arrowheadColor":"#000000","edgeLabelBackground":"#ffffff","clusterBkg":"#ffffff","clusterBorder":"#64748b"},"themeCSS":"& { background-color:#ffffff !important; } .edgeLabel div, .cluster-label div { width:max-content !important; max-width:none !important; white-space:nowrap !important; } .flowchart-link { stroke:#000000 !important; stroke-width:3.2px !important; opacity:1 !important; } .marker, marker path { fill:#000000 !important; stroke:#000000 !important; opacity:1 !important; } .edgeLabel, .edgeLabel p, .edgeLabel span { color:#102544 !important; fill:#102544 !important; font-size:180px !important; font-weight:800 !important; background-color:#ffffff !important; } .edgeLabel .labelBkg, .edgeLabel rect { fill:#ffffff !important; background-color:#ffffff !important; } .nodeLabel, .nodeLabel p { color:#102544 !important; font-size:28px !important; font-weight:600 !important; } .cluster-label text, .cluster-label span, .cluster-label p { fill:#102544 !important; color:#102544 !important; font-size:30px !important; font-weight:700 !important; }","flowchart":{"defaultRenderer":"dagre-wrapper","useMaxWidth":false,"htmlLabels":true,"subGraphTitleMargin":{"top":16,"bottom":36},"wrappingWidth":620,"nodeSpacing":360,"rankSpacing":64,"padding":22,"curve":"linear"}}}%%
+flowchart TB
+    accTitle: 전체 보안 상세 흐름도
+    accDescr: 공통 진입 뒤 요청한 일반 업무, AI Chat, 단독 Guardrail 경로만 실행한다. 유료 검사는 답변 생성과 함께 단계별로 비용을 예약하고 정산한다.
+
+    subgraph ENTRY["① 공통 진입"]
+        direction LR
+        ERequest["HTTP 요청"] --> ECors{{"CORS 처리"}}
+        ECors -->|"사전 요청"| EPreflight["허용 Origin·Method·Header 응답<br/>여기서 종료"]
+        ECors -->|"실제 요청"| EAuth{{"application: 공개 / 필요한 JWT<br/>Actuator: health/info 외 ADMIN Basic"}}
+        EAuth -->|"실패"| EAuthError["401 / 403<br/>업무 처리 전 중단"]
+        EAuth -->|"앱 통과"| EInput["Trace ID · 선언된 DTO 검증"]
+        EInput -->|"입력 오류"| EInvalid["400 INVALID_REQUEST"]
+        EAuth -->|"C16"| EActuator["C16 Prometheus · metrics<br/>지표 조회 응답"]
+    end
+
+    ROUTE{"② API 경로"}
+
+    subgraph BUSINESS["③ 일반 업무·권한"]
+        direction TB
+        BStart["C01·P01 · C02~C15·C17~C20<br/>R01~R06 · S05 · P02·P04~P06"]
+        BStart --> BCheck{{"해당 업무 검사<br/>C01 계정 · P02/P04/P05 소유자·파일<br/>대상·상태·연결·중복 규칙"}}
+        BCheck -->|"실패"| BError["경로별 업무·권한 오류<br/>400 / 401 / 403 / 404 / 409<br/>파일 크기·유형 413 / 415 등"]
+        BCheck -->|"통과"| BResponse["업무 처리·필요한 지정 필드 보호<br/>JSON / 파일 / 규칙 안내<br/>S05 모의 토큰은 USD 장부와 별도"]
+    end
+
+    subgraph CHAT["④ AI Chat · S01 / S02"]
+        direction TB
+        APre{{"로컬 입력 보안<br/>Dynamic 사전 점검 → Fixed → 길이<br/>실험 10자 · DTO 상한 30자"}}
+        APre -. "차단" .-> APolicy["보안·길이 차단 · 사유 반환<br/>Fixed·길이·Input 불허는 위험 누적<br/>필요 시 Dynamic 세션 차단"]
+        APre -->|"통과"| AInput["입력 검사 예산 예약 → NeMo Input<br/>보고 usage / 미확인 추정액 정산"]
+        AInput -. "예산 부족" .-> ACost["COST_LIMIT_BLOCKED<br/>한도별 detailCode 반환<br/>이미 정산한 앞 단계 비용 유지"]
+        AInput -. "불허" .-> APolicy
+        AInput -. "오류" .-> ATechnical["S01 기술 fallback / S02 error<br/>미확인 호출 비용은 추정 반영<br/>연결 종료는 전송 종료"]
+        AInput -->|"허용"| AGeneration["생성 예산 예약 → LLM 답변 생성<br/>S01 동기 · S02 전체 답변 버퍼<br/>완료 즉시 보고/추정 생성 비용 정산"]
+        AGeneration -. "예산 부족" .-> ACost
+        AGeneration -. "오류·중단" .-> AInterrupted["미확인 생성 비용 추정 정산<br/>늦은 완료·중복 콜백 재정산 방지"]
+        AInterrupted --> ATechnical
+        AGeneration -->|"완료"| AOutput["로컬 출력 정책 → 출력 검사 예산 예약<br/>NeMo Output 검사·보고/추정 정산"]
+        AOutput -. "예산 부족" .-> ACost
+        AOutput -. "불허" .-> AOutputBlock["OUTPUT_POLICY_BLOCKED<br/>원문 미전송 · 사용한 비용 유지"]
+        AOutput -. "오류" .-> ATechnical
+        AOutput -->|"허용"| APrivacy["Privacy 개인정보 패턴 마스킹"]
+        APrivacy --> AResponse["S01 정상 JSON / S02 token → done<br/>usageAvailable·costSource는 생성 단계"]
+    end
+
+    subgraph STANDALONE["⑤ S03·S04 단독 검사"]
+        direction TB
+        SStart{{"S03: 입력 검사 예산 확인·예약<br/>S04: 로컬 출력 정책 후 예산 확인·예약"}}
+        SStart -->|"로컬 불허"| SZero["외부 호출·예약 없음<br/>확인된 0토큰 결과"]
+        SStart -. "예산 부족" .-> SCost["200 · BLOCKED · allowed=false<br/>COST_LIMIT_BLOCKED · detailCode"]
+        SStart -->|"예약"| SCheck["해당 Input / Output Client 검사<br/>허용·불허 모두 보고/추정 정산"]
+        SCheck -->|"결과"| SResponse["200 · status·allowed·rail<br/>usageAvailable · costSource<br/>검사 허용 여부는 allowed로 확인"]
+        SCheck -. "오류" .-> SError["미확인 검사 비용 추정 반영<br/>기존 외부 예외 응답<br/>Chat의 200 fallback과 구분"]
+        SZero --> SResponse
+    end
+
+    OBSERVE["⑥ 결과·관측<br/>Trace · reasonCode · detailCode · 단계별 Metric<br/>C16: 입력 검사 / 생성 / 출력 검사 USD 비용<br/>agent.cost.tokens: 별도 모의 토큰 지표"]
+    FUTURE["후속 설계·검증<br/>일반 업무 인가 확대 · 실제 공급자 검증<br/>날짜 경계·청구 대사·추정액 보정·영속 장부"]
+
+    ENTRY -->|"통과"| ROUTE
+    ROUTE -->|"업무"| BUSINESS
+    ROUTE -->|"S01·S02"| CHAT
+    ROUTE -->|"S03·S04"| STANDALONE
+    BUSINESS -. "결과" .-> OBSERVE
+    CHAT -. "관측" .-> OBSERVE
+    STANDALONE -. "관측" .-> OBSERVE
+    OBSERVE -. "후속" .-> FUTURE
+
+    linkStyle default stroke:#000000,stroke-width:3.2px,color:#102544,font-size:180px,font-weight:800
+
+    classDef main fill:#edf4ff,stroke:#42658b,stroke-width:2px,color:#102544,font-size:28px,font-weight:600
+    classDef policy fill:#f4f0ff,stroke:#7858a8,stroke-width:2px,color:#102544,font-size:28px,font-weight:600
+    classDef cost fill:#eaf7f0,stroke:#347356,stroke-width:2px,color:#102544,font-size:28px,font-weight:600
+    classDef stop fill:#fff0ed,stroke:#ab503e,stroke-width:2px,color:#102544,font-size:28px,font-weight:600
+    classDef output fill:#eef7fb,stroke:#44798d,stroke-width:2px,color:#102544,font-size:28px,font-weight:600
+    classDef planned fill:#fff7e5,stroke:#946d24,stroke-width:2px,stroke-dasharray:7 5,color:#102544,font-size:28px,font-weight:600
+    class ERequest,EPreflight,EInput,EActuator,BStart,BResponse,ROUTE main
+    class ECors,EAuth,BCheck,APre,APrivacy policy
+    class AInput,AGeneration,AOutput,SStart,SCheck cost
+    class EAuthError,EInvalid,BError,APolicy,ACost,ATechnical,AInterrupted,AOutputBlock,SCost,SError stop
+    class AResponse,SResponse,SZero,OBSERVE output
+    class FUTURE planned
+    style ENTRY fill:#ffffff,stroke:#64748b,stroke-width:2px
+    style BUSINESS fill:#ffffff,stroke:#64748b,stroke-width:2px
+    style CHAT fill:#ffffff,stroke:#64748b,stroke-width:2px
+    style STANDALONE fill:#ffffff,stroke:#64748b,stroke-width:2px

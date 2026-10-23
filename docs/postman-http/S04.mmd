@@ -1,0 +1,22 @@
+flowchart LR
+    Request["S04 Output Guardrail 단독 검사<br/>POST /api/legal/guardrail/output"]
+    Request --> Case1["01 · 유효한 response + NeMo PASSED 또는 MODIFIED"]
+    Case1 --> Response1["200 OK<br/>allowed=true · status · content · rail"]
+    Request --> Case2["02 · 유효한 response + NeMo 불허 결과"]
+    Case2 --> Response2["200 OK<br/>allowed=false · status · rail"]
+    Request --> Case3["03 · response가 12000자를 초과"]
+    Case3 --> Response3["200 OK<br/>allowed=false · status=BLOCKED<br/>rail=local output policy"]
+    Request --> Case4["04 · response 공백 또는 누락"]
+    Case4 --> Response4["400 Bad Request<br/>INVALID_REQUEST · fieldErrors"]
+    Request --> Case5["05 · 토큰 없음 또는 무효"]
+    Case5 --> Response5["401 Unauthorized"]
+    Request --> Case6["06 · NeMo 연결 실패·오류 응답·빈 응답"]
+    Case6 --> Response6["500 예상<br/>외부 예외 미변환 · 수동 확인 필요"]
+    Request --> Case7["07 · 로컬 정책 통과 후 예산 부족"]
+    Case7 --> Response7["200 OK<br/>allowed=false · COST_LIMIT_BLOCKED<br/>detailCode=한도별 세부 사유"]
+    classDef request fill:#eaf2ff,stroke:#3465a4
+    classDef ok fill:#edf8ed,stroke:#38803c
+    classDef error fill:#fff0ee,stroke:#bc4b40
+    class Request request
+    class Response1,Response2,Response3 ok
+    class Response4,Response5,Response6,Response7 error

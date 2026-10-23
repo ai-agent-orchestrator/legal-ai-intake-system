@@ -70,11 +70,15 @@ public class OpenAiCompatibleLlmClient implements LlmClient {
         }
 
         Usage usage = response.usage();
+        boolean usageAvailable = usage != null
+                && usage.prompt_tokens() != null && usage.completion_tokens() != null
+                && usage.prompt_tokens() >= 0 && usage.completion_tokens() >= 0;
         return new LlmResponse(
                 response.choices().getFirst().message().content(),
                 response.model() == null ? model : response.model(),
-                usage == null ? 0 : usage.prompt_tokens(),
-                usage == null ? 0 : usage.completion_tokens()
+                usageAvailable ? usage.prompt_tokens() : 0,
+                usageAvailable ? usage.completion_tokens() : 0,
+                usageAvailable
         );
     }
 
@@ -98,6 +102,6 @@ public class OpenAiCompatibleLlmClient implements LlmClient {
     private record Choice(Message message) {
     }
 
-    private record Usage(int prompt_tokens, int completion_tokens) {
+    private record Usage(Integer prompt_tokens, Integer completion_tokens) {
     }
 }

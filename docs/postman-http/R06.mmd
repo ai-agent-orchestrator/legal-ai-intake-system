@@ -1,0 +1,9 @@
+flowchart LR
+    Request["R06 형사 보완수사 체크리스트<br/>GET /api/legal/criminal/checklist/supplementary-investigation"]
+    Request --> Case1["01 · 기본 경로로 조회"]
+    Case1 --> Response1["200 OK<br/>domain · role · stageCode · stageLabel<br/>checklist · recommendedAction"]
+    classDef request fill:#eaf2ff,stroke:#3465a4
+    classDef ok fill:#edf8ed,stroke:#38803c
+    classDef error fill:#fff0ee,stroke:#bc4b40
+    class Request request
+    class Response1 ok

@@ -1,0 +1,188 @@
+/* Screen 11: approved service dashboard proportions; API and dialog hooks preserved. */
+.security-heading .eyebrow > span { padding: 0 8px; }
+.operator-draft .security-heading { display: block; position: relative; min-height: 96px; margin-bottom: 23px; }
+.operator-draft .security-heading > div > p { font-size: 17px; line-height: 1.6; }
+.security-actions { position: absolute; right: 0; top: 8px; display: flex; align-items: center; gap: 22px; margin-top: 2px; margin-left: auto; }
+.operator-draft .security-actions .page-tools { margin: 0; gap: 18px; flex-direction: row; align-items: center; }
+.security-grid { display: grid; grid-template-columns: minmax(0, 1.12fr) minmax(0, .94fr) minmax(0, 1.04fr); gap: 14px; align-items: stretch; }
+.security-column.panel { margin: 0; padding: 17px 12px 12px; min-width: 0; min-height: 523px; height: 523px; overflow: hidden; border: 1px solid #e1e8f4; border-radius: 8px; background: linear-gradient(135deg, #fff, #fefeff); box-shadow: 0 1px 2px #18366302; }
+.security-metrics-panel.panel { overflow-y: auto; scrollbar-width: thin; }
+.security-column > h2, .security-metrics-heading > h2 { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; color: #081354; font-size: 18px; font-weight: 700; line-height: 1.5; letter-spacing: -.45px; margin: 0; }
+.security-column h2 > .ui-icon { width: 25px; height: 25px; color: #1456ff; }
+.security-column h2 > small { font-size: 12px; line-height: 1.5; letter-spacing: -.35px; color: #697fa7; font-weight: 400; }
+.security-query-time { display: flex; align-items: center; gap: 6px; margin: 7px 0 15px; color: #6b83ab; font-size: 12px; line-height: 1.5; }
+.security-query-time .ui-icon { width: 16px; height: 16px; }
+.security-risk-overview { display: grid; grid-template-columns: minmax(126px, .9fr) minmax(0, 1.6fr); gap: 6px; margin-bottom: 15px; }
+.risk-total { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: 146px; background: linear-gradient(140deg, #f3f7ff, #f6f9ff); border: 1px solid #e9efff; border-radius: 6px; padding: 15px 9px; }
+.risk-total > span { color: #0a195c; font-size: 14px; font-weight: 700; text-align: center; line-height: 1.6; letter-spacing: -.45px; }
+.risk-total > strong { color: #0643ff; font-size: 34px; line-height: 1.2; letter-spacing: -1px; }
+.risk-total > strong small { font-size: .74em; }
+.security-risk-levels { display: flex; flex-direction: column; justify-content: space-evenly; padding: 8px 10px; border: 1px solid #e5ebf5; border-radius: 6px; }
+.security-risk-row { display: grid; grid-template-columns: minmax(78px, 1.15fr) minmax(28px, 1fr) 77px; align-items: center; gap: 8px; color: #0d205c; font-size: 13px; line-height: 1.6; min-width: 0; letter-spacing: -.35px; }
+.security-risk-row > span { min-width: 0; word-break: keep-all; overflow-wrap: anywhere; }
+.security-risk-row > b { color: #5a7199; font-size: 12px; font-weight: 400; text-align: right; white-space: nowrap; }
+.security-risk-row > b small { font-size: 12px; }
+.security-risk-row .bar-track { height: 22px; background: linear-gradient(90deg, #f0f2f7, #f4f5f8); border-radius: 4px; }
+.security-risk-row .bar-track i { background: linear-gradient(90deg, #6991ff, #96b3ff); border-radius: 4px; }
+.security-risk-row:nth-child(n+2) .bar-track i { background: linear-gradient(90deg, #95c3ff, #b7d9ff); }
+.security-risk-row .bar-track i.high { background: linear-gradient(90deg, #ff6870, #f64b59); }
+.security-risk-row .bar-track i.medium { background: linear-gradient(90deg, #ffbb50, #ffd176); }
+.security-risk-row .bar-track i.low { background: linear-gradient(90deg, #70d4ac, #59c699); }
+.security-risk-groups { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; }
+.security-risk-group { padding: 14px 10px 13px; border: 1px solid #e3eaf5; border-radius: 7px; min-width: 0; }
+.security-risk-group > h3 { display: flex; align-items: center; gap: 9px; color: #091758; font-size: 15px; line-height: 1.5; margin: 0 0 18px; white-space: nowrap; letter-spacing: -.5px; }
+.security-risk-group > h3 .ui-icon { width: 24px; height: 24px; color: #1456ff; }
+.security-risk-group .security-risk-row { grid-template-columns: minmax(59px, 1fr) minmax(25px, 1fr) 66px; gap: 6px; font-size: 13px; margin-bottom: 17px; }
+.security-risk-group .security-risk-row:last-child { margin-bottom: 1px; }
+.security-risk-group .security-risk-row > b, .security-risk-group .security-risk-row > b small { font-size: 11px; }
+.security-risk-group .bar-track { height: 21px; }
+.security-events-panel { display: flex; flex-direction: column; }
+.security-events-scroll { overflow: auto; min-height: 0; flex: 1; margin-bottom: 12px; border: 1px solid #e3eaf5; border-radius: 5px; scrollbar-width: thin; }
+.security-events-scroll table { border-collapse: collapse; table-layout: fixed; width: 100%; min-width: 345px; font-size: 12px; }
+.security-events-scroll th { background: #f7f9ff; font-size: 12px; font-weight: 700; color: #152967; padding: 10px 7px; border-right: 1px solid #e8edf8; border-bottom: 1px solid #e8edf8; text-align: left; white-space: normal; position: sticky; top: 0; z-index: 1; }
+.security-events-scroll td { padding: 10px 7px; border-right: 1px solid #e8edf8; border-bottom: 1px solid #e8edf8; font-size: 12px; line-height: 1.5; color: #536f9b; vertical-align: top; overflow-wrap: anywhere; }
+.security-events-scroll th:last-child, .security-events-scroll td:last-child { border-right: 0; }
+.security-events-scroll tbody tr:last-child td { border-bottom: 0; }
+.security-events-scroll tbody tr:nth-child(even) { background: #fbfcff; }
+.security-events-scroll th:first-child { width: 20%; }
+.security-events-scroll th:nth-child(2) { width: 24%; }
+.security-events-scroll th:nth-child(3) { width: 27%; }
+.security-events-scroll th:nth-child(4) { width: 15%; }
+.security-events-scroll th:nth-child(5) { width: 14%; }
+.event-time > span, .event-request > span { display: block; }
+.event-time > span { font-size: 11px; }
+.event-status { display: inline-block; padding: 3px 6px; border-radius: 5px; background: #f0f4fb; color: #526c96; font-size: 11px; font-weight: 600; line-height: 1.4; }
+.event-status.denied { background: #ffe7eb; color: #e44c62; }
+.event-status.warning { background: #fff0d6; color: #e58b09; }
+.event-status.ok { background: #e1f5eb; color: #25956a; }
+.security-audit-link { margin-left: auto; margin-top: auto; display: flex; align-items: center; justify-content: center; gap: 7px; min-height: 35px; border: 1px solid #7695ff; color: #1244f5; background: #fff; padding: 7px 11px; border-radius: 5px; font-size: 12px; font-weight: 600; }
+.security-audit-link:hover { background: #f3f7ff; border-color: #265dff; }
+.security-audit-link > .ui-icon { width: 16px; height: 16px; }
+.security-metrics-heading { display: flex; align-items: flex-start; gap: 7px; }
+.security-metrics-heading > h2 { flex: 1; min-width: 0; }
+.security-metrics-heading > h2 { font-size: 16px; gap: 7px; }
+.security-metrics-heading > h2 small { font-size: 11px; white-space: nowrap; }
+.metric-connect-button { display: flex; align-items: center; gap: 5px; flex-shrink: 0; padding: 6px 8px; min-height: 31px; border: 1px solid #e0eaff; border-radius: 5px; background: #f0f5ff; color: #1456ec; font-size: 12px; font-weight: 600; }
+.metric-connect-button:hover { background: #e6eeff; }
+.metric-connect-button .ui-icon { width: 14px; height: 14px; }
+.security-metrics-state { font-size: 12px; line-height: 1.65; color: #677da1; margin: -3px 0 12px; padding: 8px 9px; background: #f2f6fd; border-radius: 5px; }
+.security-metrics-state.error { background: #fff1ed; color: #ad5039; }
+.security-metrics-content > h3 { color: #0a195c; font-size: 14px; line-height: 1.5; margin: 13px 0 7px; }
+.security-metrics-content > h3 > small, .security-metric-breakdown h3 > small { font-weight: 400; font-size: 13px; color: #425f94; }
+.security-metric-cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; }
+.security-metric-cards > div { border: 1px solid #e3e9f5; border-radius: 6px; padding: 10px 5px 8px; text-align: center; min-width: 0; background: #fff; }
+.security-metric-cards > div > span { display: block; font-size: 12px; color: #122660; font-weight: 600; line-height: 1.5; min-height: 18px; letter-spacing: -.5px; }
+.security-metric-cards strong { display: block; color: #0642ff; font-size: 18px; line-height: 1.4; margin-top: 3px; letter-spacing: -.45px; overflow-wrap: anywhere; }
+.security-metric-cards .metric-key { display: block; font-size: 10px; color: #687fa6; line-height: 1.4; margin-top: 5px; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; letter-spacing: -.45px; }
+.security-metric-cards.budget-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.budget-cards > div > span { min-height: 0; }
+.security-metric-breakdown { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 20px; margin-top: 21px; }
+.security-metric-breakdown h3 { color: #0a195c; font-size: 14px; margin: 0 0 12px; line-height: 1.5; letter-spacing: -.3px; }
+.security-metric-line + h3 { margin-top: 18px; }
+.security-stage-cost { display: grid; grid-template-columns: minmax(69px, 1.2fr) minmax(30px, 1fr) max-content; align-items: center; gap: 7px; margin-bottom: 12px; font-size: 12px; line-height: 1.6; letter-spacing: -.35px; }
+.security-stage-cost > b { color: #536d98; font-weight: 400; font-size: 12px; white-space: nowrap; }
+.security-stage-cost .bar-track { height: 18px; background: #eef1f7; border-radius: 3px; }
+.security-stage-cost .bar-track i { background: linear-gradient(90deg, #2d68ff, #99b7ff); border-radius: 3px; }
+.security-metric-line { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; line-height: 1.7; color: #647da7; margin-bottom: 5px; }
+.security-metric-line b { font-weight: 400; white-space: nowrap; }
+.security-stage-timings { font-size: 11px; color: #657ca4; margin-top: 7px; }
+.security-stage-timings summary { cursor: pointer; margin-bottom: 8px; }
+.security-metric-notes { margin-top: 15px; padding-top: 10px; border-top: 1px solid #edf1f8; font-size: 11px; color: #6079a0; }
+.security-metric-notes > summary { cursor: pointer; }
+.security-metric-notes p { font-size: 12px; line-height: 1.8; margin: 8px 0 0; }
+.security-footnotes { display: grid; grid-template-columns: 1fr 1.08fr; gap: 15px; margin-top: 16px; }
+.security-footnotes > aside { display: flex; align-items: center; gap: 16px; min-height: 72px; padding: 11px 15px; border: 1px solid #e1ecff; border-radius: 8px; background: linear-gradient(110deg, #f0f6ff, #f5f9ff); }
+.security-footnotes > aside > .ui-icon { width: 33px; height: 33px; color: #1456ff; }
+.security-footnotes h2 { color: #0a195c; font-size: 14px; line-height: 1.5; letter-spacing: -.3px; }
+.security-footnotes p { font-size: 12px; line-height: 1.6; color: #6a80a4; margin: 3px 0 0; }
+.security-footnotes > aside:last-child { background: linear-gradient(110deg, #fff6e8, #fffaf2); border-color: #fff0dc; }
+.security-footnotes > aside:last-child > .ui-icon { color: #ee950b; }
+.security-auth-dialog { border: 1px solid #d6e0f0; border-radius: 15px; padding: 27px; color: #0b2148; width: min(460px, calc(100vw - 32px)); box-shadow: 0 20px 60px #0b214833; }
+.security-auth-dialog::backdrop { background: #0b214866; }
+.security-auth-dialog > h2 { font-size: 20px; }
+.security-auth-dialog > p { font-size: 14px; line-height: 1.8; color: #657b9d; margin: 14px 0 20px; }
+.security-auth-dialog label { display: block; font-size: 14px; margin: 15px 0 8px; }
+.security-auth-dialog input { width: 100%; min-height: 44px; font-size: 15px; }
+.security-auth-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 22px; flex-wrap: wrap; }
+.security-auth-actions button { min-height: 42px; font-size: 14px; }
+.security-auth-error { font-size: 14px; line-height: 1.8; color: #a64736; background: #fff1ed; padding: 10px; border-radius: 6px; }
+@media (min-width: 1251px) and (max-width: 1550px) {
+  .security-column.panel { padding: 16px 10px 12px; }
+  .security-column > h2, .security-metrics-heading > h2 { font-size: 17px; }
+  .security-risk-overview { grid-template-columns: minmax(105px, .85fr) minmax(0, 1.6fr); }
+  .risk-total > span { font-size: 13px; }
+  .security-risk-levels { padding-inline: 6px; }
+  .security-risk-row { grid-template-columns: minmax(68px, 1fr) minmax(20px, 1fr) 66px; font-size: 12px; gap: 5px; }
+  .security-risk-row > b, .security-risk-row > b small { font-size: 11px; }
+  .security-risk-group { padding-inline: 7px; }
+  .security-risk-group > h3 { gap: 5px; font-size: 13px; }
+  .security-risk-group > h3 .ui-icon { width: 21px; height: 21px; }
+  .security-risk-group .security-risk-row { grid-template-columns: minmax(48px, 1fr) minmax(16px, .8fr) 58px; font-size: 12px; gap: 4px; }
+  .security-metric-cards > div > span { min-height: 36px; }
+  .budget-cards > div > span { min-height: 18px; }
+  .security-metric-cards strong { font-size: 17px; }
+  .security-metric-breakdown { gap: 12px; grid-template-columns: 1fr; }
+  .security-metric-breakdown > section:last-child { display: grid; grid-template-columns: 1fr 1fr; column-gap: 15px; }
+  .security-metric-breakdown > section:last-child > h3 { grid-column: 1 / -1; }
+  .security-stage-timings { grid-column: 1 / -1; }
+}
+@media (max-width: 1250px) {
+  .security-grid { grid-template-columns: 1.1fr 1fr; gap: 16px; }
+  .security-column.panel { min-height: 505px; height: auto; overflow: visible; padding: 18px 15px 14px; }
+  .security-metrics-panel { grid-column: 1 / -1; }
+  .security-column > h2, .security-metrics-heading > h2 { font-size: 18px; }
+  .security-column h2 > small { font-size: 13px; }
+  .security-risk-row { grid-template-columns: minmax(78px, 1fr) minmax(30px, 1fr) 77px; }
+  .security-metric-cards { gap: 10px; }
+  .security-metric-cards > div { padding: 14px 10px; }
+  .security-metric-cards > div > span { font-size: 14px; min-height: 0; }
+  .security-metric-cards strong { font-size: 24px; }
+  .security-metric-cards .metric-key { font-size: 11px; }
+  .security-metric-breakdown { margin-top: 25px; gap: 32px; }
+  .security-stage-cost, .security-stage-cost > b, .security-metric-line { font-size: 14px; }
+  .security-metric-breakdown h3, .security-metrics-content > h3 { font-size: 16px; }
+  .security-stage-cost { grid-template-columns: 110px minmax(40px, 1fr) max-content; }
+  .security-actions { position: static; width: 100%; justify-content: flex-end; gap: 16px; margin-top: 15px; }
+  .security-footnotes { grid-template-columns: 1fr; }
+}
+@media (max-width: 1050px) {
+  .security-grid { grid-template-columns: 1fr; }
+  .security-column.panel { min-height: 0; }
+  .security-risk-panel { padding-bottom: 20px; }
+  .security-risk-overview { grid-template-columns: minmax(126px, .7fr) minmax(0, 1.6fr); }
+  .security-risk-group .security-risk-row { grid-template-columns: minmax(70px, 1fr) minmax(40px, 1.5fr) 77px; font-size: 13px; }
+  .security-risk-group .security-risk-row > b, .security-risk-group .security-risk-row > b small { font-size: 12px; }
+  .security-events-scroll { max-height: 380px; min-height: 180px; }
+  .security-events-scroll td { padding-block: 13px; font-size: 13px; }
+  .security-audit-link { margin-top: 8px; }
+}
+@media (max-width: 800px) {
+  .operator-draft .security-heading > div > p { font-size: 15px; }
+  .security-actions { justify-content: space-between; flex-wrap: wrap; margin-left: 0; gap: 12px; }
+  .security-actions .page-tools { margin-left: auto; }
+  .security-column.panel { padding: 18px 14px 14px; }
+  .security-metric-cards > div > span { font-size: 13px; }
+  .security-metric-cards strong { font-size: 21px; }
+  .security-metric-breakdown { gap: 20px; }
+  .security-stage-cost { grid-template-columns: minmax(80px, 1.2fr) minmax(30px, 1fr) max-content; font-size: 13px; }
+  .security-stage-cost > b, .security-metric-line { font-size: 13px; }
+}
+@media (max-width: 540px) {
+  .security-grid { gap: 14px; }
+  .operator-draft .security-actions .page-tools p { display: none; }
+  .security-risk-overview { grid-template-columns: 1fr; }
+  .risk-total { min-height: 104px; }
+  .security-risk-levels { gap: 17px; padding: 16px 10px; }
+  .security-risk-groups { grid-template-columns: 1fr; }
+  .security-risk-group > h3 { font-size: 15px; }
+  .security-risk-group .security-risk-row { grid-template-columns: minmax(76px, 1fr) minmax(40px, 1.5fr) 78px; }
+  .security-metric-cards { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .security-metric-cards.budget-cards { grid-template-columns: 1fr; }
+  .security-metric-cards > div { padding: 13px 8px; }
+  .security-metric-cards .metric-key { font-size: 10px; }
+  .security-metric-breakdown { grid-template-columns: 1fr; gap: 22px; }
+  .security-footnotes > aside { align-items: flex-start; gap: 12px; }
+  .security-footnotes h2 { font-size: 14px; }
+  .security-footnotes p { font-size: 12px; }
+  .security-auth-dialog { padding: 23px; }
+}

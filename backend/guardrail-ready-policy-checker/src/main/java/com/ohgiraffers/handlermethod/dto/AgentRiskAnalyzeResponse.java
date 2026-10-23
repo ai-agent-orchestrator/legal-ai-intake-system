@@ -10,6 +10,7 @@ public record AgentRiskAnalyzeResponse(
         String recommendedAction,
         boolean guardrailReady,
         Long historyId,
-        String traceId
+        String traceId,
+        com.ohgiraffers.handlermethod.risk.AgentRiskScoring.Breakdown scoreBreakdown
 ) {
 }

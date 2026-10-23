@@ -1,0 +1,14 @@
+%%{init: {"themeVariables":{"fontSize":"20px"},"flowchart":{"useMaxWidth":false,"htmlLabels":true,"nodeSpacing":22,"rankSpacing":28,"padding":12}}}%%
+flowchart TD
+    Request["React / Postman API 요청"] --> Entry["경로별 인증·통신 처리"]
+    Entry --> Input["Controller 요청 수신<br/>해당 DTO 입력 검증"]
+    Input --> Service["Service 업무 처리"]
+    Service --> Kind{"필요한 처리 선택"}
+    Kind --> DB["DB 저장·조회<br/>Entity · Repository · JPA"]
+    Kind --> External["외부 서비스 호출<br/>AI · Guardrail"]
+    Kind --> Rules["규칙·고정 안내<br/>DB·LLM 호출 없이 처리"]
+    DB --> Response["응답 변환·반환<br/>JSON / SSE / 파일"]
+    External --> Response
+    Rules --> Response
+    classDef main fill:#eaf2ff,stroke:#3465a4
+    class Request,Entry,Input,Service,DB,External,Rules,Response main

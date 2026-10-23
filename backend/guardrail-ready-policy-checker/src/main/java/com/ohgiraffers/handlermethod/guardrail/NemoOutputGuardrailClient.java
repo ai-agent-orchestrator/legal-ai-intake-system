@@ -7,16 +7,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
+import java.net.http.HttpClient;
+import java.time.Duration;
 
 import java.util.List;
 
 @Component
 public class NemoOutputGuardrailClient implements OutputGuardrailClient {
-
-    private static final int MAX_OUTPUT_LENGTH = 12_000;
-    private static final String LOCAL_POLICY_RAIL = "local output policy";
-    private static final String LOCAL_POLICY_MESSAGE =
-            "답변이 비어 있거나 허용된 길이를 초과했습니다.";
 
     private final RestClient restClient;
     private final MeterRegistry meterRegistry;
@@ -24,9 +22,13 @@ public class NemoOutputGuardrailClient implements OutputGuardrailClient {
     public NemoOutputGuardrailClient(
             RestClient.Builder builder,
             @Value("${guardrails.base-url}") String baseUrl,
-            MeterRegistry meterRegistry
+            MeterRegistry meterRegistry,
+            @Value("${guardrails.request-timeout-ms:30000}") long timeoutMs
     ) {
-        this.restClient = builder.baseUrl(baseUrl).build();
+        var factory = new JdkClientHttpRequestFactory(HttpClient.newBuilder()
+                .connectTimeout(Duration.ofMillis(timeoutMs)).build());
+        factory.setReadTimeout(Duration.ofMillis(timeoutMs));
+        this.restClient = builder.baseUrl(baseUrl).requestFactory(factory).build();
         this.meterRegistry = meterRegistry;
     }
 
@@ -34,13 +36,14 @@ public class NemoOutputGuardrailClient implements OutputGuardrailClient {
     public OutputGuardrailResult check(String response) {
         Timer.Sample sample = Timer.start(meterRegistry);
         try {
-            if (response == null || response.isBlank() || response.length() > MAX_OUTPUT_LENGTH) {
+            OutputGuardrailResult local = OutputGuardrailPolicy.localBlock(response);
+            if (local != null) {
                 Counter.builder("ai.output.rail.decisions")
                         .tag("status", "BLOCKED")
-                        .tag("rail", LOCAL_POLICY_RAIL)
+                        .tag("rail", local.rail())
                         .register(meterRegistry)
                         .increment();
-                return new OutputGuardrailResult("BLOCKED", LOCAL_POLICY_MESSAGE, LOCAL_POLICY_RAIL);
+                return local;
             }
 
             NemoCheckResponse result = restClient.post()
@@ -59,7 +62,7 @@ public class NemoOutputGuardrailClient implements OutputGuardrailClient {
                     .tag("rail", result.rail() == null ? "none" : result.rail())
                     .register(meterRegistry)
                     .increment();
-            return new OutputGuardrailResult(result.status(), result.content(), result.rail());
+            return new OutputGuardrailResult(result.status(), result.content(), result.rail(), result.usage());
         } catch (RuntimeException exception) {
             Counter.builder("ai.output.rail.errors")
                     .tag("type", exception.getClass().getSimpleName())
@@ -79,6 +82,6 @@ public class NemoOutputGuardrailClient implements OutputGuardrailClient {
     private record NemoMessage(String role, String content) {
     }
 
-    private record NemoCheckResponse(String status, String content, String rail) {
+    private record NemoCheckResponse(String status, String content, String rail, GuardrailUsage usage) {
     }
 }

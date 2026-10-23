@@ -3,15 +3,17 @@ package com.ohgiraffers.handlermethod.service;
 import com.ohgiraffers.handlermethod.dto.AiChatRequest;
 import com.ohgiraffers.handlermethod.dto.AiChatResponse;
 import com.ohgiraffers.handlermethod.cost.AiCostControlService;
-import com.ohgiraffers.handlermethod.guardrail.InputGuardrailClient;
+import com.ohgiraffers.handlermethod.cost.CostedGuardrailService;
+import com.ohgiraffers.handlermethod.cost.CostLimitException;
 import com.ohgiraffers.handlermethod.guardrail.InputGuardrailResult;
-import com.ohgiraffers.handlermethod.guardrail.OutputGuardrailClient;
 import com.ohgiraffers.handlermethod.guardrail.OutputGuardrailResult;
 import com.ohgiraffers.handlermethod.llm.LlmClient;
 import com.ohgiraffers.handlermethod.riskengine.DynamicGuardDecision;
 import com.ohgiraffers.handlermethod.riskengine.FixedGuardResult;
 import com.ohgiraffers.handlermethod.riskengine.LegalDynamicGuardService;
 import com.ohgiraffers.handlermethod.riskengine.LegalFixedGuardService;
+import com.ohgiraffers.handlermethod.riskengine.PrivacyOutputGuardResult;
+import com.ohgiraffers.handlermethod.riskengine.PrivacyOutputGuardService;
 import com.ohgiraffers.handlermethod.support.AiMetricRecorder;
 import com.ohgiraffers.handlermethod.support.TraceContext;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,34 +32,34 @@ public class AiService {
     private static final String OUTPUT_POLICY_FALLBACK_MESSAGE =
             "해당 답변은 제공할 수 없습니다. 일반적인 법률 정보만 안내하며, 구체적인 사건은 전문가 상담이 필요합니다.";
 
-    private final InputGuardrailClient inputGuardrailClient;
-    private final OutputGuardrailClient outputGuardrailClient;
+    private final CostedGuardrailService guardrails;
     private final LlmClient llmClient;
     private final AiMetricRecorder metricRecorder;
     private final AiCostControlService costControlService;
     private final LegalFixedGuardService legalFixedGuardService;
     private final LegalDynamicGuardService legalDynamicGuardService;
+    private final PrivacyOutputGuardService privacyOutputGuardService;
     private final String systemPrompt;
     private final String configuredModel;
 
     public AiService(
-            InputGuardrailClient inputGuardrailClient,
-            OutputGuardrailClient outputGuardrailClient,
+            CostedGuardrailService guardrails,
             LlmClient llmClient,
             AiMetricRecorder metricRecorder,
             AiCostControlService costControlService,
             LegalFixedGuardService legalFixedGuardService,
             LegalDynamicGuardService legalDynamicGuardService,
+            PrivacyOutputGuardService privacyOutputGuardService,
             @Value("${llm.system-prompt}") String systemPrompt,
             @Value("${llm.model}") String configuredModel
     ) {
-        this.inputGuardrailClient = inputGuardrailClient;
-        this.outputGuardrailClient = outputGuardrailClient;
+        this.guardrails = guardrails;
         this.llmClient = llmClient;
         this.metricRecorder = metricRecorder;
         this.costControlService = costControlService;
         this.legalFixedGuardService = legalFixedGuardService;
         this.legalDynamicGuardService = legalDynamicGuardService;
+        this.privacyOutputGuardService = privacyOutputGuardService;
         this.systemPrompt = systemPrompt;
         this.configuredModel = configuredModel;
     }
@@ -87,7 +89,8 @@ public class AiService {
                     metricRecorder.recordRequest("dynamic_guard_blocked", "none");
                     metricRecorder.recordDynamicBlock(dynamicDecision.reasonCode());
                     return AiChatResponse.fallback(
-                            dynamicDecision.safeResponse(), traceId, "none", dynamicDecision.reasonCode());
+                            dynamicDecision.safeResponse(), traceId, "none", dynamicDecision.reasonCode(),
+                            dynamicDecision.reasonCode(), fixedGuard.reasonCode());
                 }
                 return AiChatResponse.fallback(
                         fixedGuard.safeResponse(), traceId, "none", fixedGuard.reasonCode());
@@ -105,13 +108,15 @@ public class AiService {
                     metricRecorder.recordRequest("dynamic_guard_blocked", configuredModel);
                     metricRecorder.recordDynamicBlock(dynamicDecision.reasonCode());
                     return AiChatResponse.fallback(
-                            dynamicDecision.safeResponse(), traceId, configuredModel, dynamicDecision.reasonCode());
+                            dynamicDecision.safeResponse(), traceId, configuredModel, dynamicDecision.reasonCode(),
+                            dynamicDecision.reasonCode(), block.detailCode());
                 }
                 return AiChatResponse.fallback(
-                        block.safeResponse(), traceId, configuredModel, block.reasonCode());
+                        block.safeResponse(), traceId, configuredModel, block.reasonCode(),
+                        block.reasonCode(), block.detailCode());
             }
 
-            InputGuardrailResult input = checkInput(request.message());
+            InputGuardrailResult input = checkInput(request.message(), request.sessionId());
             if (!input.allowed()) {
                 metricRecorder.recordRequest("input_blocked", "none");
                 metricRecorder.recordLegalGuardrailBlock("NEMO_INPUT_GUARDRAIL");
@@ -122,35 +127,44 @@ public class AiService {
                     metricRecorder.recordRequest("dynamic_guard_blocked", "none");
                     metricRecorder.recordDynamicBlock(dynamicDecision.reasonCode());
                     return AiChatResponse.fallback(
-                            dynamicDecision.safeResponse(), traceId, "none", dynamicDecision.reasonCode());
+                            dynamicDecision.safeResponse(), traceId, "none", dynamicDecision.reasonCode(),
+                            dynamicDecision.reasonCode(), "NEMO_INPUT_GUARDRAIL");
                 }
                 return AiChatResponse.fallback(
-                        input.content(), traceId, "none", "INPUT_GUARDRAIL_BLOCKED");
+                        input.content(), traceId, "none", "INPUT_GUARDRAIL_BLOCKED",
+                        "INPUT_GUARDRAIL_BLOCKED", "NEMO_INPUT_GUARDRAIL");
             }
 
-            var reservation = costControlService
-                    .reserve(systemPrompt, input.content(), configuredModel);
-            if (reservation.isEmpty()) {
+            var reservationDecision = costControlService
+                    .reserveWithBlock(systemPrompt, input.content(), configuredModel, request.sessionId());
+            if (!reservationDecision.allowed()) {
                 metricRecorder.recordRequest("cost_blocked", configuredModel);
-                return AiChatResponse.technicalFallback(
-                        "사용량 한도에 도달했습니다. 잠시 후 다시 시도해 주세요.",
+                AiCostControlService.CostLimitBlock block = reservationDecision.block();
+                metricRecorder.recordLegalCostBlock(block.detailCode());
+                metricRecorder.recordLlmCallPrevented(block.reasonCode());
+                return AiChatResponse.fallback(
+                        block.safeResponse(),
                         traceId,
                         configuredModel,
-                        "COST_LIMIT_EXCEEDED");
+                        block.detailCode(), block.reasonCode(), block.detailCode());
             }
 
+            AiCostControlService.CostReservation reservation = reservationDecision.reservation();
             LlmClient.LlmResponse llm;
+            AiCostControlService.CostSource costSource;
             try {
                 llm = callLlm(input.content());
-                costControlService.recordActualUsage(
-                        reservation.get(), llm.promptTokens(), llm.completionTokens());
+                costSource = costControlService.recordUsage(
+                        reservation, llm.promptTokens(), llm.completionTokens(), llm.usageAvailable());
             } catch (RuntimeException exception) {
-                costControlService.release(reservation.get(), "LLM_FAILURE");
+                costControlService.recordUsage(reservation, 0, 0, false);
                 throw exception;
             }
-            metricRecorder.recordTokens(llm.model(), llm.promptTokens(), llm.completionTokens());
+            if (llm.usageAvailable()) {
+                metricRecorder.recordTokens(llm.model(), llm.promptTokens(), llm.completionTokens());
+            }
 
-            OutputGuardrailResult output = checkOutput(llm.content());
+            OutputGuardrailResult output = checkOutput(llm.content(), request.sessionId());
             if (!output.allowed()) {
                 metricRecorder.recordRequest("output_blocked", llm.model());
                 return AiChatResponse.fallback(
@@ -161,7 +175,18 @@ public class AiService {
             }
 
             metricRecorder.recordRequest("success", llm.model());
-            return AiChatResponse.success(output.content(), traceId, llm.model());
+            PrivacyOutputGuardResult privacyOutput = privacyOutputGuardService.mask(output.content());
+            if (privacyOutput.masked()) {
+                privacyOutput.piiTypes().forEach(metricRecorder::recordPrivacyOutputMasked);
+            }
+            return AiChatResponse.success(privacyOutput.content(), traceId, llm.model(),
+                    llm.usageAvailable(), costSource.name());
+        } catch (CostLimitException exception) {
+            var block = exception.block();
+            metricRecorder.recordRequest("cost_blocked", configuredModel);
+            metricRecorder.recordLegalCostBlock(block.detailCode());
+            return AiChatResponse.fallback(block.safeResponse(), traceId, configuredModel,
+                    block.detailCode(), block.reasonCode(), block.detailCode());
         } catch (PipelineFailure failure) {
             metricRecorder.recordRequest("fallback", "unknown");
             log.warn("AI chat fallback traceId={} stage={} reason={}",
@@ -173,12 +198,14 @@ public class AiService {
         }
     }
 
-    private InputGuardrailResult checkInput(String message) {
+    private InputGuardrailResult checkInput(String message, String sessionId) {
         Timer.Sample timer = metricRecorder.start();
         try {
-            InputGuardrailResult result = inputGuardrailClient.check(message);
+            InputGuardrailResult result = guardrails.checkInput(message, sessionId).result();
             metricRecorder.recordStage("input_guardrail", result.status());
             return result;
+        } catch (CostLimitException exception) {
+            throw exception;
         } catch (RuntimeException exception) {
             metricRecorder.recordFailure("input_guardrail", exception.getClass().getSimpleName());
             throw new PipelineFailure("input_guardrail", "INPUT_GUARDRAIL_UNAVAILABLE", exception);
@@ -201,12 +228,14 @@ public class AiService {
         }
     }
 
-    private OutputGuardrailResult checkOutput(String answer) {
+    private OutputGuardrailResult checkOutput(String answer, String sessionId) {
         Timer.Sample timer = metricRecorder.start();
         try {
-            OutputGuardrailResult result = outputGuardrailClient.check(answer);
+            OutputGuardrailResult result = guardrails.checkOutput(answer, sessionId).result();
             metricRecorder.recordStage("output_guardrail", result.status());
             return result;
+        } catch (CostLimitException exception) {
+            throw exception;
         } catch (RuntimeException exception) {
             metricRecorder.recordFailure("output_guardrail", exception.getClass().getSimpleName());
             throw new PipelineFailure("output_guardrail", "OUTPUT_GUARDRAIL_UNAVAILABLE", exception);

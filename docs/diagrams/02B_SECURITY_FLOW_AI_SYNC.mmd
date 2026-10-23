@@ -1,0 +1,18 @@
+%%{init: {"themeVariables":{"fontSize":"20px"},"flowchart":{"useMaxWidth":false,"htmlLabels":true,"nodeSpacing":24,"rankSpacing":28,"padding":12}}}%%
+flowchart TD
+    Start["S01 · 비용 예약 성공"] --> LLM["동기 LLM 호출"]
+    LLM -->|"호출 실패"| Release["미확인 생성 비용 추정 정산"]
+    Release --> Technical["200 · 기술 fallback<br/>blocked=false · fallback=true"]
+    LLM -->|"성공"| Usage["보고 usage / 누락 usage 구분<br/>REPORTED / ESTIMATED 집계"]
+    Usage --> OutputCost{"출력 검사 예산 예약 가능?"}
+    OutputCost -->|"불가"| CostBlock["200 · COST_LIMIT_BLOCKED<br/>생성 비용 유지·원문 미전송"]
+    OutputCost -->|"예"| Output{"NeMo Output 검사·정산<br/>검사 결과 허용?"}
+    Output -->|"불허"| Block["200 · 정책 차단<br/>OUTPUT_POLICY_BLOCKED"]
+    Output -->|"기술 오류"| Technical
+    Output -->|"허용"| Privacy["Privacy 개인정보 패턴 마스킹"]
+    Privacy --> Response["200 · 정상 JSON 답변<br/>blocked=false · fallback=false"]
+    classDef main fill:#eaf2ff,stroke:#3465a4
+    classDef fail fill:#fff0ee,stroke:#bc4b40
+    classDef planned fill:#fff4dc,stroke:#b7791f,stroke-dasharray:5 5
+    class Start,LLM,Usage,Privacy,Response main
+    class Release,Technical,Block fail

@@ -1,0 +1,169 @@
+You are designing the next screen of an existing React product:
+Security-Aware Legal AI Intake System / Legal Intake.
+
+Generate ONE high-fidelity desktop UI mockup image for the screen requested below.
+Use Korean product UI text. The deliverable is a usable application screen.
+
+APPROVED VISUAL REFERENCES - THIS SUPERSEDES THE EARLIER GENERIC LOGIN CANDIDATE
+Use the user-approved desktop login and mobile login reference images attached
+to this conversation as STYLE REFERENCES, not as edit targets.
+Reference filenames: 01_LOGIN_DESKTOP_PREFERRED.png and 01_LOGIN_MOBILE_PREFERRED.png.
+The user prefers this warm, premium law-office atmosphere over the earlier
+flat neutral login mockup. Preserve that specific brand feeling across Screens 02-12.
+
+ATMOSPHERE AND BACKGROUND
+A bright contemporary legal consultation office: large daylight windows,
+a softly defocused city skyline, warm wood shelves, books, a desk, and a few plants.
+Combine cool natural window light with warm interior materials. The result should
+feel established, reassuring, polished, and human rather than sterile or flashy.
+Reuse one coherent office visual across the product; do not invent a different
+luxury interior or a new stock photo for every page.
+Place the office photo behind the application shell, at the page edges, or in
+a restrained header area. Use bright white overlays and soft background blur.
+Keep form surfaces, tables, charts, and detail drawers opaque or nearly opaque
+white; never place small text directly over shelves, books, windows, or plants.
+
+BRAND, COLOR AND TYPOGRAPHY
+Keep the reference's royal-blue shield/document mark and the product name
+Security-Aware Legal AI Intake System. A compact two-line brand lockup is suitable
+inside working screens; do not repeat the giant login title above every data table.
+Use deep navy #0B2148, royal blue #0B4AB8 / #1456C8, white #FFFFFF,
+pale blue #EDF4FF, cool borders #D6DFEC, and muted slate #63738B.
+Warm beige/wood tones belong mainly to the atmospheric background.
+Use an elegant serif for the English brand and occasional short display headings.
+Use highly readable Korean sans-serif for body text, form labels, numbers,
+table rows, controls, and longer Korean headings. Do not set every label in a serif.
+Primary buttons may use the reference's subtle navy-to-royal-blue gradient.
+Use blue line icons, soft circular icon backgrounds, thin borders, soft shadows,
+and 12-18px corner radii. Selection states use a pale-blue fill and clear blue border.
+Green indicates completion, amber review, and red errors, always with text labels.
+The dark API diagrams describe architecture; do not copy their dark theme into this UI.
+
+LAYOUT BY ROLE
+Desktop canvas: 1440px wide. Preserve generous spacing and a clear next action.
+Client screens 02-05: a welcoming law-office intake experience, four-step
+progress, comfortable white content panels, a quieter reference column.
+Attorney screens 06-08: keep the same brand and office atmosphere while using
+a compact header/sidebar and clean white work surfaces for real case review.
+Operator screens 09-12: a standalone professional workspace, a restrained navy
+sidebar, and legible white metric/table panels. Keep this shared sidebar:
+운영 요약 / 마케팅 집계 / 보안·비용 / 위험 이력·Incident.
+Use background photography more subtly on dense attorney/operator screens.
+Adapt the login's atmosphere, not its three-column promotional composition:
+working screens need room for forms and records, not a feature-list marketing rail.
+Keep the UI feasible with reusable React components, one background asset,
+CSS overlays, and a responsive grid.
+
+RESPONSIVE CONTINUITY
+The mobile reference establishes the same bright office, navy/blue brand,
+shield mark, white cards, and touch-friendly controls at a narrower width.
+Design the default deliverable as one flat desktop viewport. If a mobile version
+is requested later, make a separate approximately 390px viewport: stack cards,
+collapse navigation, keep comfortable touch targets and a clear primary action,
+and place wide tables in a readable responsive arrangement.
+Do not include the reference's physical phone frame, hand, camera island,
+status bar, or surrounding photographed device scene in the application UI image.
+
+DATA AND INTERACTION RULES
+Use only the fields and actions specified in the screen's API notes.
+API numbers, HTTP paths, DTO names, JWTs, and credentials belong in implementation
+handoff notes, not in the main customer interface. Operator technical details may
+appear where they help investigation. UI role separation does not prove server authorization.
+Distinguish unsaved drafts, stored records, loading, empty, unavailable, and error states.
+Missing metrics are unavailable, not zero. Design samples are fictional and should
+have one unobtrusive label, 디자인 예시 데이터. Production UI must use real responses.
+Keep generated IDs as read-only identifiers. Users select records; they do not invent IDs.
+Do not invent payments, appointments, messaging, editing, deleting, exports, automatic
+LLM execution, or extra backend fields. Keep planned actions visibly disabled.
+Treat privacy masking as field-specific; do not claim all content or attachments are anonymized.
+Preserve form input on failure and prevent duplicate submissions while a request is pending.
+The references define appearance, not new functionality: do not copy a password-reset
+link, language selector, JWT badge, or universal security guarantee into these screens
+unless the screen's supported workflow actually requires it.
+
+OUTPUT
+Render only the requested screen, showing a coherent main state with legible Korean labels.
+Do not regenerate Login or output all screens as a small collage. Preserve this visual system
+when the next numbered prompt arrives. Do not replace the requested image with a code listing.
+Use the API notes to make the design implementable; do not print those notes on the mockup.
+
+SCREEN 09 - 운영 요약 / Operator Overview
+
+SHARED THUMBS-UP HEADER - REQUIRED FOR SCREENS 09, 10, 11 AND 12
+Use the SECOND attached image as the actual photo source:
+09_12_OPERATOR_THUMBS_UP_SOURCE.png. It shows a dashboard monitor on the left,
+a smiling man pointing at it in the center, and a smiling woman giving a thumbs-up
+on the right in a bright law office. This replaces the earlier handshake photo.
+Use the FIRST image, 09_12_OPERATOR_HEADER_CROP_REFERENCE.png, ONLY as a reference
+for a wide, shallow horizontal header composition, not as the actual photo source.
+
+Crop the second photo into one compact panoramic banner above the dashboard content.
+Keep the monitor recognizable, both people's expressions visible, and especially
+the woman's raised thumb inside the frame. Choose the focal crop around these subjects.
+Aim for the first reference's shallow-header feel, but allow a slightly taller banner
+when necessary to retain the faces and thumbs-up together. Do not blindly force its
+exact aspect ratio, cut off the gesture, stretch the photo, or substitute new people.
+Use a focal crop of the original photo, not a regenerated or rearranged scene.
+
+Crop the source's large upper Legal Intake System title and icon row out COMPLETELY;
+do not leave clipped letters or fragments of that row along the header edge.
+Small lettering naturally visible inside the photographed monitor can remain.
+Exclude the first reference's screenshot editor controls, including 변경하기,
+위치 변경 and the download icon. Those are not application UI.
+
+Use this cropped photo as a HEADER ONLY, not as a full-page background.
+Reuse the same source image, focal crop, banner height and placement across all four
+operator screens, together with the same navy sidebar and navy/royal-blue brand.
+Place the page-specific title in a separate clear row below the banner. Put KPI cards,
+filters, charts, tables and action buttons on opaque white surfaces below that row;
+never overlay them on faces, hands or the monitor. Keep the header compact enough
+to leave useful workspace for the data. Only the active menu, title and data change.
+If mobile variants are requested later, use a proportionally taller responsive header
+crop to retain the faces and thumb; keep the page title and data outside the image.
+Plan one reusable OperatorLayout/OperatorHeader for later React implementation.
+Preserve all existing screen functions, API mappings and interaction states.
+
+SCREEN-SPECIFIC VISUAL DIRECTION
+Establish the shared operator layout with a compact panoramic header cropped from 09_12_OPERATOR_THUMBS_UP_SOURCE.png, using the first attachment only as a crop-layout reference. Retain the monitor, both expressions and the raised thumb. Below a separate page-title row, place four crisp white summary cards with blue circular icons, navy numerals, and restrained risk-status colors. Keep risk bars and three navigation cards legible. Reuse this header and navy sidebar on Screens 10-12; leave generous workspace for a short demonstration.
+
+PURPOSE AND LAYOUT
+Create the entry page of a standalone operator workspace suitable for a short demo.
+Use the shared operator sidebar, a restrained heading, manual refresh,
+and a small 조회 시각. Heading: 운영 현황을 한눈에 확인하세요.
+
+MAIN CONTENT
+- Exactly four primary totals from C12:
+  Agent 실행 이력, 위험 판단 이력, 보안 이벤트, 미확인 Incident.
+- A riskSummary section: HIGH / MEDIUM / LOW counts and total,
+  with readable horizontal bars and Korean labels 높음 / 보통 / 낮음.
+- Compact decision and recommended-action distributions, if useful,
+  using riskSummary.decisionCounts and recommendedActionCounts.
+- Three short navigation cards, not extra invented statistics:
+  마케팅 흐름 파악 → Screen 10,
+  보안·비용 확인 → Screen 11,
+  위험 이력·대응 관리 → Screen 12.
+- Clicking the open-Incident count may navigate to Screen 12's list.
+  It must not imply C12 supplied individual incident details.
+
+DATA MEANING
+Counts describe saved records. riskSummary is a read-time aggregation.
+미확인 Incident counts only OPEN, not all unresolved states.
+An ACKNOWLEDGED incident may still need work even though it leaves the OPEN count.
+Reading this dashboard does not run a new risk analysis or LLM call.
+
+STATES
+Show coherent zero/empty states, loading placeholders, and an error/retry state.
+Do not invent total inquiries, today's inquiries, daily trends, uptime,
+recent incident rows, recent alerts, or conversion rates from this response.
+Keep this overview concise enough to explain in three demo talking points.
+
+API HANDOFF - DO NOT DISPLAY ON THE PRODUCT SCREEN
+C12 GET /api/admin/dashboard/summary
+  Fields: agentRunCount, riskHistoryCount, securityEventCount,
+  openIncidentCount, riskSummary.
+  riskSummary: total, high, medium, low, decisionCounts, recommendedActionCounts.
+AdminDashboardService composes repository counts, RiskIncidentService.countOpen(),
+and AgentRiskHistoryQueryService.summarize(). C15 reuses that last aggregation.
+C12 itself is the only required data API for this screen.
+Navigation to other operator screens triggers their own APIs separately.
+Operator styling and menu placement do not establish backend admin-only access.

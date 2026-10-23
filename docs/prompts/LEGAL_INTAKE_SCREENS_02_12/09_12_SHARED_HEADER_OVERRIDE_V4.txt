@@ -1,0 +1,37 @@
+Update the shared header design for operator screens 09-12 using the two attached references.
+
+SHARED THUMBS-UP HEADER - REQUIRED FOR SCREENS 09, 10, 11 AND 12
+Use the SECOND attached image as the actual photo source:
+09_12_OPERATOR_THUMBS_UP_SOURCE.png. It shows a dashboard monitor on the left,
+a smiling man pointing at it in the center, and a smiling woman giving a thumbs-up
+on the right in a bright law office. This replaces the earlier handshake photo.
+Use the FIRST image, 09_12_OPERATOR_HEADER_CROP_REFERENCE.png, ONLY as a reference
+for a wide, shallow horizontal header composition, not as the actual photo source.
+
+Crop the second photo into one compact panoramic banner above the dashboard content.
+Keep the monitor recognizable, both people's expressions visible, and especially
+the woman's raised thumb inside the frame. Choose the focal crop around these subjects.
+Aim for the first reference's shallow-header feel, but allow a slightly taller banner
+when necessary to retain the faces and thumbs-up together. Do not blindly force its
+exact aspect ratio, cut off the gesture, stretch the photo, or substitute new people.
+Use a focal crop of the original photo, not a regenerated or rearranged scene.
+
+Crop the source's large upper Legal Intake System title and icon row out COMPLETELY;
+do not leave clipped letters or fragments of that row along the header edge.
+Small lettering naturally visible inside the photographed monitor can remain.
+Exclude the first reference's screenshot editor controls, including 변경하기,
+위치 변경 and the download icon. Those are not application UI.
+
+Use this cropped photo as a HEADER ONLY, not as a full-page background.
+Reuse the same source image, focal crop, banner height and placement across all four
+operator screens, together with the same navy sidebar and navy/royal-blue brand.
+Place the page-specific title in a separate clear row below the banner. Put KPI cards,
+filters, charts, tables and action buttons on opaque white surfaces below that row;
+never overlay them on faces, hands or the monitor. Keep the header compact enough
+to leave useful workspace for the data. Only the active menu, title and data change.
+If mobile variants are requested later, use a proportionally taller responsive header
+crop to retain the faces and thumb; keep the page title and data outside the image.
+Plan one reusable OperatorLayout/OperatorHeader for later React implementation.
+Preserve all existing screen functions, API mappings and interaction states.
+
+Apply this revision to the requested operator screen only. Keep its existing functions, navigation and API handoff unchanged. Render one desktop screen, not a four-screen collage.

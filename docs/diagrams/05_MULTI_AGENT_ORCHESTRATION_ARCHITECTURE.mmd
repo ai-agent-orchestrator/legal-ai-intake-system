@@ -1,0 +1,57 @@
+flowchart TB
+    subgraph Development["DEVELOPMENT WORKFLOW"]
+        direction LR
+        Google["Google / Gemini<br/>Business and Product Strategy"]
+        Claude["Claude<br/>Architecture Review and Refactoring"]
+        Codex["Codex<br/>Engineering Lead<br/>End-to-End Coding & Integration"]
+        Google -->|"Requirements"| Claude
+        Claude -->|"Design and Contracts"| Codex
+    end
+
+    Codex -.-> Python
+
+    subgraph Runtime["PLANNED RUNTIME"]
+        direction TB
+        Python["Python FastAPI Orchestrator<br/>Dispatch, Concurrency and Budget"]
+        InputRails["NVIDIA NeMo Guardrails<br/>Input Content Checks"]
+        Queue["Task Queue<br/>Bounded Jobs and Retries"]
+        Sandbox["NVIDIA NemoClaw / OpenShell<br/>Supported Agent + Tool Sandbox"]
+        subgraph Workers["ALIBABA CLOUD / QWEN - EXECUTION WORKERS"]
+            direction LR
+            W1["Qwen Worker<br/>Extraction and Tags"]
+            W2["Qwen Worker<br/>Summarization"]
+            W3["Qwen Worker<br/>Report Drafts"]
+        end
+        Validate["Validation and Usage Accounting<br/>Results, Trace and Cost"]
+        OutputRails["NVIDIA NeMo Guardrails<br/>Output Content Checks"]
+        Python --> InputRails -->|"Allowed"| Queue
+        Queue -.->|"Agent Tasks Only"| Sandbox
+        Sandbox -.->|"Approved Inference"| W2
+        Queue --> W1
+        Queue --> W2
+        Queue --> W3
+        W1 --> OutputRails
+        W2 --> OutputRails
+        W3 --> OutputRails
+        OutputRails -->|"Allowed"| Validate
+    end
+
+    classDef strategy fill:#173b3e,stroke:#66cfc8,stroke-width:2px,color:#e6edf6
+    classDef architecture fill:#342a4c,stroke:#b39ae5,stroke-width:2px,color:#e6edf6
+    classDef engineering fill:#18344b,stroke:#5ba7db,stroke-width:2px,color:#e6edf6
+    classDef python fill:#26313d,stroke:#a1afbf,stroke-width:2px,color:#e6edf6
+    classDef nvidia fill:#263c17,stroke:#91cc45,stroke-width:3px,color:#efffdc
+    classDef worker fill:#4b2b22,stroke:#d39a6a,stroke-width:3px,color:#fff0e6
+    classDef control fill:#42351e,stroke:#ddb965,stroke-width:2px,color:#e6edf6
+    classDef result fill:#1a2837,stroke:#78d5ef,stroke-width:2px,color:#e6edf6
+    class Google strategy
+    class Claude architecture
+    class Codex engineering
+    class Python python
+    class InputRails,OutputRails,Sandbox nvidia
+    class Queue control
+    class W1,W2,W3 worker
+    class Validate result
+    style Development fill:#141f2c,stroke:#455f79,stroke-width:1.5px,color:#c9d8eb
+    style Runtime fill:#141f2c,stroke:#455f79,stroke-width:1.5px,color:#c9d8eb
+    style Workers fill:#261b19,stroke:#b57d55,stroke-width:2px,color:#efc19e

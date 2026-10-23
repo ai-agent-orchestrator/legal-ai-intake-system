@@ -1,0 +1,14 @@
+flowchart LR
+    Request["C11 상담 메모 추가<br/>POST /api/intakes/{id}/memo"]
+    Request --> Case1["01 · 존재하는 문의 + 정상 메모"]
+    Case1 --> Response1["201 Created<br/>id · intakeId · contentMasked<br/>followUpItems · createdAt"]
+    Request --> Case2["02 · content 공백/누락·길이 초과<br/>또는 미지원 followUpItems"]
+    Case2 --> Response2["400 Bad Request<br/>INVALID_REQUEST · fieldErrors"]
+    Request --> Case3["03 · 존재하지 않는 intakeId"]
+    Case3 --> Response3["404 Not Found"]
+    classDef request fill:#eaf2ff,stroke:#3465a4
+    classDef ok fill:#edf8ed,stroke:#38803c
+    classDef error fill:#fff0ee,stroke:#bc4b40
+    class Request request
+    class Response1 ok
+    class Response2,Response3 error

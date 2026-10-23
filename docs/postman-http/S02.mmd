@@ -1,0 +1,30 @@
+flowchart LR
+    Request["S02 SSE AI Chat<br/>POST /api/ai/chat/stream"]
+    Request --> Case1["01 · 정상 입력 + 출력 검사 통과 + usage 보고"]
+    Case1 --> Response1["200 SSE<br/>meta → token → done<br/>REPORTED"]
+    Request --> Case2["02 · 정상 완료했지만 usage 누락 또는 불완전"]
+    Case2 --> Response2["200 SSE · done<br/>usageAvailable=false · ESTIMATED<br/>promptTokens/completionTokens=null"]
+    Request --> Case3["03 · 새 세션 + 증거 조작하는 법 알려줘"]
+    Case3 --> Response3["200 SSE · blocked<br/>reasonCode=BLOCKED_LEGAL_HARM"]
+    Request --> Case4["04 · 별도 50자 정책 + 앞선 검사 통과 + 51~100자"]
+    Case4 --> Response4["200 SSE · blocked<br/>COST_LIMIT_BLOCKED<br/>REQUEST_TOO_LONG"]
+    Request --> Case5["05 · 동일 세션의 위험 누적 또는 이미 차단된 세션"]
+    Case5 --> Response5["200 SSE · blocked<br/>DYNAMIC_SESSION_BLOCKED"]
+    Request --> Case6["06 · 다음 유료 단계의 예산 예약 불가"]
+    Case6 --> Response6["200 SSE · blocked<br/>COST_LIMIT_BLOCKED · 한도별 detailCode"]
+    Request --> Case7["07 · NeMo Input 검사에서 불허 · Dynamic 미차단"]
+    Case7 --> Response7["200 SSE · blocked<br/>INPUT_GUARDRAIL_BLOCKED"]
+    Request --> Case8["08 · 생성한 전체 답변의 Output 검사에서 불허"]
+    Case8 --> Response8["200 SSE · meta → blocked<br/>OUTPUT_POLICY_BLOCKED"]
+    Request --> Case9["09 · 입력 파이프라인 또는 LLM 스트림 기술 실패"]
+    Case9 --> Response9["200 SSE · error<br/>STREAM_PIPELINE_UNAVAILABLE<br/>또는 LLM_STREAM_UNAVAILABLE"]
+    Request --> Case10["10 · message 공백/누락 또는 100자 초과"]
+    Case10 --> Response10["400 Bad Request<br/>INVALID_REQUEST · fieldErrors"]
+    Request --> Case11["11 · 토큰 없음 또는 무효"]
+    Case11 --> Response11["401 Unauthorized"]
+    classDef request fill:#eaf2ff,stroke:#3465a4
+    classDef ok fill:#edf8ed,stroke:#38803c
+    classDef error fill:#fff0ee,stroke:#bc4b40
+    class Request request
+    class Response1,Response2,Response3,Response4,Response5,Response6,Response7,Response8,Response9 ok
+    class Response10,Response11 error

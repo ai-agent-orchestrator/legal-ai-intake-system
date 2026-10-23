@@ -1,7 +1,8 @@
 package com.ohgiraffers.handlermethod.api;
 
-import com.ohgiraffers.handlermethod.guardrail.InputGuardrailClient;
 import com.ohgiraffers.handlermethod.guardrail.InputGuardrailResult;
+import com.ohgiraffers.handlermethod.cost.CostedGuardrailService;
+import com.ohgiraffers.handlermethod.cost.CostLimitException;
 import com.ohgiraffers.handlermethod.support.TraceContext;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -15,28 +16,34 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/legal/guardrail")
 public class LegalGuardrailController {
 
-    private final InputGuardrailClient inputGuardrailClient;
+    private final CostedGuardrailService guardrails;
 
-    public LegalGuardrailController(InputGuardrailClient inputGuardrailClient) {
-        this.inputGuardrailClient = inputGuardrailClient;
+    public LegalGuardrailController(CostedGuardrailService guardrails) {
+        this.guardrails = guardrails;
     }
 
     @PostMapping("/input")
     public ResponseEntity<InputCheckResponse> checkInput(
             @Valid @RequestBody InputCheckRequest request
     ) {
-        InputGuardrailResult result = inputGuardrailClient.check(request.message());
-
-        return ResponseEntity.ok(new InputCheckResponse(
-                result.status(),
-                result.allowed(),
-                result.content(),
-                result.rail(),
-                TraceContext.currentTraceId()
-        ));
+        try {
+            var checked = guardrails.checkInput(request.message(), request.sessionId());
+            InputGuardrailResult result = checked.result();
+            return ResponseEntity.ok(new InputCheckResponse(
+                    result.status(),
+                    result.allowed(),
+                    result.content(),
+                    result.rail(),
+                    TraceContext.currentTraceId(), null, null, checked.usageAvailable(), checked.costSource()
+            ));
+        } catch (CostLimitException exception) {
+            var block = exception.block();
+            return ResponseEntity.ok(new InputCheckResponse("BLOCKED", false, block.safeResponse(),
+                    "cost control", TraceContext.currentTraceId(), block.reasonCode(), block.detailCode(), null, null));
+        }
     }
 
-    public record InputCheckRequest(@NotBlank String message) {
+    public record InputCheckRequest(@NotBlank String message, String sessionId) {
     }
 
     public record InputCheckResponse(
@@ -44,7 +51,11 @@ public class LegalGuardrailController {
             boolean allowed,
             String content,
             String rail,
-            String traceId
+            String traceId,
+            String reasonCode,
+            String detailCode,
+            Boolean usageAvailable,
+            String costSource
     ) {
     }
 }

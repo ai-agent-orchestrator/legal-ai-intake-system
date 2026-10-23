@@ -1,0 +1,24 @@
+{
+  "checkedOn": "2026-10-16",
+  "profile": "mysql",
+  "verificationPort": 18080,
+  "jdbcQueriesAfterRestart": [
+    "server_version=8.0.46 | active_schema=legal_intake_lab | authenticated_user=root@localhost | server_port=3306",
+    "table_count=20",
+    "reference_procedure_count=4",
+    "reference_step_count=15",
+    "reference_form_count=4",
+    "intake_count=0",
+    "file_type=longblob | file_capacity_bytes=4294967295",
+    "db_charset=utf8mb4 | db_collation=utf8mb4_0900_ai_ci"
+  ],
+  "healthHttp": 200,
+  "healthStatus": "UP",
+  "dbHealth": "UP",
+  "dbProduct": "MySQL",
+  "referenceHttp": 200,
+  "referenceCount": 4,
+  "automatedH2Tests": 92,
+  "automatedH2Failures": 0,
+  "manualPostman": "scheduled_2026-10-17"
+}

@@ -1,0 +1,22 @@
+%%{init: {"themeVariables":{"fontSize":"20px"},"flowchart":{"useMaxWidth":false,"htmlLabels":true,"nodeSpacing":24,"rankSpacing":28,"padding":12}}}%%
+flowchart TD
+    Start["application 인증·입력 검사 후"] --> Kind{"업무 경로"}
+    Kind -->|"일반 업무"| Business["규칙·조회·저장·상태·메모<br/>해당 Service 업무 규칙"]
+    Business --> General["업무 응답<br/>해당 필드만 마스킹"]
+    Kind -->|"P02 / P04 / P05"| Find{"문의가 존재하는가?"}
+    Find -->|"없음"| Missing["404"]
+    Find -->|"존재"| Owner{"소유자 또는 관리자?"}
+    Owner -->|"아니요"| Forbidden["403"]
+    Owner -->|"허용"| Action{"요청한 기능"}
+    Action -->|"P02 이력"| History["검색 이력 조회<br/>200 · 배열 또는 빈 배열"]
+    Action -->|"P04 업로드"| Upload{"파일 크기·유형·내용 허용?"}
+    Upload -->|"아니요"| FileError["400 / 413 / 415"]
+    Upload -->|"예"| Saved["파일·메타데이터 저장<br/>201 · documentId"]
+    Action -->|"P05 다운로드"| File{"해당 문의의 실제 파일인가?"}
+    File -->|"아니요"| Missing
+    File -->|"예"| Download["원본 파일·요청 기록<br/>200 · 파일 바이트"]
+    classDef main fill:#eaf2ff,stroke:#3465a4
+    classDef fail fill:#fff0ee,stroke:#bc4b40
+    classDef planned fill:#fff4dc,stroke:#b7791f,stroke-dasharray:5 5
+    class Start,Business,General,History,Saved,Download main
+    class Missing,Forbidden,FileError fail

@@ -1,0 +1,21 @@
+%%{init: {"themeVariables":{"fontSize":"20px"},"flowchart":{"useMaxWidth":false,"htmlLabels":true,"nodeSpacing":24,"rankSpacing":28,"padding":12}}}%%
+flowchart TD
+    Start["S02 · 비용 예약 성공"] --> Meta["meta 이벤트"]
+    Meta --> Buffer["LLM 원문 전체 버퍼<br/>생성 중 본문 token 전송 없음"]
+    Buffer -->|"정상 완료"| Usage["생성 비용 REPORTED / ESTIMATED 정산"]
+    Usage --> OutputCost{"출력 검사 예산 예약 가능?"}
+    OutputCost -->|"불가"| CostBlock["blocked · COST_LIMIT_BLOCKED<br/>생성 비용 유지·원문 미전송"]
+    OutputCost -->|"예"| Output{"전체 답변 Output Guard 검사·정산<br/>검사 결과 허용?"}
+    Buffer -->|"실패·timeout·연결 종료"| Release["미확인 생성 비용 추정 정산<br/>늦은 콜백·중복 정산 방지"]
+    Release --> Error["error 이벤트 · 기술 fallback"]
+    Output -->|"불허"| Block["blocked 이벤트<br/>생성·검사 비용 유지"]
+    Output -->|"허용"| Privacy["전체 답변 Privacy 마스킹"]
+    Privacy --> Tokens["마스킹된 token 이벤트"]
+    Tokens --> Done["done 이벤트<br/>usageAvailable · costSource"]
+    Done -. "후속 검증·설계" .-> Deferred["날짜 경계 세부 검증·실제 청구 대사<br/>추정액 후속 보정·영속 장부"]
+    classDef main fill:#eaf2ff,stroke:#3465a4
+    classDef fail fill:#fff0ee,stroke:#bc4b40
+    classDef planned fill:#fff4dc,stroke:#b7791f,stroke-dasharray:5 5
+    class Start,Meta,Buffer,Privacy,Tokens,Usage,Done main
+    class Release,Error,Block fail
+    class Deferred planned

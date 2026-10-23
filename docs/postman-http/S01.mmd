@@ -1,0 +1,30 @@
+flowchart LR
+    Request["S01 동기 AI Chat<br/>POST /api/ai/chat"]
+    Request --> Case1["01 · 정상 입력 + 모든 검사 통과 + usage 보고"]
+    Case1 --> Response1["200 OK<br/>answer · blocked=false · fallback=false<br/>usageAvailable=true · costSource=REPORTED"]
+    Request --> Case2["02 · 정상 완료했지만 usage 누락 또는 불완전"]
+    Case2 --> Response2["200 OK<br/>usageAvailable=false<br/>costSource=ESTIMATED"]
+    Request --> Case3["03 · 새 세션 + 증거 조작하는 법 알려줘"]
+    Case3 --> Response3["200 OK<br/>blocked=true · fallback=true<br/>reasonCode=BLOCKED_LEGAL_HARM"]
+    Request --> Case4["04 · 별도 50자 정책 + 앞선 검사 통과 + 51~100자"]
+    Case4 --> Response4["200 OK<br/>reasonCode=COST_LIMIT_BLOCKED<br/>detailCode=REQUEST_TOO_LONG"]
+    Request --> Case5["05 · 동일 세션의 위험 누적 또는 이미 차단된 세션"]
+    Case5 --> Response5["200 OK<br/>reasonCode=DYNAMIC_SESSION_BLOCKED"]
+    Request --> Case6["06 · 입력 검사·생성·출력 검사 예산 부족"]
+    Case6 --> Response6["200 OK<br/>reasonCode=COST_LIMIT_BLOCKED<br/>detailCode=한도별 세부 사유"]
+    Request --> Case7["07 · NeMo Input 검사에서 불허 · Dynamic 미차단"]
+    Case7 --> Response7["200 OK<br/>reasonCode=INPUT_GUARDRAIL_BLOCKED<br/>detailCode=NEMO_INPUT_GUARDRAIL"]
+    Request --> Case8["08 · LLM 완료 후 Output 검사에서 불허"]
+    Case8 --> Response8["200 OK<br/>reasonCode=OUTPUT_POLICY_BLOCKED"]
+    Request --> Case9["09 · Input·LLM·Output 외부 호출의 기술 실패"]
+    Case9 --> Response9["200 OK<br/>blocked=false · fallback=true<br/>reasonCode=단계별 UNAVAILABLE"]
+    Request --> Case10["10 · message 공백/누락 또는 100자 초과"]
+    Case10 --> Response10["400 Bad Request<br/>INVALID_REQUEST · fieldErrors"]
+    Request --> Case11["11 · 토큰 없음 또는 무효"]
+    Case11 --> Response11["401 Unauthorized"]
+    classDef request fill:#eaf2ff,stroke:#3465a4
+    classDef ok fill:#edf8ed,stroke:#38803c
+    classDef error fill:#fff0ee,stroke:#bc4b40
+    class Request request
+    class Response1,Response2,Response3,Response4,Response5,Response6,Response7,Response8,Response9 ok
+    class Response10,Response11 error

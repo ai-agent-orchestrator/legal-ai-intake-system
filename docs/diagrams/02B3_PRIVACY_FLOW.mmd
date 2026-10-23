@@ -1,0 +1,19 @@
+%%{init: {"theme":"base","themeVariables":{"background":"#ffffff","primaryTextColor":"#102544","lineColor":"#000000","edgeLabelBackground":"#ffffff","fontFamily":"Malgun Gothic, Arial, sans-serif","fontSize":"32px"},"themeCSS":".edgeLabel p {font-size:44px !important;font-weight:800 !important;color:#102544 !important;background:#fff !important;} .edgeLabel rect {fill:#ffffff !important;opacity:1 !important;} .flowchart-link {stroke:#000000 !important;stroke-width:3.5px !important;} marker path {fill:#000000 !important;stroke:#000000 !important;} .nodeLabel p {font-size:32px !important;} .cluster-label p {font-size:34px !important;font-weight:700 !important;}","flowchart":{"htmlLabels":true,"useMaxWidth":false,"nodeSpacing":95,"rankSpacing":85,"padding":24,"wrappingWidth":540}}}%%
+flowchart TB
+    A["S01 · S02<br/>AI Chat"]:::api
+    B["C03 · C05 · C09 · C11<br/>Intake / Memo"]:::api
+    C["C04<br/>Minimal guidance"]:::api
+    A --> D["Dynamic → Fixed<br/>Cost / Input Guard → LLM<br/>Output Guard"]:::guard
+    B --> E["Response mapping<br/>toIntakeResponse / toMemoResponse"]:::guard
+    C --> F["checkedFacts<br/>No DB · No LLM"]:::guard
+    D -->|allow| G["PrivacyOutputGuardService<br/>mask: PII patterns<br/>maskDisplayName: selected fields"]:::safe
+    E --> G
+    F --> G
+    G --> H["S01 JSON · S02 token / done<br/>C03 / C04 / C05 / C09 / C11 JSON"]:::safe
+
+    linkStyle default stroke:#000000,stroke-width:3.5px,color:#102544,font-size:44px,font-weight:800
+    classDef api fill:#eaf2ff,stroke:#42658b,stroke-width:2px,color:#102544,font-size:32px
+    classDef guard fill:#f2eeff,stroke:#7858a8,stroke-width:2px,color:#102544,font-size:32px
+    classDef safe fill:#eaf7f0,stroke:#347356,stroke-width:2px,color:#102544,font-size:32px
+    classDef stop fill:#fff0ed,stroke:#ab503e,stroke-width:2px,color:#102544,font-size:32px
+    classDef note fill:#fff8e9,stroke:#946d24,stroke-width:2px,color:#102544,font-size:32px

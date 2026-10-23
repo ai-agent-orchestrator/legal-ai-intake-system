@@ -3,8 +3,12 @@ package com.ohgiraffers.handlermethod.guardrail;
 public record InputGuardrailResult(
         String status,
         String content,
-        String rail
+        String rail,
+        GuardrailUsage usage
 ) {
+    public InputGuardrailResult(String status, String content, String rail) {
+        this(status, content, rail, null);
+    }
 
     public boolean allowed() {
         return "PASSED".equals(status) || "MODIFIED".equals(status);

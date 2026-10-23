@@ -1,0 +1,84 @@
+erDiagram
+    legal_intake ||..o{ intake_document : "logical intake_id"
+    legal_intake ||..o{ lawyer_search_condition : "logical intake_id"
+    legal_intake ||..o{ ai_search_request : "logical intake_id"
+    lawyer_search_condition ||..o{ ai_search_request : "logical condition_id"
+    ai_search_request ||..o{ search_result_snapshot : "logical search_request_id"
+    legal_intake ||..o{ consultation_memo : "logical intake_id"
+    legal_intake ||..o{ intake_document_download : "logical intake_id"
+    intake_document ||..o{ intake_document_download : "logical document_id"
+    legal_intake |o..o{ intake_event : "optional logical intake_id"
+
+    legal_intake {
+        bigint id PK
+        varchar session_id "NOT NULL; not an auth identity"
+        varchar owner_username "legacy nullable; new intake JWT owner"
+        varchar assigned_lawyer_username "nullable; one assigned LAWYER account"
+        varchar case_type
+        varchar core_statement "original text"
+        varchar desired_next_step
+        varchar status
+        timestamp created_at
+    }
+    intake_document {
+        bigint id PK
+        bigint intake_id "logical reference; NOT NULL"
+        varchar document_type "selected kind or uploaded kind"
+        varchar original_filename "nullable; present for uploads"
+        varchar content_type "nullable"
+        bigint size_bytes "nullable"
+        blob file_content "nullable; original bytes"
+        timestamp created_at
+    }
+    lawyer_search_condition {
+        bigint id PK
+        bigint intake_id "logical reference; NOT NULL; not unique"
+        varchar legal_field
+        varchar dispute_type
+        varchar preferred_region
+        varchar source_policy
+        varchar search_query
+        timestamp created_at
+    }
+    ai_search_request {
+        bigint id PK
+        bigint intake_id "logical reference; NOT NULL"
+        bigint condition_id "logical reference; NOT NULL"
+        varchar search_purpose
+        varchar source_policy
+        varchar status "PREVIEW_READY"
+        timestamp created_at
+    }
+    search_result_snapshot {
+        bigint id PK
+        bigint search_request_id "logical reference; NOT NULL"
+        varchar source_type
+        varchar title
+        varchar url
+        varchar snippet
+        int display_order
+        timestamp created_at
+    }
+    consultation_memo {
+        bigint id PK
+        bigint intake_id "logical reference; NOT NULL"
+        varchar content "original text; internal only"
+        varchar created_by "nullable for legacy; JWT author for new notes"
+        varchar follow_up_items "stored as one delimited string"
+        timestamp created_at
+    }
+    intake_document_download {
+        bigint id PK
+        bigint intake_id "logical reference; NOT NULL"
+        bigint document_id "logical reference; NOT NULL"
+        varchar username "requesting user; not a user FK"
+        timestamp_tz requested_at
+    }
+    intake_event {
+        varchar event_id PK "client-provided idempotency key"
+        bigint version "JPA optimistic version"
+        enum event_type "VISIT INTAKE_STARTED SUMMARY_VIEWED"
+        varchar session_id "NOT NULL; reported session"
+        bigint intake_id "optional logical reference"
+        timestamp_tz received_at
+    }

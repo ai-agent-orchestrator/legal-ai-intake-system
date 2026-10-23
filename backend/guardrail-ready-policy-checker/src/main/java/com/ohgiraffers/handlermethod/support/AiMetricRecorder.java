@@ -96,6 +96,13 @@ public class AiMetricRecorder {
                 .increment();
     }
 
+    public void recordPrivacyOutputMasked(String piiType) {
+        Counter.builder("legal.ai.privacy.output.masked")
+                .tag("piiType", normalize(piiType))
+                .register(meterRegistry)
+                .increment();
+    }
+
     private String normalize(String value) {
         return value == null || value.isBlank() ? "unknown" : value;
     }

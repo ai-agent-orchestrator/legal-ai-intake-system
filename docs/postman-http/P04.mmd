@@ -1,0 +1,22 @@
+flowchart LR
+    Request["P04 실제 파일 업로드<br/>POST /api/intakes/{intakeId}/documents"]
+    Request --> Case1["01 · 허용된 문의 + 5 MiB 이하 PDF/PNG/JPEG/UTF-8 TXT"]
+    Case1 --> Response1["201 Created<br/>id=documentId<br/>파일 메타데이터 · downloadUrl"]
+    Request --> Case2["02 · 토큰 없음/무효"]
+    Case2 --> Response2["401 Unauthorized"]
+    Request --> Case3["03 · 일반 사용자 + 다른 소유자의 문의"]
+    Case3 --> Response3["403 Forbidden"]
+    Request --> Case4["04 · 유효한 토큰 + 없는 intakeId"]
+    Case4 --> Response4["404 Not Found"]
+    Request --> Case5["05 · file 누락 또는 빈 파일"]
+    Case5 --> Response5["400 Bad Request"]
+    Request --> Case6["06 · 파일 5 MiB 초과 · 기본 설정"]
+    Case6 --> Response6["413 Payload Too Large"]
+    Request --> Case7["07 · 허용되지 않은 형식 · 내용/MIME 불일치"]
+    Case7 --> Response7["415 Unsupported Media Type"]
+    classDef request fill:#eaf2ff,stroke:#3465a4
+    classDef ok fill:#edf8ed,stroke:#38803c
+    classDef error fill:#fff0ee,stroke:#bc4b40
+    class Request request
+    class Response1 ok
+    class Response2,Response3,Response4,Response5,Response6,Response7 error

@@ -17,10 +17,15 @@ public record AgentRiskHistoryResponse(
         String recommendedAction,
         boolean guardrailReady,
         String traceId,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        com.ohgiraffers.handlermethod.risk.AgentRiskScoring.Breakdown scoreBreakdown
 ) {
 
     public static AgentRiskHistoryResponse from(AgentRiskHistory history) {
+        return from(history, null);
+    }
+
+    public static AgentRiskHistoryResponse from(AgentRiskHistory history, Integer retryCount) {
         return new AgentRiskHistoryResponse(
                 history.getId(),
                 history.getUserInput(),
@@ -32,7 +37,9 @@ public record AgentRiskHistoryResponse(
                 history.getRecommendedAction(),
                 history.isGuardrailReady(),
                 history.getTraceId(),
-                history.getCreatedAt()
+                history.getCreatedAt(),
+                com.ohgiraffers.handlermethod.risk.AgentRiskScoring.breakdown(
+                        splitSignals(history.getSignals()), retryCount, history.getRiskScore())
         );
     }
 

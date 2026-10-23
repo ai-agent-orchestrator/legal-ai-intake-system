@@ -1,0 +1,10 @@
+flowchart TD
+    Input["현재 질문"] --> Normalize["문자열 정규화<br/>소문자 변환·공백 제거"]
+    Normalize --> Pattern{"위험 패턴에 해당하는가?<br/>아래 고정 검사 순서 적용"}
+    Pattern -->|"예"| Reject["allowed=false<br/>첫 매칭 reasonCode + 안전 안내"]
+    Pattern -->|"아니요"| Topic{"법률 키워드가 없고<br/>명시적 범위 밖 주제인가?"}
+    Topic -->|"예"| TopicBlock
+    Topic -->|"아니요"| Allow["allowed=true<br/>reasonCode=ALLOWED"]
+    TopicBlock --> Reject
+    Reject --> CallerBlock["호출한 AiService에서<br/>현재 요청의 LLM 호출 중단<br/>Dynamic Guard에 위험 기록"]
+    Allow --> Next["AiService의 다음 검사로 진행<br/>입력 길이·Input Guard·비용 검사 등"]

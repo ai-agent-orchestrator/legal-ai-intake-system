@@ -462,7 +462,7 @@ Attorney
 
 - Attorney memo textarea
 - Status select
-  - NEW
+  - SUBMITTED (접수 / 기존 화면 초안의 NEW)
   - REVIEWED
   - NEED_MORE_INFO
   - CONSULTATION_READY
@@ -582,7 +582,6 @@ Admin / Owner Attorney
 - Token estimated / actual usage
 - Session budget usage
 - Daily budget usage
-- Strict mode status
 - Top reasonCode chart
 
 ### ReasonCode Examples
@@ -628,7 +627,6 @@ Admin / Owner Attorney
   - requestType
   - allowed
   - reasonCode
-  - policyProfile
   - estimatedTokens
   - actualTokens
 - Filter
@@ -672,48 +670,35 @@ Audit 화면에서도 원본 개인정보를 그대로 노출하지 않는다.
 
 ## 8. Screen-to-ERD Mapping
 
-| Entity | Used Screens |
-| --- | --- |
-| legal_intake | Client Form, Attorney Dashboard, Attorney Detail |
-| intake_document | Client Form, Attorney Detail |
-| lawyer_search_condition | Lawyer Search Routing, Attorney Detail |
-| ai_search_request | Lawyer Search Routing, Admin Dashboard |
-| search_result_snapshot | Lawyer Search Routing, Audit/Review |
-| future audit_log | Security Dashboard, Audit Log |
+2026-10-16 현재 코드 기준. 상세 데이터 관계와 실제 FK 여부는 [BACKEND_ERD.md](C:/myLectureWs/legal-ai-intake-security-server/docs/BACKEND_ERD.md)를 사용한다. 아래는 화면 설계와 저장 대상의 매핑이며 프런트 연결 완료를 의미하지 않는다.
+
+| Entity / Table | Used Screens | 현재 저장 의미 |
+| --- | --- | --- |
+| legal_intake | Client Form, Attorney Dashboard, Attorney Detail | 문의·현재 상태·세션·선택 소유자 |
+| intake_document | Client Form, Attorney Detail | 선택 자료 종류 또는 업로드 메타데이터·BLOB 원본 |
+| lawyer_search_condition | Lawyer Search Routing, Attorney Detail | 분야·분쟁·지역·선호 조건·검색문 |
+| ai_search_request | Lawyer Search Routing, Admin Dashboard | 문의·조건 ID로 준비한 검색 요청 기록 |
+| search_result_snapshot | Lawyer Search Routing, Audit/Review | 전달받아 저장한 검색 결과 제목·URL·요약 |
+| consultation_memo | Attorney Consultation Memo, Attorney Detail | 메모 원문·후속 조치 |
+| intake_document_download | Intake Detail의 파일 다운로드 동작 | 사용자·문의·파일·다운로드 요청 시각 |
+| intake_event | Client 행동, Marketing Funnel Dashboard | 명시적으로 보고한 방문·문의 시작·요약 조회 |
+| legal_procedure / legal_procedure_step / legal_form_template | Ontology Guide, Legal Reference | 기존 절차·단계·양식 조회 데이터, 실제 procedure_id FK |
+
+핵심 접수·검색 테이블 사이는 일반 ID 참조이며 Service에서 존재·연결을 확인한다. 새 파일·검색 이력의 소유자 검사는 전체 문의 API의 인가와 구분한다. 미래 audit_log 전용 테이블은 현재 구현 목록에 포함하지 않는다.
 
 ## 9. Implementation Priority
 
-### Day 1-4 Draft Implementation
+일정은 [12일 개발 계획](PROJECT_12_DAY_PLAN.md)을 따른다. 기존 화면 정의를 다음 단계에 맞춰 구현·연결한다.
 
-```text
-Login placeholder
-Client Intake Form
-Client AI Summary Result
-Attorney Intake Dashboard
-Attorney Intake Detail
-Security Cost Dashboard draft
-```
-
-### Day 5-7 Postman + Refactoring
-
-```text
-Normal intake request
-Fixed Guard block
-Cost Control block
-Privacy masking
-Dynamic Guard draft
-LLM Search Routing preview
-```
-
-### Day 8-10 Stabilization
-
-```text
-Marketing Dashboard
-Audit ReasonCode Log
-Demo data
-Screenshots
-Presentation capture
-```
+| Day | 화면·API 관점의 작업 |
+|---|---|
+| 1~2 | 제품 범위·화면·API·데이터 설계와 Screen–API–Controller 매핑 초안 |
+| 2~4 | 문의·자료·검색 조건·검색 요청 기록의 백엔드 저장·조회 API |
+| 5 | 확정 경로의 보안·비용 연결, DB 점검과 Postman 준비 |
+| 6~7 | API별 Postman·코드 매핑, DDD·Event Storming·Policy 매핑, 발견 오류 수정 |
+| 8 | 핵심 React 화면·Metric Dashboard 구현, 기존 API·state·DTO 연결, 브라우저 확인 |
+| 9~10 | LLM Search Routing·실제 외부 검색·결과 설명의 API 및 화면 연결 |
+| 11~12 | 통합 검증·최종 수정, 누적 산출물·캡처·시연·발표 정리 |
 
 ## 10. Final Screen Scope Recommendation
 

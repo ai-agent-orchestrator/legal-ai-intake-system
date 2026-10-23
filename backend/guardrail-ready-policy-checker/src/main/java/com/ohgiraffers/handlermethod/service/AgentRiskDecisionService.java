@@ -11,6 +11,7 @@ import com.ohgiraffers.handlermethod.risk.AgentRiskDecision;
 import com.ohgiraffers.handlermethod.risk.AgentRiskLevel;
 import com.ohgiraffers.handlermethod.risk.AgentRiskSignal;
 import com.ohgiraffers.handlermethod.risk.RecommendedAction;
+import com.ohgiraffers.handlermethod.risk.AgentRiskScoring;
 import com.ohgiraffers.handlermethod.support.AgentMetricRecorder;
 import com.ohgiraffers.handlermethod.support.TraceContext;
 import org.springframework.stereotype.Service;
@@ -62,37 +63,37 @@ public class AgentRiskDecisionService {
 
         if (policyViolation) {
             signals.add(AgentRiskSignal.POLICY_VIOLATION);
-            riskScore += 40;
+            riskScore += AgentRiskScoring.POLICY;
             agentMetricRecorder.recordPolicyViolation("risk_decision_policy_violation");
         }
 
         if (retryCount > 0) {
             signals.add(AgentRiskSignal.RETRY);
-            riskScore += Math.min(retryCount * 8, 25);
+            riskScore += AgentRiskScoring.retryPoints(retryCount);
             agentMetricRecorder.recordRetryCount(retryCount);
         }
 
         if (externalApiCall) {
             signals.add(AgentRiskSignal.EXTERNAL_API_CALL);
-            riskScore += 25;
+            riskScore += AgentRiskScoring.EXTERNAL;
             agentMetricRecorder.recordExternalApiCall("risk-decision-external-api", policyViolation ? "risky" : "called");
         }
 
         if (toolError) {
             signals.add(AgentRiskSignal.TOOL_ERROR);
-            riskScore += 15;
+            riskScore += AgentRiskScoring.TOOL_ERROR;
             agentMetricRecorder.recordToolError(toolName, "risk_decision_tool_error");
         }
 
         if (approvalRequired) {
             signals.add(AgentRiskSignal.APPROVAL_REQUIRED);
-            riskScore += 20;
+            riskScore += AgentRiskScoring.APPROVAL;
             agentMetricRecorder.recordApprovalRequired("risk_decision_approval_boundary");
         }
 
         if (dbWrite) {
             signals.add(AgentRiskSignal.DB_WRITE);
-            riskScore += 15;
+            riskScore += AgentRiskScoring.DB_WRITE;
             agentMetricRecorder.recordDbWrite("risk-decision-db", policyViolation ? "risky" : "attempted");
         }
 
@@ -150,7 +151,8 @@ public class AgentRiskDecisionService {
                 recommendedAction.name(),
                 true,
                 savedHistory.getId(),
-                traceId
+                traceId,
+                AgentRiskScoring.breakdown(signalNames, retryCount, boundedRiskScore)
         );
     }
 
@@ -189,7 +191,7 @@ public class AgentRiskDecisionService {
     }
 
     private AgentRiskLevel riskLevel(int riskScore) {
-        if (riskScore >= 80) {
+        if (riskScore >= AgentRiskScoring.BLOCK_THRESHOLD) {
             return AgentRiskLevel.HIGH;
         }
 
@@ -201,13 +203,8 @@ public class AgentRiskDecisionService {
     }
 
     private RecommendedAction recommendedAction(AgentRiskDecision decision, AgentRiskLevel riskLevel) {
-        if (decision == AgentRiskDecision.HIGH_RISK_AGENT_BEHAVIOR
-                || decision == AgentRiskDecision.RISKY_EXTERNAL_ACCESS) {
+        if (riskLevel == AgentRiskLevel.HIGH) {
             return RecommendedAction.BLOCK_AND_ESCALATE;
-        }
-
-        if (decision == AgentRiskDecision.SUSPICIOUS_RETRY) {
-            return RecommendedAction.BLOCK;
         }
 
         if (decision == AgentRiskDecision.APPROVAL_BYPASS_RISK) {
@@ -216,10 +213,6 @@ public class AgentRiskDecisionService {
 
         if (decision == AgentRiskDecision.UNSTABLE_TOOL_LOOP) {
             return RecommendedAction.DISABLE_TOOL_TEMPORARILY;
-        }
-
-        if (riskLevel == AgentRiskLevel.HIGH) {
-            return RecommendedAction.CREATE_INCIDENT;
         }
 
         if (riskLevel == AgentRiskLevel.MEDIUM) {

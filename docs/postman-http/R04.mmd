@@ -1,0 +1,16 @@
+flowchart LR
+    Request["R04 법률 양식 목록<br/>GET /api/legal/forms"]
+    Request --> Case1["01 · procedure 없이 조회 · 양식 있음"]
+    Case1 --> Response1["200 OK<br/>전체 양식 배열"]
+    Request --> Case2["02 · 존재하는 procedure로 필터 · 양식 있음"]
+    Case2 --> Response2["200 OK<br/>해당 절차 양식 배열"]
+    Request --> Case3["03 · 전체 양식 없음 또는 존재하는 절차에 양식 없음"]
+    Case3 --> Response3["200 OK<br/>빈 배열"]
+    Request --> Case4["04 · 존재하지 않는 procedure로 필터"]
+    Case4 --> Response4["500 예상<br/>대상 없음 예외 미변환 · 수동 확인 필요"]
+    classDef request fill:#eaf2ff,stroke:#3465a4
+    classDef ok fill:#edf8ed,stroke:#38803c
+    classDef error fill:#fff0ee,stroke:#bc4b40
+    class Request request
+    class Response1,Response2,Response3 ok
+    class Response4 error

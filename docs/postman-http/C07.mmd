@@ -1,0 +1,14 @@
+flowchart LR
+    Request["C07 검색 요청 상세<br/>GET /api/intakes/search-requests/{searchRequestId}"]
+    Request --> Case1["01 · 존재하는 searchRequestId · 결과 없음"]
+    Case1 --> Response1["200 OK<br/>PREVIEW_READY · results 빈 배열"]
+    Request --> Case2["02 · C08로 테스트 결과를 추가한 요청 ID"]
+    Case2 --> Response2["200 OK<br/>searchQuery · 정렬된 results"]
+    Request --> Case3["03 · 존재하지 않는 숫자 요청 ID"]
+    Case3 --> Response3["404 Not Found"]
+    classDef request fill:#eaf2ff,stroke:#3465a4
+    classDef ok fill:#edf8ed,stroke:#38803c
+    classDef error fill:#fff0ee,stroke:#bc4b40
+    class Request request
+    class Response1,Response2 ok
+    class Response3 error

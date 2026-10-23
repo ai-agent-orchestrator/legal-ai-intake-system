@@ -1,0 +1,7 @@
+flowchart LR
+    Chunks["LLM이 보내는 원본 청크"] --> Buffer["답변 전체를 서버 버퍼에 모음"]
+    Buffer --> Output["전체 답변 Output Guard 검사"]
+    Output -->|"차단"| Block["blocked 이벤트<br/>원문 token 전송 없음"]
+    Output -->|"허용·수정"| Privacy["Privacy Output Guard 마스킹"]
+    Privacy --> Events["마스킹한 본문을 token 이벤트로 전송"]
+    Events --> Done["정상 완료 비용 집계·done 이벤트"]

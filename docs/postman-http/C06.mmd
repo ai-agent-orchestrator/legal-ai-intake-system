@@ -1,0 +1,14 @@
+flowchart LR
+    Request["C06 검색 요청 생성<br/>POST /api/intakes/{intakeId}/search-requests"]
+    Request --> Case1["01 · 존재하는 intakeId + 빈 객체 또는 정상 옵션"]
+    Case1 --> Response1["201 Created<br/>id=searchRequestId<br/>PREVIEW_READY · results 빈 배열"]
+    Request --> Case2["02 · 존재하지 않는 intakeId"]
+    Case2 --> Response2["404 Not Found"]
+    Request --> Case3["03 · Body 누락 또는 searchPurpose 300자 초과"]
+    Case3 --> Response3["400 Bad Request"]
+    classDef request fill:#eaf2ff,stroke:#3465a4
+    classDef ok fill:#edf8ed,stroke:#38803c
+    classDef error fill:#fff0ee,stroke:#bc4b40
+    class Request request
+    class Response1 ok
+    class Response2,Response3 error

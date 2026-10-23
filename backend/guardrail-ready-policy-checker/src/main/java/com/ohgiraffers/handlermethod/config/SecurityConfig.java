@@ -17,6 +17,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
 public class SecurityConfig {
@@ -38,9 +39,11 @@ public class SecurityConfig {
 
     @Bean
     @Order(1)
-    SecurityFilterChain actuatorSecurity(HttpSecurity http) throws Exception {
+    SecurityFilterChain actuatorSecurity(HttpSecurity http,
+                                         UrlBasedCorsConfigurationSource corsConfigurationSource) throws Exception {
         return http
                 .securityMatcher(EndpointRequest.toAnyEndpoint())
+                .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(EndpointRequest.to("health", "info")).permitAll()
                         .anyRequest().hasRole("ADMIN"))
@@ -60,10 +63,17 @@ public class SecurityConfig {
 
     @Bean
     @Order(2)
-    SecurityFilterChain applicationSecurity(HttpSecurity http) throws Exception {
+    SecurityFilterChain applicationSecurity(HttpSecurity http,
+                                            UrlBasedCorsConfigurationSource corsConfigurationSource) throws Exception {
         return http
+                .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/intakes/classify-preview").permitAll()
+                        .requestMatchers("/api/intakes", "/api/intakes/**", "/api/legal-intake/minimal").authenticated()
+                        .requestMatchers("/api/me", "/api/intakes/*/documents/**").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/intakes/*/search-requests").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/intakes/search-requests/*/execute").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/legal/**").permitAll()
                         .requestMatchers("/api/legal/**").authenticated()
                         .requestMatchers("/api/ai/**").authenticated()
@@ -90,7 +100,10 @@ public class SecurityConfig {
                 .roles("USER")
                 .build();
 
-        return new InMemoryUserDetailsManager(admin, user);
+        UserDetails lawyer = User.withUsername("lawyer").password(passwordEncoder.encode("lawyer123")).roles("LAWYER").build();
+        UserDetails lawyer2 = User.withUsername("lawyer2").password(passwordEncoder.encode("lawyer2123")).roles("LAWYER").build();
+        UserDetails user2 = User.withUsername("user2").password(passwordEncoder.encode("user2123")).roles("USER").build();
+        return new InMemoryUserDetailsManager(admin, user, lawyer, lawyer2, user2);
     }
 
     @Bean

@@ -1,0 +1,20 @@
+flowchart LR
+    Request["S05 Agent 위험 분석<br/>POST /api/agent/risk/analyze"]
+    Request --> Case1["01 · 위험 신호 없는 정상 입력"]
+    Case1 --> Response1["200 OK<br/>decision=SAFE · riskLevel=LOW<br/>recommendedAction=ALLOW · historyId"]
+    Request --> Case2["02 · 빈 JSON 객체 전송"]
+    Case2 --> Response2["200 OK<br/>기본값 분석 · historyId"]
+    Request --> Case3["03 · policyViolation=true · externalApiCall=true · retryCount=2"]
+    Case3 --> Response3["200 OK<br/>HIGH_RISK_AGENT_BEHAVIOR · HIGH<br/>BLOCK_AND_ESCALATE"]
+    Request --> Case4["04 · approvalRequired=true · retryCount=1 · 나머지 위험 없음"]
+    Case4 --> Response4["200 OK<br/>APPROVAL_BYPASS_RISK<br/>recommendedAction=REQUIRE_APPROVAL"]
+    Request --> Case5["05 · toolError=true · retryCount=1 · 나머지 위험 없음"]
+    Case5 --> Response5["200 OK<br/>UNSTABLE_TOOL_LOOP<br/>DISABLE_TOOL_TEMPORARILY"]
+    Request --> Case6["06 · Body 누락·잘못된 JSON·필드 타입 오류"]
+    Case6 --> Response6["400 Bad Request"]
+    classDef request fill:#eaf2ff,stroke:#3465a4
+    classDef ok fill:#edf8ed,stroke:#38803c
+    classDef error fill:#fff0ee,stroke:#bc4b40
+    class Request request
+    class Response1,Response2,Response3,Response4,Response5 ok
+    class Response6 error

@@ -1,0 +1,16 @@
+flowchart LR
+    Request["C16 Prometheus 지표<br/>GET /actuator/prometheus"]
+    Request --> Case1["01 · ADMIN Basic으로 조회"]
+    Case1 --> Response1["200 OK<br/>Prometheus 지표 텍스트"]
+    Request --> Case2["02 · 인증 없음 또는 잘못된 Basic 계정"]
+    Case2 --> Response2["401 Unauthorized"]
+    Request --> Case3["03 · USER 역할의 유효한 Basic 계정"]
+    Case3 --> Response3["403 Forbidden"]
+    Request --> Case4["04 · Bearer JWT만 보내고 Basic 인증 생략"]
+    Case4 --> Response4["401 Unauthorized"]
+    classDef request fill:#eaf2ff,stroke:#3465a4
+    classDef ok fill:#edf8ed,stroke:#38803c
+    classDef error fill:#fff0ee,stroke:#bc4b40
+    class Request request
+    class Response1 ok
+    class Response2,Response3,Response4 error

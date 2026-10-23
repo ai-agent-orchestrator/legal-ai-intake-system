@@ -1,0 +1,13 @@
+flowchart LR
+    Request["C12 운영 요약<br/>GET /api/admin/dashboard/summary"]
+    Request --> Case1["01 · 운영 이력이 있는 상태"]
+    Case1 --> Response1["200 OK<br/>agentRunCount · riskHistoryCount<br/>securityEventCount · openIncidentCount · riskSummary"]
+    Request --> Case2["02 · 관련 운영 데이터가 모두 없음"]
+    Case2 --> Response2["200 OK<br/>수치 0 · 위험 집계 Map 빈 값"]
+    Request --> Case3["03 · S05 분석 또는 C19/C20 처리 후 재조회"]
+    Case3 --> Response3["200 OK<br/>저장 이력·현재 OPEN 수 반영"]
+    classDef request fill:#eaf2ff,stroke:#3465a4
+    classDef ok fill:#edf8ed,stroke:#38803c
+    classDef error fill:#fff0ee,stroke:#bc4b40
+    class Request request
+    class Response1,Response2,Response3 ok

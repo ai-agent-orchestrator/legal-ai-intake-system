@@ -1,0 +1,44 @@
+%%{init: {"themeVariables":{"fontSize":"20px"},"flowchart":{"useMaxWidth":false,"htmlLabels":true,"nodeSpacing":22,"rankSpacing":28,"padding":12}}}%%
+flowchart TD
+    Request["React / Postman 요청"] --> Entry["application API 진입<br/>경로별 인증·CORS"]
+    Entry --> Input["Controller · 해당 DTO<br/>입력 수신·검증"]
+    Input --> Services
+    subgraph Services["백엔드 처리와 API 위치"]
+        direction TB
+        subgraph A1["사용자·문의·검색"]
+            direction LR
+            Account["인증·사용자<br/>로그인 C01 · 내 정보 P01<br/>개발 계정·JWT"]
+            Intake["문의 접수·검토<br/>등록 C03 · 상세 C05 · 목록 C09<br/>상태 C10 · 메모 C11<br/>문의·자료·조건·메모 처리"]
+            Search["검색 기록<br/>생성 C06 · 상세 C07<br/>결과 C08 · 문의별 이력 P02<br/>PREVIEW_READY · 스냅샷"]
+            Account ~~~ Intake ~~~ Search
+        end
+        subgraph A2["파일·법률정보·규칙 안내"]
+            direction LR
+            Files["파일·행동 기록<br/>업로드 P04 · 다운로드 P05<br/>행동 이벤트 P06<br/>BLOB·요청 기록·중복 방지"]
+            Reference["법률 Reference<br/>목록 R01 · 상세 R02 · 단계 R03<br/>양식 목록 R04 · 상세 R05<br/>R06 고정 체크리스트"]
+            Rules["비저장 규칙 안내<br/>분류 미리보기 C02<br/>간단 안내 C04<br/>LLM 호출 없음"]
+            Files ~~~ Reference ~~~ Rules
+        end
+        subgraph A3["AI·위험 분석·운영"]
+            direction LR
+            AI["AI·Guardrail<br/>동기 S01 · SSE S02<br/>입력 단독 S03 · 출력 단독 S04<br/>Chat과 단독 검사 경로 구분"]
+            Risk["Agent 위험 분석 S05<br/>점수·판정·권장 조치<br/>이력·조건별 Incident 저장"]
+            Reporting["운영자 화면09~13<br/>요약 C12 · 마케팅 C13<br/>보안 C14 · 위험 집계 C15<br/>위험 이력 C17 · Incident 목록 C18<br/>확인 C19 · 종결 C20<br/>13 위험 요약 C16·C17"]
+            AI ~~~ Risk ~~~ Reporting
+        end
+        A1 ~~~ A2 ~~~ A3
+    end
+    Services --> Processing["업무에 필요한 처리만 선택<br/>JPA 저장·조회 / 외부 Client / 비저장 규칙"]
+    Processing --> Response["응답 변환·반환<br/>JSON / SSE / 파일 바이트"]
+    Services --> Future["P03 구현 · 화면05 실제 검색 실행<br/>JWT·소유자/ADMIN·동일 요청 선점<br/>LLM 검색문 → 네이버 두 검색 → DB 저장 → LLM 설명<br/>입출력 Guard·공통 비용 장부"]
+    Response ~~~ Future
+    Services --> Metrics["경로별 Metric·Trace 기록"]
+    Future ~~~ Metrics
+    Metrics --> Monitor["지표 조회 C16<br/>별도 Actuator · ADMIN Basic<br/>화면11·13의 Prometheus 텍스트 조회"]
+    classDef main fill:#eaf2ff,stroke:#3465a4
+    classDef planned fill:#fff4dc,stroke:#b7791f,stroke-dasharray:5 5
+    class Request,Entry,Input,Account,Intake,Search,Files,Reference,Rules,AI,Risk,Reporting,Processing,Response,Metrics,Monitor main
+    class Future main
+    style A1 fill:#ffffff,stroke:#c8d6e5
+    style A2 fill:#ffffff,stroke:#c8d6e5
+    style A3 fill:#ffffff,stroke:#c8d6e5

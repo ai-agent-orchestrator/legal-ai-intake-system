@@ -1,0 +1,17 @@
+flowchart LR
+    Request["C17 Agent 위험 이력<br/>GET /api/agent/risk/history"]
+    Request --> Case1["01 · 필터 없이 조회 · 이력 있음"]
+    Case1 --> Response1["200 OK<br/>최신순 최대 50개 배열"]
+    Request --> Case2["02 · riskLevel 지정"]
+    Case2 --> Response2["200 OK<br/>해당 등급 이력 배열"]
+    Request --> Case3["03 · riskLevel 없이 decision만 지정"]
+    Case3 --> Response3["200 OK<br/>해당 결정 이력 배열"]
+    Request --> Case4["04 · riskLevel과 decision을 모두 지정"]
+    Case4 --> Response4["200 OK<br/>riskLevel 우선 필터 결과"]
+    Request --> Case5["05 · 이력 없음 또는 필터 일치 없음"]
+    Case5 --> Response5["200 OK<br/>빈 배열"]
+    classDef request fill:#eaf2ff,stroke:#3465a4
+    classDef ok fill:#edf8ed,stroke:#38803c
+    classDef error fill:#fff0ee,stroke:#bc4b40
+    class Request request
+    class Response1,Response2,Response3,Response4,Response5 ok

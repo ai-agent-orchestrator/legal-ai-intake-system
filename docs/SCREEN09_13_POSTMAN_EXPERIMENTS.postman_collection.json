@@ -1,0 +1,664 @@
+{
+  "info": {
+    "name": "화면09~13 · Postman 입력·Controller 대조",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "운영자 화면 API의 실제 메서드·URL·Params·인증·Body 템플릿. C16/C17은 화면13 재사용. 이 파일 생성 과정에서는 요청을 실행하지 않았습니다. Incident ID는 목록에서 직접 선택하세요."
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:8080",
+      "type": "string"
+    },
+    {
+      "key": "adminUsername",
+      "value": "admin",
+      "type": "string"
+    },
+    {
+      "key": "adminPassword",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "incidentId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "riskHistoryId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "noauth"
+  },
+  "item": [
+    {
+      "name": "09 · 운영 요약",
+      "item": [
+        {
+          "name": "C12 GET 운영 요약",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/dashboard/summary",
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "C12 · AdminDashboardController.summary()\nParams 없음; Body 없음\nNo Auth\n200 JSON"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "10 · 마케팅 집계",
+      "item": [
+        {
+          "name": "C13 GET 마케팅 집계",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/dashboard/marketing-funnel",
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "C13 · MarketingDashboardController.funnel()\nParams 없음; Body 없음\nNo Auth\n200 JSON"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "11 · 보안·위험·비용 조회",
+      "item": [
+        {
+          "name": "C14 GET 보안 이벤트",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/dashboard/security-events",
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "C14 · AdminDashboardController.securityEvents()\nParams 없음; Body 없음\nNo Auth\n200 JSON"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "C15 GET 위험 집계",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/agent/risk/summary",
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "C15 · AgentRiskHistoryController.summary()\nParams 없음; Body 없음\nNo Auth\n200 JSON"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "C16 GET Prometheus · ADMIN Basic",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "text/plain"
+              }
+            ],
+            "url": "{{baseUrl}}/actuator/prometheus",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsername}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "C16 · Spring Boot Actuator\nParams 없음; Body 없음; Accept: text/plain\nBasic Auth: ADMIN\n200 Prometheus 텍스트"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "12-A · 위험·Incident 조회",
+      "item": [
+        {
+          "name": "C17 GET 전체 위험 이력",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/agent/risk/history",
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "C17 · AgentRiskHistoryController.history()\nBody 없음; Params 선택: riskLevel=HIGH 또는 decision=HIGH_RISK_AGENT_BEHAVIOR\nNo Auth\n200 JSON"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "C17 GET riskLevel=HIGH",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/agent/risk/history?riskLevel=HIGH",
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "C17 · AgentRiskHistoryController.history()\nBody 없음; Params 선택: riskLevel=HIGH 또는 decision=HIGH_RISK_AGENT_BEHAVIOR\nNo Auth\n200 JSON"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "C17 GET decision 필터",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/agent/risk/history?decision=HIGH_RISK_AGENT_BEHAVIOR",
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "C17 · AgentRiskHistoryController.history()\nBody 없음; Params 선택: riskLevel=HIGH 또는 decision=HIGH_RISK_AGENT_BEHAVIOR\nNo Auth\n200 JSON"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "C17 GET 두 조건 · riskLevel 우선",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/agent/risk/history?riskLevel=HIGH&decision=SAFE",
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "C17 · AgentRiskHistoryController.history()\nBody 없음; Params 선택: riskLevel=HIGH 또는 decision=HIGH_RISK_AGENT_BEHAVIOR\nNo Auth\n200 JSON"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "C18 GET Incident 목록 · id 직접 선택",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/incidents",
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "C18 · RiskIncidentController.findRecent()\nParams 없음; Body 없음; 응답의 id에서 incidentId 선택\nNo Auth\n200 JSON"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "12-B · 선택한 Incident 상태 변경",
+      "description": "C18에서 선택한 실제 id를 incidentId에 넣은 뒤 실행. riskHistoryId를 쓰지 않습니다. Body 없음.",
+      "item": [
+        {
+          "name": "C19 PATCH 선택 Incident 확인",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/incidents/{{incidentId}}/ack",
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "C19 · RiskIncidentController.acknowledge()\nPath incidentId={{incidentId}}; Params 없음; Body none\nNo Auth\n200 JSON"
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const selected = String(pm.variables.get('incidentId') || '');",
+                  "if (!/^[1-9][0-9]*$/.test(selected)) throw new Error('C18 목록에서 실험할 id를 직접 선택하고 incidentId 변수에 넣으세요.');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('same incident id', function () { pm.expect(String(pm.response.json().id)).to.eql(String(pm.variables.get('incidentId'))); });",
+                  "pm.test('status ACKNOWLEDGED', function () { pm.expect(pm.response.json().status).to.eql('ACKNOWLEDGED'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "C20 PATCH 같은 Incident 종결",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/incidents/{{incidentId}}/resolve",
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "C20 · RiskIncidentController.resolve()\nPath incidentId={{incidentId}}; Params 없음; Body none\nNo Auth\n200 JSON"
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const selected = String(pm.variables.get('incidentId') || '');",
+                  "if (!/^[1-9][0-9]*$/.test(selected)) throw new Error('C18 목록에서 실험할 id를 직접 선택하고 incidentId 변수에 넣으세요.');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('same incident id', function () { pm.expect(String(pm.response.json().id)).to.eql(String(pm.variables.get('incidentId'))); });",
+                  "pm.test('status RESOLVED', function () { pm.expect(pm.response.json().status).to.eql('RESOLVED'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "C18 GET 처리 후 목록 재조회",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/incidents",
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "C18 · RiskIncidentController.findRecent()\nParams 없음; Body 없음; 응답의 id에서 incidentId 선택\nNo Auth\n200 JSON"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "C12 GET 처리 후 요약 재조회",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/dashboard/summary",
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "C12 · AdminDashboardController.summary()\nParams 없음; Body 없음\nNo Auth\n200 JSON"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "13 · 현재 지표·위험 기록·실제 시계열",
+      "item": [
+        {
+          "name": "C16 GET 화면13 지표·세션 점수",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "text/plain"
+              }
+            ],
+            "url": "{{baseUrl}}/actuator/prometheus",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsername}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "C16 · Spring Boot Actuator\nParams 없음; Body 없음; Accept: text/plain\nBasic Auth: ADMIN\n200 Prometheus 텍스트"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "C17 GET 화면13 요청별 점수·신호",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/agent/risk/history",
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "C17 · AgentRiskHistoryController.history()\nBody 없음; Params 선택: riskLevel=HIGH 또는 decision=HIGH_RISK_AGENT_BEHAVIOR\nNo Auth\n200 JSON"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "보조 Actuator GET 화면13 실제 시계열 · ADMIN Basic",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/actuator/guardtimeseries",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "actuator",
+                "guardtimeseries"
+              ]
+            },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminUsername}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "최근1시간,15초 간격,직전5분 increase. Params/Body 없음. 기존 Prometheus 실행 및 legal-ai-intake 수집 job 필요. C16과 같은 ADMIN Basic, 기존 번호 API37개와 별도 보조 경로."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 actual time-series response', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) { const data = pm.response.json(); pm.test('range contract', () => { pm.expect(data.stepSeconds).to.eql(15); pm.expect(data.windowSeconds).to.eql(300); pm.expect(data.series).to.be.an('array'); }); }"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "선택 준비 · S05 가상 분석 기록 생성",
+      "description": "빈 데이터 상태에서 요청별 위험 이력·Incident를 준비하려는 경우에만 실행. DB 기록을 생성하며 외부 LLM 호출은 없습니다.",
+      "item": [
+        {
+          "name": "S05 POST 가상 고위험 분석",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/agent/risk/analyze",
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "S05 · AgentRiskDecisionController.analyze()\nraw JSON: userInput, toolName, retryCount, promptTokens, completionTokens, policyViolation, toolError, externalApiCall, approvalRequired, dbWrite\nNo Auth\n200 JSON",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userInput\": \"Postman 운영 지표용 가상 위험 요청\",\n  \"toolName\": \"external-api\",\n  \"retryCount\": 2,\n  \"promptTokens\": 0,\n  \"completionTokens\": 0,\n  \"policyViolation\": true,\n  \"toolError\": false,\n  \"externalApiCall\": true,\n  \"approvalRequired\": false,\n  \"dbWrite\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) pm.collectionVariables.set('riskHistoryId', String(pm.response.json().historyId));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+%%{init: {"themeVariables":{"fontSize":"20px"},"flowchart":{"useMaxWidth":false,"htmlLabels":true,"nodeSpacing":22,"rankSpacing":28,"padding":12}}}%%
+flowchart TD
+    Request["API 요청"] --> Gate{"경로별 인증·입력 검사"}
+    Gate -->|"실패"| Stop["거절·차단·실패 안내"]
+    Gate -->|"통과"| Kind{"요청한 기능"}
+    Kind --> Business["일반 업무<br/>권한·대상·상태 규칙 확인"]
+    Business --> Response["해당 경로의 응답"]
+    Kind --> Input["AI 질문<br/>입력 보안·비용 검사"]
+    Input -->|"허용"| LLM["LLM 호출"]
+    Input -->|"차단"| Stop
+    LLM --> Output["출력 검사·개인정보 보호"]
+    Output -->|"허용"| Response
+    Output -->|"차단"| Stop
+    Stop --> Response
+    classDef main fill:#eaf2ff,stroke:#3465a4
+    classDef blocked fill:#fff0ee,stroke:#bc4b40
+    class Request,Business,Input,LLM,Output,Response main
+    class Stop blocked

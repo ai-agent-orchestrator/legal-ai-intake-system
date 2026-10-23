@@ -1,0 +1,41 @@
+%%{init: {"themeVariables":{"fontSize":"20px"},"flowchart":{"useMaxWidth":false,"htmlLabels":true,"nodeSpacing":26,"rankSpacing":30,"padding":12}}}%%
+flowchart TD
+    Client["React / Postman<br/>HTTP 요청"] --> Entry["요청 진입<br/>경로별 인증·CORS·Trace"]
+    Entry --> Controller["Controller · Request DTO<br/>요청 수신·입력 검증"]
+    Controller --> Route{"요청에 맞는 업무 처리"}
+
+    subgraph Data["저장·조회 업무"]
+        direction TB
+        Business["업무 Service<br/>문의·검색 기록·상담·파일·행동<br/>위험 이력·법률정보·운영 집계"]
+        Business --> Policy["업무 규칙 확인<br/>대상 존재·권한·상태·연결 검증"]
+        Policy --> Repository["Entity · Repository<br/>JPA / Hibernate"]
+        Repository --> Database[("DB 저장·조회<br/>MySQL / 기본 H2")]
+    end
+    subgraph Guidance["비저장 안내"]
+        direction TB
+        Rules["규칙 기반 분류·간단 안내<br/>고정 체크리스트"]
+        Rules --> GuideResult["안내 결과 생성<br/>DB 저장·LLM 호출 없음"]
+    end
+    subgraph AI["AI 질문 처리"]
+        direction TB
+        AIPolicy["AI 업무 Service<br/>입력 보안·비용 정책 적용"]
+        AIPolicy --> External["외부 Client 연동<br/>Guardrail 검사·LLM 답변 생성"]
+        External --> Output["출력 검사·개인정보 마스킹<br/>일반 답변 / 스트리밍 결과"]
+    end
+    Route --> Business
+    Route --> Rules
+    Route --> AIPolicy
+    Database --> Compose["응답 구성<br/>DTO 변환·경로별 지정 필드 보호"]
+    GuideResult --> Compose
+    Output --> Compose
+    Compose --> Response["HTTP 응답 반환<br/>JSON / SSE / 파일 바이트"]
+
+    classDef main fill:#eaf2ff,stroke:#3465a4
+    classDef data fill:#edf8ed,stroke:#38803c
+    classDef external fill:#f3edff,stroke:#7950b5
+    class Client,Entry,Controller,Business,Policy,Rules,GuideResult,Compose,Response main
+    class Repository,Database data
+    class AIPolicy,External,Output external
+    style Data fill:#f8fbff,stroke:#b7c9e2
+    style Guidance fill:#f8fbff,stroke:#b7c9e2
+    style AI fill:#faf8ff,stroke:#cbbce4

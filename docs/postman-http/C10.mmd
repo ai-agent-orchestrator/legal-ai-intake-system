@@ -1,0 +1,18 @@
+flowchart LR
+    Request["C10 문의 상태 변경<br/>PATCH /api/intakes/{id}/status"]
+    Request --> Case1["01 · SUBMITTED에서 REVIEWED 등 허용 상태로 변경"]
+    Case1 --> Response1["200 OK<br/>previousStatus · status<br/>changed=true"]
+    Request --> Case2["02 · 현재와 같은 상태 재요청"]
+    Case2 --> Response2["200 OK<br/>changed=false"]
+    Request --> Case3["03 · CLOSED 문의를 다른 상태로 재개"]
+    Case3 --> Response3["409 Conflict"]
+    Request --> Case4["04 · status 누락 또는 미지원 상태"]
+    Case4 --> Response4["400 Bad Request<br/>INVALID_REQUEST · fieldErrors"]
+    Request --> Case5["05 · 존재하지 않는 intakeId"]
+    Case5 --> Response5["404 Not Found"]
+    classDef request fill:#eaf2ff,stroke:#3465a4
+    classDef ok fill:#edf8ed,stroke:#38803c
+    classDef error fill:#fff0ee,stroke:#bc4b40
+    class Request request
+    class Response1,Response2 ok
+    class Response3,Response4,Response5 error

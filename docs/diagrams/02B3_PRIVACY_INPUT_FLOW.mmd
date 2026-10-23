@@ -1,0 +1,18 @@
+%%{init: {"theme":"base","themeVariables":{"background":"#ffffff","primaryTextColor":"#102544","lineColor":"#000000","edgeLabelBackground":"#ffffff","fontFamily":"Malgun Gothic, Arial, sans-serif","fontSize":"32px"},"themeCSS":".edgeLabel p {font-size:44px !important;font-weight:800 !important;color:#102544 !important;background:#fff !important;} .edgeLabel rect {fill:#ffffff !important;opacity:1 !important;} .flowchart-link {stroke:#000000 !important;stroke-width:3.5px !important;} marker path {fill:#000000 !important;stroke:#000000 !important;} .nodeLabel p {font-size:32px !important;} .cluster-label p {font-size:34px !important;font-weight:700 !important;}","flowchart":{"htmlLabels":true,"useMaxWidth":false,"nodeSpacing":95,"rankSpacing":85,"padding":24,"wrappingWidth":540}}}%%
+flowchart TB
+    A["S01 · S02<br/>JWT + valid request"]:::api
+    A --> B{"Dynamic Guard<br/>preCheck(sessionId)"}:::guard
+    B -->|block| X["DYNAMIC_SESSION_BLOCKED<br/>No remote call"]:::stop
+    B -->|pass| C{"Fixed Guard<br/>check(message)"}:::guard
+    C -->|privacy| D["BLOCKED_PRIVACY_RISK<br/>recordBlockedEvent: +50"]:::guard
+    D --> E{"riskScore ≥ 100 ?"}:::guard
+    E -->|yes| X
+    E -->|no| Y["BLOCKED_PRIVACY_RISK<br/>No remote call"]:::stop
+    C -->|pass| F["Cost / Input Guard<br/>LLM → Output Guard → Privacy"]:::safe
+
+    linkStyle default stroke:#000000,stroke-width:3.5px,color:#102544,font-size:44px,font-weight:800
+    classDef api fill:#eaf2ff,stroke:#42658b,stroke-width:2px,color:#102544,font-size:32px
+    classDef guard fill:#f2eeff,stroke:#7858a8,stroke-width:2px,color:#102544,font-size:32px
+    classDef safe fill:#eaf7f0,stroke:#347356,stroke-width:2px,color:#102544,font-size:32px
+    classDef stop fill:#fff0ed,stroke:#ab503e,stroke-width:2px,color:#102544,font-size:32px
+    classDef note fill:#fff8e9,stroke:#946d24,stroke-width:2px,color:#102544,font-size:32px

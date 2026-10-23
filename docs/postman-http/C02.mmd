@@ -1,0 +1,14 @@
+flowchart LR
+    Request["C02 분류 미리보기<br/>POST /api/intakes/classify-preview"]
+    Request --> Case1["01 · coreStatement 정상 입력 · 300자 이내"]
+    Case1 --> Response1["200 OK<br/>caseType · recommendedDocuments<br/>persisted=false"]
+    Request --> Case2["02 · caseType=UNKNOWN + 분류할 본문"]
+    Case2 --> Response2["200 OK<br/>본문에 따른 규칙 분류 결과"]
+    Request --> Case3["03 · coreStatement 공백/누락 또는 300자 초과"]
+    Case3 --> Response3["400 Bad Request<br/>INVALID_REQUEST · fieldErrors"]
+    classDef request fill:#eaf2ff,stroke:#3465a4
+    classDef ok fill:#edf8ed,stroke:#38803c
+    classDef error fill:#fff0ee,stroke:#bc4b40
+    class Request request
+    class Response1,Response2 ok
+    class Response3 error

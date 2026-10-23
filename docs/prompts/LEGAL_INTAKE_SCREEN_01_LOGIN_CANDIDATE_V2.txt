@@ -1,0 +1,56 @@
+Use case: ui-mockup.
+Create ONE polished high-fidelity desktop web application login mockup image
+for "Legal Intake" / Security-Aware Legal AI Intake System.
+This is Screen 01, a NEW COMPARISON CANDIDATE, not a replacement of the existing login.
+Render the actual application viewport, approximately 1440 x 1024, straight-on,
+with no device frame, browser chrome, perspective, watermark, or explanatory callouts.
+All product UI text must be legible Korean, except the English product name.
+
+MOOD AND VISUAL SYSTEM
+Professional, trustworthy, calm, practical legal-tech SaaS.
+Background #F6F7F9; surface #FFFFFF; primary text #182230; muted #667085;
+borders #D0D5DD; primary blue #175CD3; soft blue #EFF8FF.
+Readable Korean sans-serif typography such as Pretendard or Noto Sans KR.
+Use a generous whitespace rhythm, thin borders, subtle shadows, modest 8-12px
+corner radii, and a restrained blue accent. The page should feel implementable in React.
+
+COMPOSITION
+A minimal top application header with a small blue geometric mark and
+the product name "Legal Intake" at the left.
+A balanced centered white login panel, approximately 520px wide, with generous
+inner padding and a clean single-column reading order.
+Do not turn the viewport into a promotional hero or add decorative legal imagery.
+
+EXACT SCREEN CONTENT
+- Small panel label: "로그인"
+- Main heading, comfortably wrapped across two lines:
+  "법률 문의를 차근차근 정리하세요"
+- Supporting sentence:
+  "사건을 정리하고, 상담에 필요한 정보를 준비하세요."
+- Input label: "아이디"
+  Placeholder: "아이디를 입력하세요"
+- Input label: "비밀번호"
+  Placeholder: "비밀번호를 입력하세요"
+  A discreet password visibility icon is acceptable.
+- One dominant full-width blue primary button: "로그인"
+- Keep room for a contextual login error without displaying a red error in this default state.
+- A thin divider and secondary section title: "데모 체험"
+- Three equally weighted outlined demo-role buttons in a row:
+  "의뢰인 체험" / "변호사 체험" / "운영자 체험"
+  Small consistent role icons are acceptable.
+- Small muted helper text:
+  "안전하게 로그인하고 문의 내용을 확인하세요."
+
+CONSTRAINTS
+Primary login and demo exploration must be visually distinct.
+Keep controls large, text crisp, alignment precise, and the page calm.
+Do not add social login, sign-up, password reset, payments, appointments,
+technical badges, JWT text, API paths, debug panels, invented statistics,
+stock photos, gavels, courthouse backgrounds, heavy gradients, or gold luxury styling.
+This request is for one default-state visual design image, not source code or a prose plan.
+
+IMPLEMENTATION NOTE (NOT VISIBLE ON THE MOCKUP)
+Normal authentication uses C01 POST /api/auth/login with username/password and
+P01 GET /api/me for current-user context. A demo-role button must not be treated
+as backend authorization or automatic role elevation. Keep the existing implemented
+login intact until the user compares both designs and chooses one.

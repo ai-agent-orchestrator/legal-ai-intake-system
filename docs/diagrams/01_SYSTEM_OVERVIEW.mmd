@@ -1,0 +1,56 @@
+%%{init: {"theme":"base","themeVariables":{"fontSize":"20px","fontFamily":"Malgun Gothic, sans-serif"},"flowchart":{"useMaxWidth":false,"htmlLabels":true,"nodeSpacing":24,"rankSpacing":30,"padding":14}}}%%
+flowchart TD
+    subgraph Users["사용자 · React 화면"]
+        direction LR
+        Client["의뢰인 · 화면01~05<br/>로그인·분류·접수·안내·검색"]
+        Attorney["변호사 · 화면06~08<br/>문의 목록·상세·상태·메모"]
+        Operator["운영자 · 화면09~13<br/>운영·마케팅·보안·감사·AI 위험 요약"]
+        Client ~~~ Attorney ~~~ Operator
+    end
+    Users -->|"React / Postman 개별 요청"| Api["Spring Boot API<br/>경로별 인증 · CORS · DTO · Trace"]
+    Api --> Backend
+    subgraph Backend["백엔드 기능과 API 위치 · 구현 37개"]
+        direction TB
+        subgraph Row1["인증 · 문의 · 검색"]
+            direction LR
+            Account["인증·사용자<br/>로그인 C01 · 내 정보 P01"]
+            Intake["규칙 기반 분류·접수·검토<br/>분류 C02 · 안내 C04<br/>등록 C03 · 상세 C05 · 목록 C09<br/>상태 C10 · 메모 C11"]
+            Search["검색 기록·외부 실행<br/>생성 C06 · 상세 C07 · 직접 결과 C08<br/>문의별 이력 P02 · 실제 실행 P03<br/>조건 → LLM 검색문 → 검색 → 저장 → LLM 설명"]
+            Account ~~~ Intake ~~~ Search
+        end
+        subgraph Row2["자료 · 법률정보 · AI 질문"]
+            direction LR
+            Materials["파일·행동 기록<br/>업로드 P04 · 다운로드 P05<br/>행동 이벤트 P06"]
+            Reference["법률 Reference<br/>목록 R01 · 상세 R02 · 단계 R03<br/>양식 목록 R04 · 상세 R05<br/>고정 체크리스트 R06"]
+            Chat["AI 질문 S01 · SSE S02<br/>입력·생성·출력 Guard별 예약·정산<br/>최종 Privacy 마스킹"]
+            Materials ~~~ Reference ~~~ Chat
+        end
+        subgraph Row3["단독 검사 · 위험 분석 · 운영"]
+            direction LR
+            Standalone["단독 Guardrail 검사<br/>입력 S03 · 출력 S04<br/>검사 비용도 공통 장부에 합산"]
+            RiskAnalyze["Agent 위험 분석 S05<br/>요청별 점수·판정·이력<br/>조건별 Incident 생성"]
+            Reporting["운영자 화면09~13<br/>09 C12 · 10 C13 · 11 C14·C15·C16<br/>12 C17·C18·C19·C20<br/>13 C16 지표 + C17 기존 점수·신호"]
+            Standalone ~~~ RiskAnalyze ~~~ Reporting
+        end
+        Row1 ~~~ Row2 ~~~ Row3
+    end
+    Backend --> Dependencies
+    subgraph Dependencies["업무별 저장 · 외부 서비스"]
+        direction LR
+        Store[("JPA 데이터<br/>문의·자료·조건·검색 결과·설명<br/>파일·행동·Reference·Agent·Incident")]
+        External["NeMo / LLM / 네이버 검색<br/>P03: 변협 대상 + 일반 공개 웹<br/>각 LLM 생성 전후 Guard·예산 통제<br/>실제 유료 공급자 검증은 별도"]
+        Store ~~~ External
+    end
+    Backend --> Metrics["Metric · Trace 관측<br/>DB 이력과 구분 · MeterRegistry"]
+    Metrics --> Monitor["C16 Prometheus · ADMIN Basic<br/>화면11·13에서 재사용"]
+    Monitor --> Observability["화면13 AI 위험 요약<br/>C16 지표 + C17 저장된 요청 점수<br/>요청별 위험 / 대화 누적 위험의 두 기준"]
+    Backend -. "향후 확장" .-> Future["RAG / Vector DB / 기간·코호트 분석"]
+    classDef implemented fill:#eaf2ff,stroke:#3465a4,color:#102544
+    classDef planned fill:#fff4dc,stroke:#b7791f,stroke-dasharray:5 5,color:#5b3b12
+    classDef data fill:#edf8ed,stroke:#38803c,color:#173c20
+    class Client,Attorney,Operator,Api,Account,Intake,Search,Materials,Reference,Chat,Standalone,RiskAnalyze,Reporting,Metrics,Monitor,Observability implemented
+    class Future planned
+    class Store,External data
+    style Row1 fill:#ffffff,stroke:#c8d6e5
+    style Row2 fill:#ffffff,stroke:#c8d6e5
+    style Row3 fill:#ffffff,stroke:#c8d6e5

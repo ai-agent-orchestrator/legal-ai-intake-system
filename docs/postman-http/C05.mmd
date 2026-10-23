@@ -1,0 +1,14 @@
+flowchart LR
+    Request["C05 문의 상세<br/>GET /api/intakes/{id}"]
+    Request --> Case1["01 · 존재하는 intakeId"]
+    Case1 --> Response1["200 OK<br/>문의 · 조건 · consultationMemos<br/>uploadedDocuments"]
+    Request --> Case2["02 · 존재하지 않는 숫자 ID"]
+    Case2 --> Response2["404 Not Found"]
+    Request --> Case3["03 · 숫자가 아닌 경로 ID"]
+    Case3 --> Response3["400 Bad Request"]
+    classDef request fill:#eaf2ff,stroke:#3465a4
+    classDef ok fill:#edf8ed,stroke:#38803c
+    classDef error fill:#fff0ee,stroke:#bc4b40
+    class Request request
+    class Response1 ok
+    class Response2,Response3 error

@@ -1,10 +1,12 @@
 package com.ohgiraffers.handlermethod.riskengine;
 
+import com.ohgiraffers.handlermethod.support.AiSessionIds;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -29,31 +31,36 @@ public class LegalDynamicGuardService {
     }
 
     public DynamicGuardDecision preCheck(String sessionId) {
-        SessionRiskState state = sessionStates.get(normalizeSessionId(sessionId));
-        if (state == null || !state.blocked) {
-            return DynamicGuardDecision.allow(state == null ? 0 : state.riskScore);
+        SessionRiskState state = sessionStates.get(AiSessionIds.normalize(sessionId));
+        if (state == null) {
+            return DynamicGuardDecision.allow(0);
         }
-        return DynamicGuardDecision.block("DYNAMIC_SESSION_BLOCKED", state.riskScore, DYNAMIC_BLOCK_RESPONSE);
+        synchronized (state) {
+            return state.blocked
+                    ? DynamicGuardDecision.block("DYNAMIC_SESSION_BLOCKED", state.riskScore, DYNAMIC_BLOCK_RESPONSE)
+                    : DynamicGuardDecision.allow(state.riskScore);
+        }
     }
 
     public DynamicGuardDecision recordBlockedEvent(String sessionId, String reasonCode) {
-        String normalizedSessionId = normalizeSessionId(sessionId);
+        String normalizedSessionId = AiSessionIds.normalize(sessionId);
         String normalizedReason = normalizeReason(reasonCode);
         SessionRiskState state = sessionStates.computeIfAbsent(normalizedSessionId, ignored -> new SessionRiskState());
 
-        state.riskScore += score(normalizedReason);
-        state.totalBlockedCount++;
-        state.reasonCounts.merge(normalizedReason, 1, Integer::sum);
+        synchronized (state) {
+            state.riskScore += score(normalizedReason);
+            state.totalBlockedCount++;
+            state.reasonCounts.merge(normalizedReason, 1, Integer::sum);
+            recordRiskEvent(normalizedReason);
 
-        recordRiskEvent(normalizedReason);
-
-        if (shouldBlock(state, normalizedReason)) {
-            state.blocked = true;
-            recordDynamicBlock(normalizedReason);
-            return DynamicGuardDecision.block("DYNAMIC_SESSION_BLOCKED", state.riskScore, DYNAMIC_BLOCK_RESPONSE);
+            if (!state.blocked && shouldBlock(state, normalizedReason)) {
+                state.blocked = true;
+                recordDynamicBlock(normalizedReason);
+            }
+            return state.blocked
+                    ? DynamicGuardDecision.block("DYNAMIC_SESSION_BLOCKED", state.riskScore, DYNAMIC_BLOCK_RESPONSE)
+                    : DynamicGuardDecision.allow(state.riskScore);
         }
-
-        return DynamicGuardDecision.allow(state.riskScore);
     }
 
     private boolean shouldBlock(SessionRiskState state, String reasonCode) {
@@ -67,6 +74,15 @@ public class LegalDynamicGuardService {
         if ("BLOCKED_PROMPT_INJECTION".equals(reasonCode) && sameReasonCount >= 2) {
             return true;
         }
+        if ("BLOCKED_JAILBREAK".equals(reasonCode) && sameReasonCount >= 2) {
+            return true;
+        }
+        if ("BLOCKED_SECRET_REQUEST".equals(reasonCode) && sameReasonCount >= 2) {
+            return true;
+        }
+        if ("OUT_OF_SCOPE_TOPIC".equals(reasonCode) && sameReasonCount >= 3) {
+            return true;
+        }
         if ("REQUEST_TOO_LONG".equals(reasonCode) && sameReasonCount >= 2) {
             return true;
         }
@@ -76,9 +92,10 @@ public class LegalDynamicGuardService {
     private int score(String reasonCode) {
         return switch (reasonCode) {
             case "BLOCKED_LEGAL_HARM" -> 70;
-            case "BLOCKED_PROMPT_INJECTION" -> 60;
-            case "BLOCKED_PRIVACY_RISK", "BLOCKED_AUTH_BYPASS", "NEMO_INPUT_GUARDRAIL" -> 50;
+            case "BLOCKED_JAILBREAK", "BLOCKED_PROMPT_INJECTION" -> 60;
+            case "BLOCKED_SECRET_REQUEST", "BLOCKED_PRIVACY_RISK", "BLOCKED_AUTH_BYPASS", "NEMO_INPUT_GUARDRAIL" -> 50;
             case "REQUEST_TOO_LONG", "COST_LIMIT_BLOCKED" -> 35;
+            case "OUT_OF_SCOPE_TOPIC" -> 20;
             default -> 25;
         };
     }
@@ -100,16 +117,13 @@ public class LegalDynamicGuardService {
 
     private double maxRiskScore() {
         return sessionStates.values().stream()
-                .mapToInt(state -> state.riskScore)
+                .mapToInt(state -> {
+                    synchronized (state) {
+                        return state.riskScore;
+                    }
+                })
                 .max()
                 .orElse(0);
-    }
-
-    private String normalizeSessionId(String sessionId) {
-        if (sessionId == null || sessionId.isBlank()) {
-            return "anonymous";
-        }
-        return sessionId.trim();
     }
 
     private String normalizeReason(String reasonCode) {
@@ -123,6 +137,6 @@ public class LegalDynamicGuardService {
         private int riskScore;
         private int totalBlockedCount;
         private boolean blocked;
-        private final Map<String, Integer> reasonCounts = new ConcurrentHashMap<>();
+        private final Map<String, Integer> reasonCounts = new HashMap<>();
     }
 }

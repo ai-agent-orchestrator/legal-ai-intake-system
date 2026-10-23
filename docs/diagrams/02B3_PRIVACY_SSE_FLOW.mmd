@@ -1,0 +1,20 @@
+%%{init: {"theme":"base","themeVariables":{"background":"#ffffff","primaryTextColor":"#102544","lineColor":"#000000","edgeLabelBackground":"#ffffff","fontFamily":"Malgun Gothic, Arial, sans-serif","fontSize":"32px"},"themeCSS":".edgeLabel p {font-size:44px !important;font-weight:800 !important;color:#102544 !important;background:#fff !important;} .edgeLabel rect {fill:#ffffff !important;opacity:1 !important;} .flowchart-link {stroke:#000000 !important;stroke-width:3.5px !important;} marker path {fill:#000000 !important;stroke:#000000 !important;} .nodeLabel p {font-size:32px !important;} .cluster-label p {font-size:34px !important;font-weight:700 !important;}","flowchart":{"htmlLabels":true,"useMaxWidth":false,"nodeSpacing":95,"rankSpacing":85,"padding":24,"wrappingWidth":540}}}%%
+flowchart TB
+    A["S02<br/>POST /api/ai/chat/stream"]:::api
+    A --> B["Dynamic → Fixed<br/>Cost / Input Guard → Generation reserve"]:::guard
+    B -->|pass| C["meta → LLM streaming<br/>onChunk → pending.append<br/>No body token sent"]:::guard
+    C -->|complete| D["recordUsage<br/>Settle generation cost"]:::guard
+    D --> E{"checkOutput<br/>Complete pending text"}:::guard
+    E -->|block| X["blocked<br/>No token event"]:::stop
+    E -->|allow| F["mask(result.content)<br/>Output Guard content → PII masking"]:::safe
+    F --> G["sendMaskedChunks<br/>token → token → done"]:::safe
+    B -. block .-> X
+    C -. error .-> Y["error<br/>Unknown dispatched usage → ESTIMATED"]:::stop
+    E -. error .-> Y
+
+    linkStyle default stroke:#000000,stroke-width:3.5px,color:#102544,font-size:44px,font-weight:800
+    classDef api fill:#eaf2ff,stroke:#42658b,stroke-width:2px,color:#102544,font-size:32px
+    classDef guard fill:#f2eeff,stroke:#7858a8,stroke-width:2px,color:#102544,font-size:32px
+    classDef safe fill:#eaf7f0,stroke:#347356,stroke-width:2px,color:#102544,font-size:32px
+    classDef stop fill:#fff0ed,stroke:#ab503e,stroke-width:2px,color:#102544,font-size:32px
+    classDef note fill:#fff8e9,stroke:#946d24,stroke-width:2px,color:#102544,font-size:32px

@@ -1,0 +1,52 @@
+%%{init: {"flowchart": {"rankSpacing": 30, "nodeSpacing": 26}}}%%
+flowchart TB
+    Start["Spring Boot<br/>Request or Batch Job"]
+    Prepare["Python Preprocessing<br/>Parse, Chunk, Deduplicate"]
+    Type{"LLM<br/>Required?"}
+    Code["Ordinary Code<br/>Sort, Format and Aggregate"]
+    Gate{"Budget + Capacity<br/>Available?"}
+    Queue["Task Queue<br/>Controlled Concurrency"]
+    InputRails["NVIDIA NeMo Guardrails<br/>Input Checks"]
+    Sandbox["NVIDIA NemoClaw / OpenShell<br/>Supported Agent Sandbox"]
+    Worker["Alibaba Cloud / Qwen<br/>Inference Worker"]
+    Usage["Record Every Attempt<br/>Usage or Estimated / Pending Cost"]
+    Check{"Valid<br/>Response?"}
+    Retry{"Retry<br/>Allowed?"}
+    Review["Stop / Defer<br/>Record Status for Review"]
+    Save["Store Validated Results<br/>Source References and Trace"]
+    OutputRails["NVIDIA NeMo Guardrails<br/>Output Checks"]
+    Return["Return to Spring Boot<br/>Output Checks, Privacy, Accounting"]
+
+    Start --> Prepare --> Type
+    Type -->|"No"| Code
+    Code --> Save
+    Type -->|"Yes"| Gate
+    Gate -->|"Yes"| InputRails
+    InputRails -->|"Allowed"| Queue
+    InputRails -->|"Blocked / Error"| Review
+    Gate -->|"No"| Review
+    Queue --> Worker --> Usage --> Check
+    Queue -.->|"Agent Tasks"| Sandbox
+    Sandbox -.->|"Approved Inference"| Worker
+    Check -->|"Yes"| OutputRails
+    OutputRails -->|"Allowed"| Save
+    OutputRails -->|"Blocked / Error"| Review
+    Check -->|"No"| Retry
+    Retry -->|"Yes"| Gate
+    Retry -->|"No"| Review
+    Save --> Return
+
+    classDef engineering fill:#18344b,stroke:#5ba7db,stroke-width:2px,color:#e6edf6
+    classDef python fill:#26313d,stroke:#a1afbf,stroke-width:2px,color:#e6edf6
+    classDef nvidia fill:#263c17,stroke:#91cc45,stroke-width:3px,color:#efffdc
+    classDef worker fill:#4b2b22,stroke:#d39a6a,stroke-width:3px,color:#fff0e6
+    classDef control fill:#42351e,stroke:#ddb965,stroke-width:2px,color:#e6edf6
+    classDef result fill:#1a2837,stroke:#78d5ef,stroke-width:2px,color:#e6edf6
+    classDef stop fill:#40282d,stroke:#c58b92,stroke-width:2px,color:#e6edf6
+    class Start,Return engineering
+    class Prepare,Code python
+    class InputRails,OutputRails,Sandbox nvidia
+    class Type,Gate,Queue,Check,Retry control
+    class Worker worker
+    class Usage,Save result
+    class Review stop

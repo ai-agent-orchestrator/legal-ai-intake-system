@@ -1,0 +1,29 @@
+erDiagram
+    legal_procedure ||..o{ legal_procedure_step : "physical FK procedure_id"
+    legal_procedure ||..o{ legal_form_template : "physical FK procedure_id"
+
+    legal_procedure {
+        bigint id PK
+        varchar code UK "API path identifier"
+        enum domain
+        varchar title
+        varchar summary
+        varchar user_role
+    }
+    legal_procedure_step {
+        bigint id PK
+        bigint procedure_id FK "NOT NULL; JPA ManyToOne"
+        int step_order
+        varchar step_code
+        varchar title
+        varchar description
+        varchar checklist
+    }
+    legal_form_template {
+        bigint id PK
+        bigint procedure_id FK "NOT NULL; JPA ManyToOne"
+        varchar form_code UK "API path identifier"
+        varchar title
+        varchar file_type
+        varchar usage_note
+    }

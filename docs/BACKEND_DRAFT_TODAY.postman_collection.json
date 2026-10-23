@@ -1,0 +1,563 @@
+{
+  "info": {
+    "name": "Legal AI Backend Draft - 2026-10-15",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "현재 개발 설정의 로컬 서버에서 순서대로 실행합니다. baseUrl을 서버 주소로 지정하세요. 신규 API 및 저장·조회 흐름 재현용이며, 제공 시점에 실제 Postman 실행을 완료했다는 의미는 아닙니다. 새 문의와 검색 요청·메모를 생성합니다. 외부 검색·LLM 호출은 하지 않습니다. 2026-10-16: 신규 5개 API는 ADDITIONAL_FIVE_APIS Collection 참조. 행동 단계는 이제 REPORTED_EVENT이며 기록이 없으면 0입니다."
+  },
+  "variable": [
+    {
+      "value": "http://localhost:8080",
+      "type": "string",
+      "key": "baseUrl"
+    },
+    {
+      "value": "",
+      "type": "string",
+      "key": "intakeId"
+    },
+    {
+      "value": "",
+      "type": "string",
+      "key": "conditionId"
+    },
+    {
+      "value": "",
+      "type": "string",
+      "key": "searchRequestId"
+    }
+  ],
+  "item": [
+    {
+      "name": "01 분류 preview - DB 저장 없음",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/intakes/classify-preview",
+        "body": {
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          },
+          "mode": "raw",
+          "raw": "{\"caseType\":\"UNKNOWN\",\"coreStatement\":\"돈을 빌려줬는데 못 받고 있습니다.\"}"
+        }
+      },
+      "event": [
+        {
+          "script": {
+            "exec": [
+              "pm.test(\"HTTP status\", function () { pm.response.to.have.status(200); });",
+              "const body = pm.response.json();",
+              "pm.test(\"Rule based, no persistence\", function () { pm.expect(body.classificationMethod).to.eql(\"RULE_BASED\"); pm.expect(body.persisted).to.eql(false); });"
+            ],
+            "type": "text/javascript"
+          },
+          "listen": "test"
+        }
+      ]
+    },
+    {
+      "name": "02 빈 preview - 400",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/intakes/classify-preview",
+        "body": {
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          },
+          "mode": "raw",
+          "raw": "{\"coreStatement\":\" \"}"
+        }
+      },
+      "event": [
+        {
+          "script": {
+            "exec": [
+              "pm.test(\"HTTP status\", function () { pm.response.to.have.status(400); });",
+              "pm.test(\"Field validation\", function () { pm.expect(pm.response.json().code).to.eql(\"INVALID_REQUEST\"); });"
+            ],
+            "type": "text/javascript"
+          },
+          "listen": "test"
+        }
+      ]
+    },
+    {
+      "name": "03 문의 생성 - ID 보관",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/intakes",
+        "body": {
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          },
+          "mode": "raw",
+          "raw": "{\"sessionId\":\"today-draft-{{$guid}}\",\"inquiryPurpose\":\"필요한 자료 확인\",\"caseType\":\"CIVIL\",\"partyPosition\":\"원고\",\"coreStatement\":\"빌려준 돈을 못 받고 있습니다.\",\"desiredNextStep\":\"상담\",\"preferredRegion\":\"서울\",\"documents\":[\"입금 내역\",\"입금 내역\",\"카카오톡/문자\"]}"
+        }
+      },
+      "event": [
+        {
+          "script": {
+            "exec": [
+              "pm.test(\"HTTP status\", function () { pm.response.to.have.status(201); });",
+              "const body = pm.response.json();",
+              "pm.collectionVariables.set(\"intakeId\", String(body.id));",
+              "pm.collectionVariables.set(\"conditionId\", String(body.lawyerSearchCondition.id));",
+              "pm.test(\"Submitted and deduplicated\", function () { pm.expect(body.status).to.eql(\"SUBMITTED\"); pm.expect(body.selectedDocuments.length).to.eql(2); });"
+            ],
+            "type": "text/javascript"
+          },
+          "listen": "test"
+        }
+      ]
+    },
+    {
+      "name": "04 문의 상세",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/intakes/{{intakeId}}"
+      },
+      "event": [
+        {
+          "script": {
+            "exec": [
+              "pm.test(\"HTTP status\", function () { pm.response.to.have.status(200); });"
+            ],
+            "type": "text/javascript"
+          },
+          "listen": "test"
+        }
+      ]
+    },
+    {
+      "name": "05 문의 목록",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/intakes"
+      },
+      "event": [
+        {
+          "script": {
+            "exec": [
+              "pm.test(\"HTTP status\", function () { pm.response.to.have.status(200); });"
+            ],
+            "type": "text/javascript"
+          },
+          "listen": "test"
+        }
+      ]
+    },
+    {
+      "name": "06 검색 요청 생성 - ID 보관",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/intakes/{{intakeId}}/search-requests",
+        "body": {
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          },
+          "mode": "raw",
+          "raw": "{}"
+        }
+      },
+      "event": [
+        {
+          "script": {
+            "exec": [
+              "pm.test(\"HTTP status\", function () { pm.response.to.have.status(201); });",
+              "const body = pm.response.json();",
+              "pm.collectionVariables.set(\"searchRequestId\", String(body.id));",
+              "pm.test(\"Preview ready\", function () { pm.expect(body.status).to.eql(\"PREVIEW_READY\"); });"
+            ],
+            "type": "text/javascript"
+          },
+          "listen": "test"
+        }
+      ]
+    },
+    {
+      "name": "07 동일 문의 검색 요청 추가 - 문의 수 중복 집계 확인용",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/intakes/{{intakeId}}/search-requests",
+        "body": {
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          },
+          "mode": "raw",
+          "raw": "{}"
+        }
+      },
+      "event": [
+        {
+          "script": {
+            "exec": [
+              "pm.test(\"HTTP status\", function () { pm.response.to.have.status(201); });"
+            ],
+            "type": "text/javascript"
+          },
+          "listen": "test"
+        }
+      ]
+    },
+    {
+      "name": "08 검색 결과 스냅샷 추가",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/intakes/search-requests/{{searchRequestId}}/results",
+        "body": {
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          },
+          "mode": "raw",
+          "raw": "{\"sourceType\":\"PUBLIC_WEB\",\"title\":\"데모 검색 결과\",\"url\":\"https://example.com/lawyer\",\"snippet\":\"직접 전달한 예시 결과입니다.\"}"
+        }
+      },
+      "event": [
+        {
+          "script": {
+            "exec": [
+              "pm.test(\"HTTP status\", function () { pm.response.to.have.status(201); });"
+            ],
+            "type": "text/javascript"
+          },
+          "listen": "test"
+        }
+      ]
+    },
+    {
+      "name": "09 검색 요청 상세 및 결과",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/intakes/search-requests/{{searchRequestId}}"
+      },
+      "event": [
+        {
+          "script": {
+            "exec": [
+              "pm.test(\"HTTP status\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"Result persisted\", function () { pm.expect(pm.response.json().results.length).to.be.above(0); });"
+            ],
+            "type": "text/javascript"
+          },
+          "listen": "test"
+        }
+      ]
+    },
+    {
+      "name": "10 검토 상태 변경",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/intakes/{{intakeId}}/status",
+        "body": {
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          },
+          "mode": "raw",
+          "raw": "{\"status\":\"REVIEWED\"}"
+        }
+      },
+      "event": [
+        {
+          "script": {
+            "exec": [
+              "pm.test(\"HTTP status\", function () { pm.response.to.have.status(200); });"
+            ],
+            "type": "text/javascript"
+          },
+          "listen": "test"
+        }
+      ]
+    },
+    {
+      "name": "11 상담 메모 - 출력 마스킹",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/intakes/{{intakeId}}/memo",
+        "body": {
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          },
+          "mode": "raw",
+          "raw": "{\"content\":\"예시 연락처 010-1234-5678로 자료 요청\",\"followUpItems\":[\"REQUEST_DOCUMENTS\",\"SCHEDULE_CONSULTATION\"]}"
+        }
+      },
+      "event": [
+        {
+          "script": {
+            "exec": [
+              "pm.test(\"HTTP status\", function () { pm.response.to.have.status(201); });",
+              "pm.test(\"Phone masked\", function () { pm.expect(pm.response.json().contentMasked).to.include(\"010-1***-****\"); });"
+            ],
+            "type": "text/javascript"
+          },
+          "listen": "test"
+        }
+      ]
+    },
+    {
+      "name": "12 문의 상세 - 메모 재조회",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/intakes/{{intakeId}}"
+      },
+      "event": [
+        {
+          "script": {
+            "exec": [
+              "pm.test(\"HTTP status\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"Memo returned\", function () { pm.expect(pm.response.json().consultationMemos.length).to.be.above(0); });"
+            ],
+            "type": "text/javascript"
+          },
+          "listen": "test"
+        }
+      ]
+    },
+    {
+      "name": "13 상담 준비 상태 변경",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/intakes/{{intakeId}}/status",
+        "body": {
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          },
+          "mode": "raw",
+          "raw": "{\"status\":\"CONSULTATION_READY\"}"
+        }
+      },
+      "event": [
+        {
+          "script": {
+            "exec": [
+              "pm.test(\"HTTP status\", function () { pm.response.to.have.status(200); });"
+            ],
+            "type": "text/javascript"
+          },
+          "listen": "test"
+        }
+      ]
+    },
+    {
+      "name": "14 마케팅 집계 - 행동 기록 수와 측정 기준",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/admin/dashboard/marketing-funnel"
+      },
+      "event": [
+        {
+          "script": {
+            "exec": [
+              "pm.test(\"HTTP status\", function () { pm.response.to.have.status(200); });",
+              "const body = pm.response.json();",
+              "pm.test(\"Reported visit count is numeric\", function () { const visit = body.stages.find(s => s.stage === \"VISIT\"); pm.expect(visit.count).to.be.a(\"number\"); pm.expect(visit.measurement).to.eql(\"REPORTED_EVENT\"); pm.expect(body.dropOffMeasured).to.eql(false); });",
+              "pm.test(\"Distinct inquiry count is no larger than request count\", function () { pm.expect(body.searchRequestedIntakeCount).to.be.at.most(body.searchRequestCount); });"
+            ],
+            "type": "text/javascript"
+          },
+          "listen": "test"
+        }
+      ]
+    },
+    {
+      "name": "15 문의 종료",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/intakes/{{intakeId}}/status",
+        "body": {
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          },
+          "mode": "raw",
+          "raw": "{\"status\":\"CLOSED\"}"
+        }
+      },
+      "event": [
+        {
+          "script": {
+            "exec": [
+              "pm.test(\"HTTP status\", function () { pm.response.to.have.status(200); });"
+            ],
+            "type": "text/javascript"
+          },
+          "listen": "test"
+        }
+      ]
+    },
+    {
+      "name": "16 종료 후 재개 - 409",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/intakes/{{intakeId}}/status",
+        "body": {
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          },
+          "mode": "raw",
+          "raw": "{\"status\":\"REVIEWED\"}"
+        }
+      },
+      "event": [
+        {
+          "script": {
+            "exec": [
+              "pm.test(\"HTTP status\", function () { pm.response.to.have.status(409); });"
+            ],
+            "type": "text/javascript"
+          },
+          "listen": "test"
+        }
+      ]
+    },
+    {
+      "name": "17 없는 문의에 메모 - 404",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/intakes/9223372036854775807/memo",
+        "body": {
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          },
+          "mode": "raw",
+          "raw": "{\"content\":\"저장되면 안 되는 예시 메모\"}"
+        }
+      },
+      "event": [
+        {
+          "script": {
+            "exec": [
+              "pm.test(\"HTTP status\", function () { pm.response.to.have.status(404); });"
+            ],
+            "type": "text/javascript"
+          },
+          "listen": "test"
+        }
+      ]
+    }
+  ]
+}

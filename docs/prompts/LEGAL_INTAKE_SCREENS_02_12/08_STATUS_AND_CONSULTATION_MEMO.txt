@@ -1,0 +1,138 @@
+You are designing the next screen of an existing React product:
+Security-Aware Legal AI Intake System / Legal Intake.
+
+Generate ONE high-fidelity desktop UI mockup image for the screen requested below.
+Use Korean product UI text. The deliverable is a usable application screen.
+
+APPROVED VISUAL REFERENCES - THIS SUPERSEDES THE EARLIER GENERIC LOGIN CANDIDATE
+Use the user-approved desktop login and mobile login reference images attached
+to this conversation as STYLE REFERENCES, not as edit targets.
+Reference filenames: 01_LOGIN_DESKTOP_PREFERRED.png and 01_LOGIN_MOBILE_PREFERRED.png.
+The user prefers this warm, premium law-office atmosphere over the earlier
+flat neutral login mockup. Preserve that specific brand feeling across Screens 02-12.
+
+ATMOSPHERE AND BACKGROUND
+A bright contemporary legal consultation office: large daylight windows,
+a softly defocused city skyline, warm wood shelves, books, a desk, and a few plants.
+Combine cool natural window light with warm interior materials. The result should
+feel established, reassuring, polished, and human rather than sterile or flashy.
+Reuse one coherent office visual across the product; do not invent a different
+luxury interior or a new stock photo for every page.
+Place the office photo behind the application shell, at the page edges, or in
+a restrained header area. Use bright white overlays and soft background blur.
+Keep form surfaces, tables, charts, and detail drawers opaque or nearly opaque
+white; never place small text directly over shelves, books, windows, or plants.
+
+BRAND, COLOR AND TYPOGRAPHY
+Keep the reference's royal-blue shield/document mark and the product name
+Security-Aware Legal AI Intake System. A compact two-line brand lockup is suitable
+inside working screens; do not repeat the giant login title above every data table.
+Use deep navy #0B2148, royal blue #0B4AB8 / #1456C8, white #FFFFFF,
+pale blue #EDF4FF, cool borders #D6DFEC, and muted slate #63738B.
+Warm beige/wood tones belong mainly to the atmospheric background.
+Use an elegant serif for the English brand and occasional short display headings.
+Use highly readable Korean sans-serif for body text, form labels, numbers,
+table rows, controls, and longer Korean headings. Do not set every label in a serif.
+Primary buttons may use the reference's subtle navy-to-royal-blue gradient.
+Use blue line icons, soft circular icon backgrounds, thin borders, soft shadows,
+and 12-18px corner radii. Selection states use a pale-blue fill and clear blue border.
+Green indicates completion, amber review, and red errors, always with text labels.
+The dark API diagrams describe architecture; do not copy their dark theme into this UI.
+
+LAYOUT BY ROLE
+Desktop canvas: 1440px wide. Preserve generous spacing and a clear next action.
+Client screens 02-05: a welcoming law-office intake experience, four-step
+progress, comfortable white content panels, a quieter reference column.
+Attorney screens 06-08: keep the same brand and office atmosphere while using
+a compact header/sidebar and clean white work surfaces for real case review.
+Operator screens 09-12: a standalone professional workspace, a restrained navy
+sidebar, and legible white metric/table panels. Keep this shared sidebar:
+운영 요약 / 마케팅 집계 / 보안·비용 / 위험 이력·Incident.
+Use background photography more subtly on dense attorney/operator screens.
+Adapt the login's atmosphere, not its three-column promotional composition:
+working screens need room for forms and records, not a feature-list marketing rail.
+Keep the UI feasible with reusable React components, one background asset,
+CSS overlays, and a responsive grid.
+
+RESPONSIVE CONTINUITY
+The mobile reference establishes the same bright office, navy/blue brand,
+shield mark, white cards, and touch-friendly controls at a narrower width.
+Design the default deliverable as one flat desktop viewport. If a mobile version
+is requested later, make a separate approximately 390px viewport: stack cards,
+collapse navigation, keep comfortable touch targets and a clear primary action,
+and place wide tables in a readable responsive arrangement.
+Do not include the reference's physical phone frame, hand, camera island,
+status bar, or surrounding photographed device scene in the application UI image.
+
+DATA AND INTERACTION RULES
+Use only the fields and actions specified in the screen's API notes.
+API numbers, HTTP paths, DTO names, JWTs, and credentials belong in implementation
+handoff notes, not in the main customer interface. Operator technical details may
+appear where they help investigation. UI role separation does not prove server authorization.
+Distinguish unsaved drafts, stored records, loading, empty, unavailable, and error states.
+Missing metrics are unavailable, not zero. Design samples are fictional and should
+have one unobtrusive label, 디자인 예시 데이터. Production UI must use real responses.
+Keep generated IDs as read-only identifiers. Users select records; they do not invent IDs.
+Do not invent payments, appointments, messaging, editing, deleting, exports, automatic
+LLM execution, or extra backend fields. Keep planned actions visibly disabled.
+Treat privacy masking as field-specific; do not claim all content or attachments are anonymized.
+Preserve form input on failure and prevent duplicate submissions while a request is pending.
+The references define appearance, not new functionality: do not copy a password-reset
+link, language selector, JWT badge, or universal security guarantee into these screens
+unless the screen's supported workflow actually requires it.
+
+OUTPUT
+Render only the requested screen, showing a coherent main state with legible Korean labels.
+Do not regenerate Login or output all screens as a small collage. Preserve this visual system
+when the next numbered prompt arrives. Do not replace the requested image with a code listing.
+Use the API notes to make the design implementable; do not print those notes on the mockup.
+
+SCREEN 08 - 상태 변경·상담 메모 / Status and Consultation Notes
+
+SCREEN-SPECIFIC VISUAL DIRECTION
+Use a focused white writing surface with the office background only faintly visible outside the work area. Clearly separate the status panel from the consultation-note editor. Use the same refined navy/blue controls, a quieter outlined status-save action, and a clear note-save button within its own panel. Make follow-up checkboxes, character count, independent save feedback, and unsaved text easy to see.
+
+PURPOSE AND LAYOUT
+Create a focused attorney work screen linked to Screen 07.
+Keep a compact inquiry header with the same read-only ID and current status.
+Use two distinct save areas so the user understands what has been committed.
+
+STATUS PANEL
+- Label: 문의 상태.
+- Show current status and a next-status selector with Korean labels.
+- Choices reflect SUBMITTED, REVIEWED, NEED_MORE_INFO, CONSULTATION_READY, CLOSED.
+- Button: 상태 변경 저장.
+- A concise result: 변경 전 → 변경 후, or 변경 없음.
+- Preserve conflict feedback without claiming the change succeeded.
+- CLOSED inquiries cannot change to another status; returning to SUBMITTED is
+  disallowed from other statuses. Keep the current status visible when editing is locked.
+
+CONSULTATION NOTE PANEL
+- Heading: 상담 준비 메모.
+- Large but bounded text area, max 4000 characters, with a counter.
+- A separate follow-up checklist:
+  자료 보완 요청 / 상담 일정 확인 필요 / 서면 검토 필요 / 전자소송 안내 필요.
+- Button: 메모 추가 저장.
+- Show existing saved notes as read-only, masked entries with timestamps.
+- Explain through layout that the written note and follow-up flags are separate fields.
+  Checking a flag does not send a message, book an appointment, or generate note content.
+
+STATES AND NAVIGATION
+Show independent pending/success/error states for the two saves.
+If one succeeds and the other fails, preserve the success and the remaining draft.
+Do not represent the two HTTP requests as one atomic transaction.
+Use a back action to Screen 07 and a local unsaved-changes indication where useful.
+Do not invent editing or deleting existing memos. A closed inquiry's status lock
+does not by itself mean the current memo-creation API rejects new notes.
+
+API HANDOFF - DO NOT DISPLAY ON THE PRODUCT SCREEN
+C10 PATCH /api/intakes/{id}/status
+  Body: {status}. Response: id, previousStatus, status, changed.
+  Allowed same-state requests can be unchanged; invalid transitions can return 409.
+C11 POST /api/intakes/{id}/memo
+  Body: required content (max 4000), followUpItems (max 4).
+  Codes: REQUEST_DOCUMENTS, SCHEDULE_CONSULTATION, DOCUMENT_REVIEW, E_LITIGATION_GUIDE.
+  Response: id, intakeId, contentMasked, followUpItems, createdAt.
+Both operations use the same parent inquiry ID already selected on Screens 06/07.
+After a successful write, explicitly reread C05 for Screen 07; the backend does
+not automatically invoke another screen's HTTP API. Use C05 for contextual reads.
