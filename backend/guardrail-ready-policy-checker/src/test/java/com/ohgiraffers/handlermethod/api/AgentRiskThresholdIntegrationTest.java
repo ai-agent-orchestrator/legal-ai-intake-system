@@ -35,6 +35,7 @@ class AgentRiskThresholdIntegrationTest {
 
     private Map<String, Object> analyze(String body, String trace) throws Exception {
         var result = mvc.perform(post("/api/agent/risk/analyze").header("X-Trace-Id", trace)
+                .header("Authorization", "Bearer " + tokens.createToken("admin", "ROLE_ADMIN"))
                 .contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isOk()).andReturn();
         return JsonPath.read(result.getResponse().getContentAsString(), "$");
     }

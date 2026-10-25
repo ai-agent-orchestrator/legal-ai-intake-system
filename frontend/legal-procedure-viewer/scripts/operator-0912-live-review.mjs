@@ -1,4 +1,5 @@
 // Disposable LOCAL API review, with synthetic DB records. No external LLM/search calls.
+// SUPERSEDED (2026-10-25): written before operator APIs required ADMIN JWT (P1-02) and before /api/agent/** writes became ADMIN-only. It calls those APIs anonymously, so it now fails by design. Use the backend tests OperatorAuthorizationIntegrationTest / SecurityRouteAccessIntegrationTest and scripts/Verify-FourHardening.mjs instead.
 import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
 import * as api from '../src/operator/operatorApi.js';

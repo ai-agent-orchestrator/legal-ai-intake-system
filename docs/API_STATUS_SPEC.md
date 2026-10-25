@@ -192,9 +192,12 @@ SSE 중단·오류·timeout 추정 정산과 중복 콜백 방지는 기존 S02 
 **7. 공통 통신·오류·검증 상태**
 
 - JSON 요청은 `Content-Type: application/json`. 성공 응답은 대부분 DTO 또는 배열을 직접 반환한다. C16은 텍스트, S02는 SSE.
-- 현재 `/api/me`, `/api/ai/**`, GET 이외 `/api/legal/**`, 신규 파일 API, GET 문의별 검색 이력, P03 검색 실행은 JWT 인증 대상. 나머지 기존 `/api/intakes/**`, `/api/admin/**`, `/api/agent/**`, `/api/incidents/**`, 행동 수집 `/api/intake-events`는 현재 개발용 공개 설정이다.
+- 경로 정책은 `SecurityConfig`의 다섯 목록으로 관리하며, **목록에 없는 `/api/**`는 기본 차단**(익명 401 `JWT_REQUIRED`, 로그인 403 `JWT_FORBIDDEN`)이다. 새 컨트롤러 경로가 목록에서 빠지면 `SecurityRouteInventoryTest`가 실패한다. (2026-10-25 운영자 교차 검수 반영)
+  - 익명 허용: POST `/api/auth/login`, `/api/intakes/classify-preview`, `/api/intake-events`(세션 검증) · GET 법률 절차/서식 카탈로그 `/api/legal/procedures/**`, `/api/legal/forms/**`, `/api/legal/criminal/**`.
+  - 로그인(모든 역할, 소유권은 Service에서 확인): `/api/me`, `/api/intakes/**`, `/api/legal-intake/minimal`, `/api/legal/intake/analyze`, `/api/legal/guardrail/**`, `/api/ai/**`.
+  - ADMIN JWT: `/api/admin/**`, `/api/agent/**`(S05 포함 위험 이력·Incident를 만드는 쓰기 전체), `/api/incidents/**`, GET `/api/legal/intake/history`·`summary`(전체 사용자 사건 요약), 실습·안내 API(`/api/chat`, `/api/menus`, `/api/n-plus-one-practice/**`, `/api/transaction-practice/**`, `/api/status`, `/api/observability/**`, `/api/security-observability/**`).
 - Actuator는 별도 Security 체인이다. health/info는 공개, 그 밖의 Endpoint는 ADMIN Basic 인증이다.
-- CORS는 application·Actuator Security 체인에서 공통 source를 사용한다. preflight를 처리한 뒤 실제 요청의 JWT·ADMIN Basic 인증을 유지하며, SSE 완료 비동기 dispatch에서도 JWT 인증을 복원한다.
+- CORS는 application·Actuator Security 체인에서 공통 source를 사용한다. 허용 출처는 `app.cors.allowed-origin-patterns`(기본 `http://127.0.0.1:[*]`, `http://localhost:[*]`, 환경변수 `CORS_ALLOWED_ORIGIN_PATTERNS`)이며 자격 증명 쿠키는 허용하지 않는다. preflight를 처리한 뒤 실제 요청의 JWT·ADMIN Basic 인증을 유지하며, SSE 완료 비동기 dispatch에서도 JWT 인증을 복원한다.
 - Validation 오류는 400, `ErrorResponse(code=INVALID_REQUEST, message, status, path, traceId, fieldErrors, timestamp)`이다.
 - 존재하지 않는 Intake·검색 요청·파일은 해당 신규 업무 경로에서 404, 금지 상태 전이는 409. 기존 다른 모듈의 예외·오류 본문은 동일하게 통일되어 있지 않다.
 - traceId는 `/api/**`의 Interceptor·로그에서 추적한다. 모든 성공 DTO가 traceId 필드를 포함하는 것은 아니다.
@@ -287,12 +290,12 @@ P02·P04·P05는 [IntakeAccessService.requireAccess](C:/myLectureWs/legal-ai-int
 | C10/C11 상태·메모 | @Valid·문의 존재, 상태는 Entity/Enum 전이 정책 | 같은 상태는 200/changed=false, 금지 전이 409, 메모 본문 마스킹 |
 | P02/P04/P05 이력·파일 | JWT·소유자/관리자, 파일은 크기·확장자/내용 유형·문의 연결 | 401/403/404, 빈 파일 400·크기 413·유형 415. 익명 문의의 신규 API는 관리자 접근 |
 | P06 행동 이벤트 | @Valid, 타입, SUMMARY_VIEWED의 intakeId, 문의·세션 일치, eventId 중복 | 201 최초 / 200 동일 재전송 / 409 다른 내용으로 ID 재사용. 외부 호출 없음 |
-| C12~C15/C17~C20 운영 조회·Incident | 현재 개발용 공개 경로, 각 조회·상태 메서드 규칙 | Agent/보안 DB와 마케팅 읽기 모델 구분. 기존 Incident의 없는 ID 등 오류 본문·상태는 실제 실험으로 기록 |
+| C12~C15/C17~C20 운영 조회·Incident | ADMIN JWT 필수(익명 401, USER·LAWYER 403), 각 조회·상태 메서드 규칙 | Agent/보안 DB와 마케팅 읽기 모델 구분. 기존 Incident의 없는 ID 등 오류 본문·상태는 실제 실험으로 기록 |
 | C16 Prometheus | ADMIN Basic. 사용자 JWT와 구분 | 401 인증 없음, 403 USER Basic, 200 ADMIN Basic. 노출 성공과 Prometheus의 실제 수집 성공은 구분 |
 | R01~R06 Reference | 현재 GET 공개, Path·Query를 Service에서 처리 | JPA 조회 또는 고정 체크리스트. 없는 코드·잘못된 필터는 실제 응답 기록 |
 | S01/S02 동기·SSE | JWT·@Valid → Dynamic preCheck → Fixed → 입력 길이 → 입력 검사 비용 예약·정산 → 생성 비용 예약 | 동기·SSE 모두 생성 정산 후 출력 검사 예약·정산·Privacy. SSE는 전체 버퍼 보호 후 token, 오류·중단은 미확인 비용 추정 정산 |
 | S03/S04 Guardrail 단독 | JWT·@Valid → 비용 Service → 해당 NeMo Client → 보고/추정 정산 | Chat의 Fixed·Dynamic·답변 생성 전체를 실행하지 않으며 검사 비용은 같은 예산·장부 사용. Output 단독 API도 Privacy와 구분 |
-| S05 Agent 위험 분석 | 현재 @Valid 제약 없음. 신호·기본값·점수·결정 규칙 | 이력·Metric·필요 시 Incident. Chat Dynamic 세션 누적과 별도 경로 |
+| S05 Agent 위험 분석 | ADMIN JWT 필수(운영 화면 데이터 생성 경로). @Valid 제약 없음. 신호·기본값·점수·결정 규칙 | 이력·Metric·필요 시 Incident. Chat Dynamic 세션 누적과 별도 경로 |
 
 CORS·preflight 서버 처리는 Security 체인에 연결되어 있다. **이번 1차는 Postman으로 HTTP 작동·오류를 확인하고, React 연결 시 실제 브라우저 CORS를 확인한다.** 모든 API에 동일 Guard를 추가하거나 브라우저 확인을 이번 학습의 선행 조건으로 삼지 않는다.
 

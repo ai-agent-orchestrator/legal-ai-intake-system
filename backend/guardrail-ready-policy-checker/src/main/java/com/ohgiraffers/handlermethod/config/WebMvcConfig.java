@@ -1,6 +1,7 @@
 package com.ohgiraffers.handlermethod.config;
 
 import com.ohgiraffers.handlermethod.interceptor.TraceIdInterceptor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
@@ -25,10 +26,17 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 .addPathPatterns("/api/**");
     }
 
+    /**
+     * Browser origins allowed to call /api and /actuator. Defaults to local development origins on any port
+     * (React dev/preview servers and QA servers); set CORS_ALLOWED_ORIGIN_PATTERNS for a deployed front end.
+     * Credentials (cookies) are never allowed; authentication uses the Authorization header only.
+     */
     @Bean
-    public UrlBasedCorsConfigurationSource corsConfigurationSource() {
+    public UrlBasedCorsConfigurationSource corsConfigurationSource(
+            @Value("${app.cors.allowed-origin-patterns}") String[] allowedOriginPatterns) {
         CorsConfiguration api = new CorsConfiguration();
-        api.setAllowedOriginPatterns(List.of("*"));
+        api.setAllowedOriginPatterns(List.of(allowedOriginPatterns));
+        api.setAllowCredentials(false);
         api.setAllowedMethods(List.of("GET", "POST", "PATCH", "OPTIONS"));
         api.setAllowedHeaders(List.of("*"));
         api.setExposedHeaders(List.of("Content-Disposition", "X-Trace-Id", "Idempotent-Replayed"));

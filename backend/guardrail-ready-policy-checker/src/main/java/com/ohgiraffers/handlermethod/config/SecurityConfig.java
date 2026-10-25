@@ -22,6 +22,61 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @Configuration
 public class SecurityConfig {
 
+    /*
+     * Application route policy. Every /api route must match one of the lists below (checked in the order used in
+     * applicationSecurity, first match wins); anything else under /api is denied (401 anonymous / 403 signed-in),
+     * so new endpoints are closed by default. SecurityRouteInventoryTest fails when a controller route is unlisted.
+     * Actuator endpoints are handled by actuatorSecurity (ADMIN Basic) and are not listed here.
+     */
+
+    /** Anonymous POST: login, guest classification (screen 02) and anonymous funnel events (validated per session). */
+    static final String[] PUBLIC_POST_APIS = {
+            "/api/auth/login",
+            "/api/intakes/classify-preview",
+            "/api/intake-events"
+    };
+
+    /** Anonymous GET: the shared legal procedure/form reference catalog only. */
+    static final String[] PUBLIC_GET_APIS = {
+            "/api/legal/procedures", "/api/legal/procedures/**",
+            "/api/legal/forms", "/api/legal/forms/**",
+            "/api/legal/criminal/**"
+    };
+
+    /** ADMIN GET: aggregates across all users' legal-intake analyses (contain case summaries). */
+    static final String[] ADMIN_GET_APIS = {
+            "/api/legal/intake/history",
+            "/api/legal/intake/summary"
+    };
+
+    /**
+     * ADMIN (any method): operator screens 09-13 and the lab/practice APIs.
+     * /api/agent/** writes risk history and incidents that the operator screens display,
+     * so anonymous callers must not be able to create them.
+     */
+    static final String[] ADMIN_APIS = {
+            "/api/admin/**",
+            "/api/agent/**",
+            "/api/incidents", "/api/incidents/**",
+            "/api/chat",
+            "/api/menus", "/api/menus/**",
+            "/api/n-plus-one-practice/**",
+            "/api/transaction-practice/**",
+            "/api/status",
+            "/api/observability/**",
+            "/api/security-observability/**"
+    };
+
+    /** Any signed-in role. Ownership/assignment rules are enforced in the services. */
+    static final String[] AUTHENTICATED_APIS = {
+            "/api/me",
+            "/api/intakes", "/api/intakes/**",
+            "/api/legal-intake/minimal",
+            "/api/legal/intake/analyze",
+            "/api/legal/guardrail/**",
+            "/api/ai/**"
+    };
+
     private final SecurityMetricRecorder securityMetricRecorder;
     private final JwtTokenProvider jwtTokenProvider;
     private final JwtJsonAuthenticationEntryPoint jwtAuthenticationEntryPoint;
@@ -68,18 +123,14 @@ public class SecurityConfig {
         return http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/login").permitAll()
-                        .requestMatchers("/api/admin/**", "/api/agent/risk/history", "/api/agent/risk/summary",
-                                "/api/incidents", "/api/incidents/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/intakes/classify-preview").permitAll()
-                        .requestMatchers("/api/intakes", "/api/intakes/**", "/api/legal-intake/minimal").authenticated()
-                        .requestMatchers("/api/me", "/api/intakes/*/documents/**").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/api/intakes/*/search-requests").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/api/intakes/search-requests/*/execute").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/api/legal/**").permitAll()
-                        .requestMatchers("/api/legal/**").authenticated()
-                        .requestMatchers("/api/ai/**").authenticated()
-                        .requestMatchers("/api/**", "/h2-console/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, PUBLIC_POST_APIS).permitAll()
+                        .requestMatchers(HttpMethod.GET, PUBLIC_GET_APIS).permitAll()
+                        .requestMatchers(HttpMethod.GET, ADMIN_GET_APIS).hasRole("ADMIN")
+                        .requestMatchers(ADMIN_APIS).hasRole("ADMIN")
+                        .requestMatchers(AUTHENTICATED_APIS).authenticated()
+                        // Default deny: a new /api endpoint stays closed until it is listed above.
+                        .requestMatchers("/api/**").denyAll()
+                        .requestMatchers("/h2-console/**").permitAll()
                         .anyRequest().permitAll())
                 .csrf(csrf -> csrf.disable())
                 .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.sameOrigin()))

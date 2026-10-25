@@ -1,4 +1,5 @@
 // Local-only React review support. Never imported by production code.
+// SUPERSEDED (2026-10-25): written before operator APIs required ADMIN JWT (P1-02) and before /api/agent/** writes became ADMIN-only. It calls those APIs anonymously, so it now fails by design. Use the backend tests OperatorAuthorizationIntegrationTest / SecurityRouteAccessIntegrationTest and scripts/Verify-FourHardening.mjs instead.
 import http from 'node:http';
 import assert from 'node:assert/strict';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
