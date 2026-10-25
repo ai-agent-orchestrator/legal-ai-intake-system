@@ -128,16 +128,20 @@ export default function IntakeSearchPage({ api, id, requestId, user, onLogin }) 
     if (writer.current || !review) return;
     if (review.kind === 'create' && !user) { onLogin(); return; }
     const controller = new AbortController(); writer.current = controller; setPending('review');
+    setReview(old => old ? { ...old, checked: false } : old);
     try {
       if (review.kind === 'create') await api.searchHistory(id, controller.signal);
       else {
         const data = await api.searchRequest(id, review.requestId, controller.signal);
         if (!controller.signal.aborted && String(currentId.current) === String(review.requestId)) selection.apply(data);
       }
-      if (!controller.signal.aborted && mounted.current) { setHistoryRevision(value => value + 1); setFailure(null); }
+      if (!controller.signal.aborted && mounted.current) {
+        setHistoryRevision(value => value + 1); setFailure(null);
+        setReview(old => old ? { ...old, checked: true } : old);
+      }
     } catch (error) { if (!controller.signal.aborted && mounted.current) setFailure({ kind: review.kind, error }); }
     finally {
-      if (writer.current === controller) { writer.current = null; if (mounted.current) { setPending(''); setReview(old => old ? { ...old, checked: true } : old); } }
+      if (writer.current === controller) { writer.current = null; if (mounted.current) setPending(''); }
     }
   }
   async function execute() {

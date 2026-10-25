@@ -9,7 +9,7 @@ $DebugPreference = 'SilentlyContinue'
 $InformationPreference = 'SilentlyContinue'
 
 $projectRoot = Split-Path -Parent $PSScriptRoot
-$secretDirectory = Join-Path $projectRoot 'backend/guardrail-ready-policy-checker/.local'
+$secretDirectory = Join-Path $projectRoot 'backend/guardrail-ready-policy-checker/.local/secrets'
 $keyFile = Join-Path $secretDirectory 'openai-key.dpapi'
 $readinessFile = Join-Path $secretDirectory 'openai-readiness.json'
 $secretKey = $null
@@ -18,6 +18,7 @@ $keyPointer = [IntPtr]::Zero
 $httpClient = $null
 $request = $null
 $response = $null
+$stage = 'input'
 
 try {
     Write-Host 'Paste your OpenAI API key below. Input is hidden. Do not use a usage-page URL.'
@@ -28,7 +29,12 @@ try {
     if ($plainKey -ne $plainKey.Trim() -or $plainKey -match '[\r\n]' -or -not $plainKey.StartsWith('sk-')) {
         throw 'Invalid key format. Paste the API key only; no URL, spaces or quotes.'
     }
+    # Hidden/non-ASCII characters break the Authorization header (message could echo the key).
+    if ($plainKey -notmatch '^[A-Za-z0-9_-]+$') {
+        throw 'Invalid key characters. The pasted text has hidden or unexpected characters; copy the key again.'
+    }
 
+    $stage = 'http-setup'
     Add-Type -AssemblyName System.Net.Http
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
     # No custom host, redirect, retry or provider-response logging.
@@ -37,8 +43,10 @@ try {
     $httpClient = [Net.Http.HttpClient]::new($handler)
     $httpClient.Timeout = [TimeSpan]::FromSeconds(20)
     $request = [Net.Http.HttpRequestMessage]::new([Net.Http.HttpMethod]::Get, 'https://api.openai.com/v1/models')
+    $stage = 'auth-header'
     $request.Headers.Authorization = [Net.Http.Headers.AuthenticationHeaderValue]::new('Bearer', $plainKey)
     Write-Host 'Checking authentication and model list (no generation request)...'
+    $stage = 'network-send'
     $response = $httpClient.SendAsync($request).GetAwaiter().GetResult()
     if (-not $response.IsSuccessStatusCode) {
         $statusCode = [int]$response.StatusCode
@@ -49,6 +57,7 @@ try {
             default { throw "OpenAI HTTP $statusCode. No key or provider error body was printed." }
         }
     }
+    $stage = 'parse-response'
     $payload = $response.Content.ReadAsStringAsync().GetAwaiter().GetResult() | ConvertFrom-Json
     $modelIds = @($payload.data | ForEach-Object { $_.id })
     if ($modelIds.Count -eq 0) { throw 'No models returned. Nothing was saved.' }
@@ -57,11 +66,11 @@ try {
         [pscustomobject]@{ model = $_; listed = ($modelIds -contains $_) }
     })
 
+    $stage = 'local-folder-acl'
     New-Item -ItemType Directory -Path $secretDirectory -Force | Out-Null
     # Remove inherited access and restrict this directory to the current user.
     $currentSid = [Security.Principal.WindowsIdentity]::GetCurrent().User
     $directoryAcl = [Security.AccessControl.DirectorySecurity]::new()
-    $directoryAcl.SetOwner($currentSid)
     $directoryAcl.SetAccessRuleProtection($true, $false)
     $rule = [Security.AccessControl.FileSystemAccessRule]::new($currentSid,
         [Security.AccessControl.FileSystemRights]::FullControl,
@@ -70,6 +79,7 @@ try {
         [Security.AccessControl.AccessControlType]::Allow)
     $directoryAcl.AddAccessRule($rule)
     Set-Acl -LiteralPath $secretDirectory -AclObject $directoryAcl
+    $stage = 'encrypt-save'
     $encryptedKey = ConvertFrom-SecureString -SecureString $secretKey
     [IO.File]::WriteAllText($keyFile, $encryptedKey)
     $result = [ordered]@{
@@ -80,6 +90,7 @@ try {
         applicationConnection = 'not-configured'
         note = 'A listed model still needs a generation test; this does not prove billing credit or inference permission.'
     }
+    $stage = 'readiness-file'
     $result | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $readinessFile -Encoding UTF8
     Write-Host 'Authentication: PASS. Key saved encrypted locally; not added to Git.'
     $availability | Format-Table -AutoSize
@@ -88,12 +99,18 @@ try {
 }
 catch {
     # Print only controlled local messages, never raw network exceptions/provider bodies.
-    $safeMessages = @('No key supplied', 'Invalid key format', 'HTTP 401:', 'HTTP 403:', 'HTTP 429:', 'OpenAI HTTP ', 'No models returned')
+    $safeMessages = @('No key supplied', 'Invalid key format', 'Invalid key characters', 'HTTP 401:', 'HTTP 403:', 'HTTP 429:', 'OpenAI HTTP ', 'No models returned')
     $message = $_.Exception.Message
     if (@($safeMessages | Where-Object { $message.StartsWith($_) }).Count -gt 0) {
         Write-Host $message -ForegroundColor Red
     } else {
-        Write-Host 'Setup failed (network, response or local storage). No secret/error body printed. Tell Codex this message.' -ForegroundColor Red
+        # Only the stage name and exception TYPE names are printed; messages may contain the key.
+        $types = @()
+        $ex = $_.Exception
+        while ($ex) { $types += $ex.GetType().FullName; $ex = $ex.InnerException }
+        Write-Host "Setup failed at stage: $stage" -ForegroundColor Red
+        Write-Host ("Exception types: " + ($types -join ' > ')) -ForegroundColor Red
+        Write-Host 'No key or error message was printed. Share only these two lines.' -ForegroundColor Red
     }
     exit 1
 }

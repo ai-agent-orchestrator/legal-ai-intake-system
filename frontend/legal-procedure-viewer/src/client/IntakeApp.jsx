@@ -31,7 +31,7 @@ export default function IntakeApp() {
   const api = useMemo(() => createIntakeApi({
     base: import.meta.env.VITE_INTAKE_API_BASE || '',
     getToken: () => token.current,
-    onUnauthorized: () => { token.current = ''; setUser(null); },
+    onUnauthorized: () => { token.current = ''; setUser(null); setListFilters(EMPTY_LIST_FILTERS); },
   }), []);
 
   useEffect(() => {
@@ -64,10 +64,10 @@ export default function IntakeApp() {
     setIntakeForm(current => ({ ...current, ...changed }));
     previousClassification.current = source;
   }
-  function logout() { token.current = ''; sessionOwner.current = ''; submissionAttempt.current = null; setUser(null); setDraft(INITIAL_DRAFT); setIntakeForm(INITIAL_INTAKE_FORM); setPreview(null); }
+  function logout() { token.current = ''; sessionOwner.current = ''; submissionAttempt.current = null; previousClassification.current = null; setUser(null); setDraft(INITIAL_DRAFT); setIntakeForm(INITIAL_INTAKE_FORM); setPreview(null); setListFilters(EMPTY_LIST_FILTERS); }
   function signedIn(data, redirect = false) {
     if (sessionOwner.current && sessionOwner.current !== data.username) {
-      submissionAttempt.current = null; setDraft(INITIAL_DRAFT); setIntakeForm(INITIAL_INTAKE_FORM); setPreview(null);
+      submissionAttempt.current = null; previousClassification.current = null; setDraft(INITIAL_DRAFT); setIntakeForm(INITIAL_INTAKE_FORM); setPreview(null); setListFilters(EMPTY_LIST_FILTERS);
     }
     sessionOwner.current = data.username;
     token.current = data.accessToken;
@@ -89,7 +89,7 @@ export default function IntakeApp() {
     <a href="#main-content" className="skip-link" onClick={event => { event.preventDefault(); document.querySelector('main')?.focus(); }}>본문 바로가기</a>
     <IntakeHeader route={route} user={user} onLogin={() => setLoginOpen(true)} onLogout={logout}/>
     <div id="main-content" className="intake-route" key={user ? user.username + user.role : 'anonymous'}>
-      {!user && ['receipt', 'review', 'search', 'intake-list', 'lawyer-detail', 'consultation'].includes(route.name) ? <main className="intake-shell compact"><section className="intake-panel"><h1>로그인이 필요합니다.</h1><p>본인 문의와 배정된 문의만 확인할 수 있습니다. 작성 중인 내용은 로그인 후 이어서 사용할 수 있습니다.</p><button className="intake-button" onClick={() => setLoginOpen(true)}>로그인하고 계속하기</button></section></main>
+      {!user && ['receipt', 'review', 'search', 'intake-list', 'lawyer-detail', 'consultation'].includes(route.name) ? <main className="intake-shell compact"><section className="intake-panel"><h1>로그인이 필요합니다.</h1><p>본인 문의와 배정된 문의만 확인할 수 있습니다. 작성 중인 내용은 로그인 후 이어서 사용할 수 있습니다.</p><p className="field-hint">로그인 정보는 현재 탭의 메모리에만 보관하며, 새로고침하면 해제됩니다. 다시 로그인해 주세요.</p><button className="intake-button" onClick={() => setLoginOpen(true)}>로그인하고 계속하기</button></section></main>
         : route.name === 'consultation' && !isStaff(user) ? <main className="intake-shell compact"><section className="intake-panel"><h1>담당 변호사 전용 기능입니다.</h1><p>내부 상담 메모와 상태 변경은 담당 변호사와 사무소 관리자만 사용할 수 있습니다.</p><a href="#/lawyer/intakes">내 문의 목록으로</a></section></main>
         : route.name === 'account' ? <AccountPage api={api} user={user}/>
         : route.name === 'intake-list' ? <IntakeListPage user={user} api={api} filters={listFilters} setFilters={setListFilters}/>

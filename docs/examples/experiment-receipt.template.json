@@ -1,0 +1,11 @@
+{
+  "model": null,
+  "usageAvailable": null,
+  "promptTokens": null,
+  "completionTokens": null,
+  "costSource": null,
+  "providerMode": "unknown",
+  "guardMode": "unknown",
+  "blocked": null,
+  "fallback": null
+}

@@ -1,0 +1,9 @@
+{
+  "kind": "template_only_not_evidence",
+  "amountUsd": null,
+  "windowStart": null,
+  "windowEnd": null,
+  "exclusiveOperation": false,
+  "model": null,
+  "guardIncluded": false
+}

@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import * as api from './operatorApi.js';
 import { useResource } from './useResource.js';
 import { number, PageRefresh, Resource, Stat } from './components.jsx';
 import Icon from './Icon.jsx';
+import MarketingDemoPanel from './MarketingDemoPanel.jsx';
 
 const stageLabels = {
   VISIT: '방문', INTAKE_STARTED: '문의 작성 시작', INTAKE_SUBMITTED: '문의 접수',
@@ -26,14 +28,16 @@ function MarketingDistribution({ title, icon, values, total, labels = {} }) {
 }
 
 export default function MarketingPage({ base }) {
-  const marketing = useResource(api.getMarketingFunnel, base);
+  const [demo, setDemo] = useState(false);
+  const marketing = useResource(api.getMarketingFunnel, base, { enabled: !demo });
   const basis = marketing.data?.measurementBasis;
   return <section className="marketing-page overview-page" aria-label="마케팅 집계">
     <div className="page-heading marketing-heading">
-      <div><div className="eyebrow">운영 관리 <span aria-hidden="true">›</span> 마케팅 집계</div><h1 tabIndex="-1">마케팅 집계</h1><p>의뢰인의 문의 여정을 단계별로 확인할 수 있습니다. {basis === 'ALL_RECORDS_IN_CURRENT_DATABASE' && '(현재 DB 전체 기록 기준)'}</p></div>
-      <div className="marketing-actions"><a className="back-to-overview" href="#/overview"><Icon name="arrow-left" />운영 요약으로</a><PageRefresh item={marketing} /></div>
+      <div><div className="eyebrow">운영 관리 <span aria-hidden="true">›</span> 마케팅 집계</div><h1 tabIndex="-1">마케팅 집계</h1><p>{demo ? '어디에서 줄어들고, 왜 수임으로 이어지지 않을까요?' : <>의뢰인의 문의 여정을 단계별로 확인할 수 있습니다. {basis === 'ALL_RECORDS_IN_CURRENT_DATABASE' && '(현재 DB 전체 기록 기준)'}</>}</p></div>
+      <div className="marketing-actions"><a className="back-to-overview" href="#/overview"><Icon name="arrow-left" />운영 요약으로</a>{!demo && <PageRefresh item={marketing} />}</div>
     </div>
-    <Resource item={marketing}>{value => <>
+    <div className="marketing-mode" role="group" aria-label="마케팅 자료 선택"><button type="button" aria-pressed={!demo} onClick={() => setDemo(false)}>실제 집계</button><button type="button" aria-pressed={demo} onClick={() => setDemo(true)}>시연 분석</button><span>{demo ? '가상 문의 40건 · 전환 분석 시연' : '기존 C13 API · 현재 DB 기준'}</span></div>
+    {demo ? <MarketingDemoPanel /> : <Resource item={marketing}>{value => <>
       <div className="stat-grid marketing-stats">
         <Stat label="접수된 문의" value={value.submittedIntakeCount} foot="저장된 문의 수입니다." icon="document" unit="건" />
         <Stat label="검색 요청 건수" value={value.searchRequestCount} foot="저장된 검색 요청 수입니다." icon="search" unit="건" accent="amber" />
@@ -59,6 +63,6 @@ export default function MarketingPage({ base }) {
         <div><h2>{value.dropOffMeasured === false ? '단계별 집계 기준이 달라 전환율·이탈률은 아직 측정하지 않습니다.' : '단계별 집계 기준을 확인해 주세요.'}</h2><p>각 단계는 서로 다른 측정 기준(보고된 이벤트, 저장된 문의, 고유 문의, 현재 상태)을 사용합니다. 단계 간 전환율이나 이탈률을 계산하지 않습니다.</p></div>
         <p className="measurement-basis"><span>집계 기준</span>{basis === 'ALL_RECORDS_IN_CURRENT_DATABASE' ? '현재 DB 전체 기록 기준' : '서버 응답 기준'}<small>({basis || '집계 기준 미제공'})</small></p>
       </aside>
-    </>}</Resource>
+    </>}</Resource>}
   </section>;
 }

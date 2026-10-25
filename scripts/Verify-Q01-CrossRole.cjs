@@ -9,7 +9,7 @@ const { createRequire } = require('node:module');
 const runtimeRequire = createRequire(path.join(process.env.USERPROFILE, '.cache/codex-runtimes/codex-primary-runtime/dependencies/node/package.json'));
 const { chromium } = runtimeRequire('playwright');
 const root = path.resolve(__dirname, '..');
-const out = path.join(root, 'output/q01-cross-role-2026-10-23');
+const out = path.join(root, 'output/q01-cross-role-2026-10-25');
 const backendPath = path.join(root, 'backend/guardrail-ready-policy-checker');
 const dist = path.join(root, 'frontend/legal-procedure-viewer/dist');
 const runtime = JSON.parse(fs.readFileSync(path.join(backendPath, '.local/runtime-logs/server-8080.json'), 'utf8').replace(/^\uFEFF/, ''));
@@ -45,7 +45,7 @@ async function login(page, who, operator = false, navigate = true) {
   if (operator) { await page.getByText('서버 연결 설정', { exact: true }).click(); await page.getByRole('textbox', { name: 'API 서버', exact: true }).fill(base); }
   await page.locator('input[name=username]').fill(who);
   await page.locator('input[name=password]').fill(passwords[who]);
-  await page.getByRole('button', { name: operator ? '관리자 로그인' : '로그인', exact: true }).click();
+  await page.locator(operator ? 'form[aria-label="관리자 로그인"]' : 'form[aria-label="로그인"]').getByRole('button', { name: operator ? '관리자 로그인' : '로그인', exact: true }).click();
   await page.waitForFunction(() => !document.querySelector('input[name=password]'));
 }
 async function layout(page, label) {
@@ -124,8 +124,8 @@ async function main() {
     assert.equal((await call(`/api/intakes/${intakeId}/documents/${documentId}/download`, 'anonymous')).status, 401);
     const rejectedUpload = new FormData(); rejectedUpload.set('file', new Blob(['synthetic'], { type: 'text/plain' }), 'denied.txt'); assert.equal((await call(`/api/intakes/${intakeId}/documents`, 'user2', 'POST', rejectedUpload)).status, 403);
     assert.equal((await call(`/api/intakes/${intakeId}/search-requests`, 'user2', 'POST', { searchPurpose: '가상 검수' })).status, 403);
-    await hash(user, `#/lawyer/intakes/${intakeId}`); await user.getByRole('button', { name: '다운로드', exact: true }).waitFor();
-    const downloadEvent = user.waitForEvent('download'); await user.getByRole('button', { name: '다운로드', exact: true }).click(); assert.equal((await downloadEvent).suggestedFilename(), 'q01-document.txt');
+    await hash(user, `#/lawyer/intakes/${intakeId}`); await user.getByRole('button', { name: /다운로드/ }).waitFor();
+    const downloadEvent = user.waitForEvent('download'); await user.getByRole('button', { name: /다운로드/ }).click(); assert.equal((await downloadEvent).suggestedFilename(), 'q01-document.txt');
     const denied = await context.newPage(); await login(denied, 'user2'); await hash(denied, `#/lawyer/intakes/${intakeId}`); await denied.getByText('이 요청에 대한 접근 권한이 없습니다.', { exact: true }).waitFor(); assert(!(await denied.locator('main').innerText()).includes(story));
   });
   const admin = await context.newPage(), a = await context.newPage(), b = await context.newPage();
@@ -162,8 +162,8 @@ async function main() {
   await run('Q01-07', 'ADMIN stale edit409 recovers; reassignment/revocation removes old lawyer data and write access', async () => {
     await hash(admin, `#/lawyer/intakes/${intakeId}/consultation`); await admin.locator('select[name=nextStatus]').waitFor();
     const latest = (await call('/api/intakes/' + intakeId)).data;
-    assert.equal((await call(`/api/intakes/${intakeId}/status`, 'lawyer', 'PATCH', { status: 'CLOSED', expectedVersion: latest.version })).status, 200);
-    await admin.locator('[name=memoContent]').fill('Q01 관리자 충돌 메모'); await admin.locator('select[name=nextStatus]').selectOption('REVIEWED');
+    assert.equal((await call(`/api/intakes/${intakeId}/status`, 'lawyer', 'PATCH', { status: 'REVIEWED', expectedVersion: latest.version })).status, 200);
+    await admin.locator('[name=memoContent]').fill('Q01 관리자 충돌 메모'); await admin.locator('select[name=nextStatus]').selectOption('NEED_MORE_INFO');
     await Promise.all([admin.waitForResponse(r => r.url().endsWith('/status') && r.status() === 409), admin.getByRole('button', { name: '상태 변경 저장', exact: true }).click()]); await admin.getByRole('button', { name: '확인 후 편집 계속', exact: true }).waitFor(); assert.equal(await admin.locator('[name=memoContent]').inputValue(), 'Q01 관리자 충돌 메모'); await admin.getByRole('button', { name: '확인 후 편집 계속', exact: true }).click(); await admin.getByRole('button', { name: '상태 변경 저장', exact: true }).click(); await admin.locator('.consultation-success').waitFor();
     await hash(admin, `#/lawyer/intakes/${intakeId}`); await admin.locator('#assigned-lawyer').fill('lawyer2'); await admin.getByRole('button', { name: '담당 배정 저장', exact: true }).click(); await admin.getByText('현재 담당:', { exact: false }).filter({ hasText: 'lawyer2' }).waitFor();
     await b.locator('[name=memoContent]').fill('Q01 회수 후 저장 금지'); await Promise.all([b.waitForResponse(r => r.url().endsWith('/memo') && r.status() === 403), b.getByRole('button', { name: '메모 추가 저장', exact: true }).click()]); await b.getByText('이 요청에 대한 접근 권한이 없습니다.', { exact: true }).waitFor(); assert.equal(await b.locator('[name=memoContent]').count(), 0); assert(!(await b.locator('main').innerText()).includes(memoText));
@@ -174,13 +174,13 @@ async function main() {
     for (const who of ['user', 'lawyer']) {
       const page = await context.newPage(); await page.goto(front + '/operator.html#/overview'); await page.getByText('서버 연결 설정', { exact: true }).click(); await page.getByRole('textbox', { name: 'API 서버', exact: true }).fill(base); await page.locator('input[name=username]').fill(who); await page.locator('input[name=password]').fill(passwords[who]); await page.getByRole('button', { name: '관리자 로그인', exact: true }).click(); await page.getByText('관리자 계정으로 로그인해 주세요.', { exact: true }).waitFor(); assert.equal(await page.locator('input[name=password]').inputValue(), ''); assert.equal((await call('/api/admin/dashboard/summary', who)).status, 403);
     }
-    const operator = await context.newPage(); await login(operator, 'admin', true); await operator.getByRole('heading', { name: '운영 현황을 한눈에 확인하세요.', exact: true }).waitFor(); assert.equal((await call('/api/admin/dashboard/summary')).status, 200); await operator.getByRole('button', { name: '로그아웃', exact: true }).click(); await operator.locator('input[name=password]').waitFor();
+    const operator = await context.newPage(); await login(operator, 'admin', true); await operator.getByRole('heading', { name: '운영 현황을 한눈에 확인하세요.', exact: true }).waitFor(); assert.equal((await call('/api/admin/dashboard/summary')).status, 200); await operator.locator('.operator-menu summary').click(); await operator.getByRole('button', { name: '로그아웃', exact: true }).click(); await operator.locator('input[name=password]').waitFor();
   });
   await run('Q01-09', 'Wrong password401 clears password and retains no authenticated view', async () => {
     const page = await context.newPage(); await page.goto(front + '/intake.html#/login'); await page.locator('input[name=username]').fill('user'); await page.locator('input[name=password]').fill('q01-wrong-password'); await Promise.all([page.waitForResponse(r => r.url().endsWith('/api/auth/login') && r.status() === 401), page.getByRole('button', { name: '로그인', exact: true }).click()]); await page.getByText('아이디 또는 비밀번호가 올바르지 않습니다. 다시 확인해 주세요.', { exact: true }).waitFor(); assert.equal(await page.locator('input[name=password]').inputValue(), ''); assert.equal(await page.locator('.intake-account a').count(), 0);
   });
   await run('Q01-10', 'Cryptographically valid expired JWT gets actual401; old protected data unmounts; no browser token storage', async () => {
-    const page = await context.newPage(); await login(page, 'user'); await hash(page, `#/lawyer/intakes/${intakeId}`); await page.getByRole('button', { name: '다운로드', exact: true }).waitFor();
+    const page = await context.newPage(); await login(page, 'user'); await hash(page, `#/lawyer/intakes/${intakeId}`); await page.getByRole('button', { name: /다운로드/ }).waitFor();
     const expired = expiredToken(); assert.equal((await call('/api/me', 'anonymous', 'GET', null, { Authorization: 'Bearer ' + expired })).status, 401);
     await page.route('**/api/intakes', route => route.continue({ headers: { ...route.request().headers(), authorization: 'Bearer ' + expired } })); await hash(page, '#/lawyer/intakes'); await page.getByRole('heading', { name: '로그인이 필요합니다.', exact: true }).waitFor(); assert(!(await page.locator('main').innerText()).includes(story)); assert.equal(await page.locator('.intake-account').innerText().then(text => text.includes('비회원')), true);
     const storage = await page.evaluate(() => [...Object.values(localStorage), ...Object.values(sessionStorage)].join(' ')); assert(!/eyJ[A-Za-z0-9_-]+\./.test(storage));

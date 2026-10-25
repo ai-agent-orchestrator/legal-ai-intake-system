@@ -658,6 +658,44 @@ test('Screen05 React: failed C08 preserves draft; uncertain save requires latest
   await act(async () => button(tree, '최신 저장 정보 조회').props.onClick()); assert.equal(writes, 2);
   await act(async () => button(tree, '중복 가능성 확인 후 편집 계속').props.onClick()); assert.equal(field(tree, 'title').props.value, '보존할 제목'); assert.equal(button(tree, '이 결과 추가하기').props.disabled, false);
 });
+for (const kind of ['create', 'result', 'execute']) {
+  test(`Q02 ${kind}: failed latest-read keeps uncertain write locked until a successful verification`, async t => {
+    let failReads = false;
+    const writePath = kind === 'create' ? '/api/intakes/42/search-requests' : `/api/intakes/search-requests/81/${kind === 'result' ? 'results' : 'execute'}`;
+    const { tree, navigate, calls } = await mountAsStaff(t, (url, init) => {
+      if (url === writePath && init.method === 'POST') throw new TypeError('Synthetic lost response after a possible commit');
+      if (failReads && init.method === 'GET' && (url === '/api/intakes/42/search-requests' || url === '/api/intakes/search-requests/81')) return response({}, 500);
+    });
+    await navigate(kind === 'create' ? '/intake/42/search' : '/intake/42/search/81');
+    if (kind === 'create') { await change(tree, 'searchPurpose', '응답 유실 확인용 목적'); await submitSearch(tree, '검색 요청 추가'); }
+    if (kind === 'result') {
+      await change(tree, 'sourceType', 'CASE_LAW'); await change(tree, 'title', '응답 유실 확인용 제목'); await change(tree, 'url', 'https://example.com/q02');
+      await submitSearch(tree, '검색 요청 81 결과 링크 기록');
+    }
+    if (kind === 'execute') await act(async () => button(tree, '외부 검색 실행').props.onClick());
+    const writeCount = () => calls.filter(call => call.url === writePath && call.init.method === 'POST').length;
+    assert.equal(writeCount(), 1);
+    failReads = true;
+    await act(async () => button(tree, '최신 저장 정보 조회').props.onClick());
+    assert.ok(!button(tree, '중복 가능성 확인 후 편집 계속'), 'A failed GET must not unlock uncertain writes');
+    assert.equal(button(tree, '검색 요청 기록하기').props.disabled, true);
+    assert.equal(writeCount(), 1);
+    failReads = false;
+    await act(async () => button(tree, '최신 저장 정보 조회').props.onClick());
+    assert.ok(button(tree, '중복 가능성 확인 후 편집 계속'));
+    failReads = true;
+    await act(async () => button(tree, '최신 저장 정보 조회').props.onClick());
+    assert.ok(!button(tree, '중복 가능성 확인 후 편집 계속'), 'A later failed verification must clear an earlier successful check');
+    failReads = false;
+    await act(async () => button(tree, '최신 저장 정보 조회').props.onClick());
+    await act(async () => button(tree, '중복 가능성 확인 후 편집 계속').props.onClick());
+    assert.equal(button(tree, '검색 요청 기록하기').props.disabled, false);
+    assert.equal(writeCount(), 1);
+    if (kind === 'create') assert.equal(field(tree, 'searchPurpose').props.value, '응답 유실 확인용 목적');
+    if (kind === 'result') assert.equal(field(tree, 'title').props.value, '응답 유실 확인용 제목');
+  });
+}
+
 test('Screen05 React: result sorting/copy fallback and unsafe legacy link rendering use stored data only', async t => {
   const saved = testSearch(42, 81, { results: [searchResult({ id: 102, title: '이전 기록', displayOrder: 1 }), searchResult({ id: 103, title: '새 기록', displayOrder: 2, createdAt: '2026-10-21T12:00:00', url: 'javascript:alert(1)' })] });
   const { tree, navigate } = await mountAsStaff(t, url => url === '/api/intakes/search-requests/81' ? response(saved) : undefined);
@@ -1125,6 +1163,22 @@ test('P03 React: requires login, submits once, polls C07 and displays source and
   assert.ok(text(tree.root).includes('네이버 공개 웹 검색')); assert.equal(button(tree, '외부 검색 실행').props.disabled, true);
   assert.equal(calls.find(call => call.url.endsWith('/execute')).init.headers.Authorization, 'Bearer qa-token');
 });
+test('Q02 P03: rapid repeated execute clicks produce one POST and keep the running request locked', async t => {
+  let release;
+  const { tree, calls, navigate } = await mountAsStaff(t, url => url.endsWith('/81/execute') ? new Promise(resolve => { release = resolve; }) : undefined);
+  await navigate('/intake/42/search/81');
+  let pending;
+  await act(async () => {
+    const click = button(tree, '외부 검색 실행').props.onClick;
+    pending = click(); click();
+  });
+  assert.equal(calls.filter(call => call.url.endsWith('/81/execute')).length, 1);
+  const running = testSearch(42, 81, { status: 'RUNNING', execution: p03Execution() });
+  await act(async () => { release(response(running, 202)); await pending; });
+  assert.equal(button(tree, '외부 검색 진행 중').props.disabled, true);
+  await navigate('/help');
+});
+
 test('P03 React: missing config preserves selected request and shows actionable error without auto retry', async t => {
   const { tree, calls, navigate } = await mountAsStaff(t, url => searchLogin(url) || (url.endsWith('/81/execute') ? response({}, 503) : undefined));
   await navigate('/intake/42/search/81'); await loginSearch(tree);
