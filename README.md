@@ -1,5 +1,11 @@
 # Security-Aware Legal AI Intake System
 
+**고객은 선택하고, 챗봇은 정리한다.** 선택형 Legal Intake Form으로 문의를 사건 유형·보유 자료·다음 단계로 구조화하고, 변호사의 상담 준비와 관리자의 AI 보안·비용 관측을 연결합니다.
+
+[제품 정의와 Problem → Solution](#problem---solution) · [제품 소개 PDF](docs/presentation-pdfs/PRODUCT_INTRODUCTION_DARK_TABLET.pdf) · [PM·보안·운영 핵심 PDF](docs/presentation-pdfs/PM_SECURITY_CORE_DARK_TABLET.pdf)
+
+아래 날짜별 기록의 테스트 수·미완료 항목은 각 검수 시점의 기록입니다. 제품 소개와 과거 검수 결과를 구분해서 읽어 주세요.
+
 > **2026-10-23 베타:** 화면01~13과 P03·SSE·권한 처리를 포함한 로컬 시연용 소스입니다. 운영자 ADMIN 인가까지 적용했으며 실제 외부 호출·청구 검증과 재전송·상태 처리3건의 보완이 남아 있습니다. [베타 실행/Claude 인수인계](docs/BETA_HANDOFF_2026-10-23.md) · [남은 작업](docs/SCREEN01_12_REMAINING_TASKS.md).
 
 **2026-10-22 현행 반영:** P03 실행·화면05 연결 구현, 운영자 React 화면09~13 구현. 화면13은 기존 C16/C17 재사용이며 새 API 번호·DB 테이블을 추가하지 않았다. 구현 API는 37개다. 외부 LLM·네이버 실제 키 호출·청구 검증은 아직 별도다.
@@ -414,6 +420,8 @@ MySQL 실험은 [연결 준비와 Postman 확인 순서](docs/MYSQL_CONNECTION_C
 
 ## PM Positioning
 
+[PM 포지셔닝·Problem → Solution·보안 구조·역할별 보드·Observability 핵심 PDF](docs/presentation-pdfs/PM_SECURITY_CORE_DARK_TABLET.pdf) · [편집 원본](docs/presentation-2026-10-25/04_PM_SECURITY_CORE.md)
+
 `Legal AI Intake System`은 고객 경험, 변호사 업무 효율, 운영 지표, AI 보안을 함께 고려한 PM 중심의 보안형 챗봇 프로젝트입니다.
 
 저는 이 프로젝트를 단순히 개발자 관점의 기능 구현 과제로만 접근하지 않았습니다. PM 관점에서 다음 요소를 함께 검토했습니다.
@@ -450,7 +458,9 @@ AI가 코드를 빠르게 만들어내는 시대일수록, 시장 문제를 정�
 고객은 선택하고, 챗봇은 정리한다.
 ```
 
-고객은 문의 목적, 사건 유형, 당사자 위치, 핵심 사실, 보유 자료, 원하는 다음 단계를 선택합니다. 챗봇은 이 선택값을 바탕으로 현재 문의 유형, 분쟁 가능성, 준비 자료, 다음 정리 방향을 자연어 문장으로 안내합니다.
+고객은 문의 목적, 사건 유형, 당사자 위치, 핵심 사실, 보유 자료, 원하는 다음 단계를 선택·입력합니다. 시스템은 이 선택값을 바탕으로 현재 문의 유형, 분쟁 가능성, 준비 자료, 다음 정리 방향을 자연어 문장으로 안내합니다.
+
+화면02~04의 초반 분류·간단 안내는 **규칙·템플릿 기반**이며, 매번 LLM으로 사건을 요약하지 않습니다. 화면05의 검색문 구성·검색 결과 관련성 설명에서 LLM을 사용합니다. 상담 전환 손실 감소는 제품 목표이며, 실제 전환율 개선을 실증한 수치로 주장하지 않습니다.
 
 예시:
 
@@ -471,8 +481,10 @@ AI가 코드를 빠르게 만들어내는 시대일수록, 시장 문제를 정�
 상대방에게 반환을 요청한 기록을 날짜순으로 정리해 주세요.
 
 계약서나 약정서가 있다면 함께 준비하는 것이 좋습니다.
-입력하신 개인정보는 답변에 그대로 표시하지 않고 마스킹 처리됩니다.
+개인정보 보호를 위해 출력 경로의 패턴 마스킹과 역할별 접근 통제를 적용합니다.
 ```
+
+위 문장은 안내 예시입니다. 패턴 마스킹이 모든 개인정보를 탐지한다는 의미는 아니며, 안내는 최종 법률 판단을 대신하지 않습니다.
 
 ## Minimal Legal Intake Form
 
@@ -510,7 +522,7 @@ AI가 코드를 빠르게 만들어내는 시대일수록, 시장 문제를 정�
 - 상대방
 - 문제가 된 금액 또는 피해 규모
 - 현재 진행 단계
-- 핵심 내용 한 문장
+- 핵심 내용 한 문장: 최대 100자(서버 UTF-16 길이 기준)
 
 ### 5. 보유 자료
 
@@ -535,20 +547,26 @@ Implemented endpoint:
 POST /api/legal-intake/minimal
 ```
 
+이 API는 JWT 인증을 확인하고 입력값을 규칙·템플릿으로 안내합니다. 문의 저장은 별도의 `POST /api/intakes`이며, 간단 안내 API 자체는 문의 저장이나 LLM 생성을 수행하지 않습니다.
+
 ## Mini Legal Ontology
 
 본 프로젝트는 법률 상담 전환 손실 문제를 `선택형 Legal Intake Form`과 `미니 법률 온톨로지`로 구조화했습니다.
 
 이 프로젝트에서 온톨로지는 복잡한 법률 지식 그래프가 아니라, 고객의 선택값과 키워드를 사건 유형, 분쟁 영역, 준비 자료로 연결하는 최소 분류 체계입니다.
 
-```text
-고객 입력
--> 선택값
--> 사건 유형
--> 분쟁 영역
--> 준비 자료
--> 다음 정리 방향
+```mermaid
+flowchart LR
+    A[고객 입력] --> B[선택값]
+    B --> C[사건 유형]
+    C --> D[분쟁 영역]
+    D --> E[준비 자료]
+    E --> F[다음 정리 방향]
 ```
+
+예: `빌려준 돈을 못 받음` → `민사·원고` → `대여금·금전 반환 가능성` → `입금 내역·대화·계약서` → `반환 요청 기록을 날짜순 정리`.
+
+[편집 가능한 전체 입력·검색 흐름](docs/presentation-2026-10-25/PRODUCT_INTAKE_FLOW.mmd) · [온톨로지 예시 흐름](docs/presentation-2026-10-25/MINI_LEGAL_ONTOLOGY.mmd)
 
 선택형 intake와 미니 법률 온톨로지는 고객, 변호사, 시스템 모두의 비용을 줄이는 구조입니다.
 
@@ -592,7 +610,7 @@ Privacy Output Guard
 -> 개인정보 입력은 허용하되 출력에서는 마스킹
 ```
 
-대표 reasonCode:
+대표 정책 사유·세부 사유·보호 결과 (응답 필드와 역할은 구분):
 
 ```text
 BLOCKED_JAILBREAK
@@ -606,7 +624,7 @@ DYNAMIC_SESSION_BLOCKED
 PII_OUTPUT_MASKED
 ```
 
-개인정보 마스킹 예시:
+개인정보 표시 마스킹 예시 (개념 예시이며 실제 출력 형식은 필드·패턴에 따라 다름):
 
 ```text
 홍길동 -> 홍**
@@ -641,9 +659,9 @@ AI 서비스는 LLM 호출 전에 위험 요청, 반복 공격, 비용 폭주를
 
 ### 6. 운영 관점
 
-AI 서비스는 운영 중 관찰 가능해야 합니다. 초기 문의가 어디서 끊기는지, 어떤 요청이 차단되는지, 비용 차단이 얼마나 발생하는지 Prometheus/Grafana metric으로 볼 수 있어야 합니다.
+AI 서비스는 운영 중 관찰 가능해야 합니다. 현재 문의·검색·상담 준비 현황은 DB 집계로, 보안·비용은 Prometheus 지표와 운영자 대시보드로 확인합니다. 화면13에서 위험 신호 조합과 이력을 함께 봅니다.
 
-따라서 차단 이유와 전환 손실을 reasonCode, metric, dashboard로 확인할 수 있도록 설계했습니다.
+차단 이유는 사유 코드·지표·대시보드에 연결했습니다. 실제 고객 여정의 중도 이탈과 상담 후 계약 전환은 추가 수집이 필요한 범위이며, 현재 마케팅 시연 모드의 더미 결과와 구분합니다.
 
 ## Boards And Dashboards
 
@@ -657,7 +675,8 @@ AI 서비스는 운영 중 관찰 가능해야 합니다. 초기 문의가 어�
    -> 변호사가 상담 전 사건 유형, 당사자 위치, 보유 자료, 원하는 도움을 확인
 
 3. Marketing / Operation Board
-   -> 개인사업자인 변호사가 문의 수, 사건 유형, 상담 준비 완료율, 중도 이탈을 확인
+   -> ADMIN 권한으로 문의 수·사건 유형·검색 수·현재 상담 준비 수 조회
+   -> 상담 후 전환·이탈 사유는 별도 더미 시연 모드
 
 4. Security Check Board
    -> Fixed Guard, Dynamic Guard, Cost Control, Privacy Masking, LLM call prevented를 확인
@@ -665,13 +684,13 @@ AI 서비스는 운영 중 관찰 가능해야 합니다. 초기 문의가 어�
 
 ## Observability
 
-운영자는 다음과 같은 지표를 확인할 수 있습니다.
+운영자는 실제 DB 집계와 관측 지표를 확인합니다. 실측하지 않은 전환율과 이탈률은 분리합니다.
 
 ```text
 문의 수
 사건 유형별 유입
-상담 준비 완료율
-중도 이탈
+검색 요청 수
+현재 상담 준비 수
 Fixed Guard 차단 수
 Dynamic Guard 차단 수
 Cost Control 차단 수
@@ -680,6 +699,8 @@ LLM 호출 방지 수
 ```
 
 이 시스템은 단순 챗봇이 아니라, 초기 문의가 어디서 끊기는지 관찰할 수 있는 intake observability system을 지향합니다.
+
+현재 단계별 집계만으로 고객의 중도 이탈률을 계산하지 않습니다. 상담 후 계약 전환·이탈 사유는 더미 시연이며, 실제 측정에는 고객 여정·상담 결과와 수집 기준이 필요합니다. `REQUEST_TOO_LONG`은 비용 공통 사유와 구분되는 세부 사유이며 `PII_OUTPUT_MASKED`는 보호 결과 맥락에서 읽습니다. 요청 패턴 80점 차단 권고와 대화 누적 100점 세션 제한도 별도 기준입니다.
 
 ## Current Implementation
 
@@ -703,9 +724,15 @@ Metric
 -> guardrail block, cost block, dynamic block, privacy output masking, llm call prevented
 ```
 
-Postman 실험 시나리오는 [POSTMAN_SECURITY_SCENARIOS.md](POSTMAN_SECURITY_SCENARIOS.md)에 정리했습니다.
-상세 실험 플레이북은 [POSTMAN_EXPERIMENT_PLAYBOOK.md](POSTMAN_EXPERIMENT_PLAYBOOK.md)에 정리했습니다.
-보안 흐름 복습용 Mermaid 설계도는 [SECURITY_FLOW.md](SECURITY_FLOW.md)에 정리했습니다.
+보안·비용 흐름은 다크 태블릿용 PDF로 확인할 수 있습니다.
+
+| 자료 | 주요 내용 |
+|---|---|
+| [Cost Control PDF](docs/presentation-pdfs/COST_CONTROL_DARK_TABLET.pdf) | A4~A7 예산 차단·생성 후 차단 개선, V02~V03·C1 실제 usage·예약 종료·OpenAI 증가 대조 |
+| [Error Stop Flow PDF](docs/presentation-pdfs/ERROR_STOP_FLOW_DARK_TABLET.pdf) | A1 입력 101자·A2 비밀 요청 사전 차단, B2 시간 초과 후 추정 정산 |
+| [Dynamic Guard PDF](docs/presentation-pdfs/DYNAMIC_GUARD_DARK_TABLET.pdf) | A3-1 같은 세션 위험 반복 차단, A3-2 정상 질문으로 바꿔도 차단 유지 |
+
+각 PDF는 **실험 번호·제목 → 확인 의미 → 관측 결과 → 원본 캡처 → 비용·OpenAI 사용량 대조** 순서로 읽습니다. [전체 실험·결과 매칭표](docs/presentation-pdfs/EXPERIMENT_RESULT_MAPPING.md)에서 증거를 찾을 수 있습니다. 모의 장부와 실제 공급자 사용량을 구분하며, 기록이 없는 B1·C1-300은 미검증으로 남겼습니다.
 
 ## Expansion Plan
 
