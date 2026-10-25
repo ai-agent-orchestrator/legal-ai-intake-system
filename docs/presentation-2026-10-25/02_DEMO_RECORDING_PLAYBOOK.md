@@ -86,4 +86,3 @@ ChatGPT는 대본·자막·컷 구성 검토에 활용합니다.
 OpenAI 키 입력·설정 파일·프로젝트 잔액/계정 페이지는 녹화하지 않습니다. 가상 사례와 공개 시연 계정만 사용하고 모의 배너를 유지합니다.
 
 > 공식 자료: obsproject.com/kb/quick-start-guide / clipchamp.com/en/blog/clipchamps-auto-captioning-feature/ . 실제 목소리 녹음 뒤 SRT 시간을 다시 맞추세요.
-

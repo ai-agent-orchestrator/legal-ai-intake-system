@@ -234,7 +234,11 @@ def render(target):
     if not command:
         raise RuntimeError('pdftoppm is required for visual QA')
     subprocess.run([command, '-png', '-scale-to', '1024', str(target), str(QA / 'page')], check=True, capture_output=True)
-    files = sorted(QA.glob('page-*.png'))
+    count = len(PdfReader(target).pages)
+    files = sorted(QA.glob('page-*.png'))[:count]
+    for stale in QA.glob('contact-*.png'):
+        if int(stale.stem.split('-')[-1]) > (count + 11) // 12:
+            stale.unlink()
     for batch in range(0, len(files), 12):
         selected = files[batch:batch + 12]
         sheet = PILImage.new('RGB', (1024, ((len(selected) + 1) // 2) * 404), BG)

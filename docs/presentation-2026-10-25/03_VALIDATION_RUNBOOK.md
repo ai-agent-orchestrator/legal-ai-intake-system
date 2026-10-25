@@ -116,4 +116,3 @@ USER user / LAWYER lawyer / ADMIN admin. 로그인 화면에서 역할을 바꾸
 문의 DB 파일은 유지되지만 Dynamic 세션·비용 메모리 장부·누적 Metric은 재시작 때 초기화됩니다. 재촬영 전 seed/지표를 다시 준비하고 실제 비용 영속 원장이라고 설명하지 않습니다.
 
 > 현재 주소: http://127.0.0.1:5176/intake.html#/login / operator.html#/observability . 정상 조회와 모의/실제 경계를 확인한 뒤 녹화를 시작합니다.
-
