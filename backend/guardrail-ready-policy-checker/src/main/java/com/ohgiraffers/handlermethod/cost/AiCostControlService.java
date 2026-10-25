@@ -14,6 +14,7 @@ import java.time.LocalDate;
 import java.time.Clock;
 import java.time.ZoneId;
 import org.springframework.beans.factory.annotation.Autowired;
+import java.util.List;
 import java.util.Map;
 import java.util.EnumMap;
 import java.util.Optional;
@@ -25,6 +26,8 @@ public class AiCostControlService {
 
     private static final BigDecimal ONE_THOUSAND = BigDecimal.valueOf(1_000);
     private static final int CHAT_MESSAGE_OVERHEAD_TOKENS = 32;
+    /** Metric stage tag for blocks raised by the whole-request precheck (no stage has run yet). */
+    static final String REQUEST_PRECHECK_TAG = "request_precheck";
 
     private final BigDecimal monthlyBudgetUsd;
     private final BigDecimal dailyBudgetUsd;
@@ -173,19 +176,9 @@ public class AiCostControlService {
         String normalizedSessionId = AiSessionIds.normalize(sessionId);
         BigDecimal estimatedUsd = calculateCost(inputTokens, outputTokens, inputRate, outputRate);
 
-        if (actualUsd.add(estimatedUsageUsd).add(reservedUsd).add(estimatedUsd).compareTo(monthlyBudgetUsd) > 0) {
-            return blockedBudget("MONTHLY_BUDGET_EXCEEDED", model, stage);
-        }
-
-        if (dailyActualUsd.add(dailyEstimatedUsageUsd).add(dailyReservedUsd).add(estimatedUsd).compareTo(dailyBudgetUsd) > 0) {
-            return blockedBudget("DAILY_BUDGET_EXCEEDED", model, stage);
-        }
-
-        BigDecimal sessionUsed = sessionActualUsd.getOrDefault(normalizedSessionId, BigDecimal.ZERO)
-                .add(sessionEstimatedUsageUsd.getOrDefault(normalizedSessionId, BigDecimal.ZERO))
-                .add(sessionReservedUsd.getOrDefault(normalizedSessionId, BigDecimal.ZERO));
-        if (sessionUsed.add(estimatedUsd).compareTo(sessionBudgetUsd) > 0) {
-            return blockedBudget("SESSION_BUDGET_EXCEEDED", model, stage);
+        String exceeded = budgetExceededReason(estimatedUsd, normalizedSessionId);
+        if (exceeded != null) {
+            return blockedBudget(exceeded, model, stage.tag());
         }
 
         reservedUsd = reservedUsd.add(estimatedUsd);
@@ -202,6 +195,61 @@ public class AiCostControlService {
         return CostReservationDecision.allowed(
                 new CostReservation(model, normalizedSessionId, currentBudgetDate, estimatedUsd,
                         stage, inputRate, outputRate, new ReservationCompletion()));
+    }
+
+    /**
+     * The first budget limit that {@code additionalUsd} would exceed on top of everything already settled or
+     * reserved (monthly, then daily, then session), or {@code null} when it fits. Caller must hold the monitor.
+     */
+    private String budgetExceededReason(BigDecimal additionalUsd, String normalizedSessionId) {
+        if (actualUsd.add(estimatedUsageUsd).add(reservedUsd).add(additionalUsd).compareTo(monthlyBudgetUsd) > 0) {
+            return "MONTHLY_BUDGET_EXCEEDED";
+        }
+        if (dailyActualUsd.add(dailyEstimatedUsageUsd).add(dailyReservedUsd).add(additionalUsd).compareTo(dailyBudgetUsd) > 0) {
+            return "DAILY_BUDGET_EXCEEDED";
+        }
+        BigDecimal sessionUsed = sessionActualUsd.getOrDefault(normalizedSessionId, BigDecimal.ZERO)
+                .add(sessionEstimatedUsageUsd.getOrDefault(normalizedSessionId, BigDecimal.ZERO))
+                .add(sessionReservedUsd.getOrDefault(normalizedSessionId, BigDecimal.ZERO));
+        if (sessionUsed.add(additionalUsd).compareTo(sessionBudgetUsd) > 0) {
+            return "SESSION_BUDGET_EXCEEDED";
+        }
+        return null;
+    }
+
+    /** One paid stage of a request plan, estimated before anything runs. */
+    public record StageEstimate(CostStage stage, int inputTokens, int outputTokens,
+                                BigDecimal inputRate, BigDecimal outputRate) {
+    }
+
+    /** Answer-stage estimate with the configured answer model rates and output cap (same basis as reserveWithBlock). */
+    public StageEstimate answerEstimate(String systemPrompt, String userMessage) {
+        return new StageEstimate(CostStage.ANSWER, estimateChatInputTokens(systemPrompt, userMessage),
+                maxOutputTokens, inputUsdPer1kTokens, outputUsdPer1kTokens);
+    }
+
+    /**
+     * Whole-request budget gate, run before the first paid stage of a request.
+     * Each stage checks the budget only for itself, so without this gate a request could pay for the answer and then
+     * be stopped at the output check: the generation cost is spent and nothing is delivered. Blocking up front when
+     * the sum of every planned stage does not fit prevents that. Nothing is reserved here; each stage still reserves
+     * and settles on its own, so this is an extra gate and the per-stage limits stay in force.
+     */
+    public synchronized Optional<CostLimitBlock> precheckRequestBudget(List<StageEstimate> plan,
+                                                                     String model, String sessionId) {
+        resetDailyBudgetIfNeeded();
+        BigDecimal plannedUsd = BigDecimal.ZERO;
+        for (StageEstimate stage : plan) {
+            if (stage.inputTokens() < 0 || stage.outputTokens() < 0
+                    || stage.inputRate().signum() < 0 || stage.outputRate().signum() < 0) {
+                throw new IllegalArgumentException("Cost estimates and rates must be nonnegative");
+            }
+            plannedUsd = plannedUsd.add(calculateCost(stage.inputTokens(), stage.outputTokens(),
+                    stage.inputRate(), stage.outputRate()));
+        }
+        String exceeded = budgetExceededReason(plannedUsd, AiSessionIds.normalize(sessionId));
+        return exceeded == null ? Optional.empty()
+                : Optional.of(blockedBudget(exceeded, model, REQUEST_PRECHECK_TAG).block());
     }
 
     public synchronized CostSource recordUsage(CostReservation reservation, int promptTokens,
@@ -294,11 +342,11 @@ public class AiCostControlService {
                 .max(BigDecimal.ZERO);
     }
 
-    private CostReservationDecision blockedBudget(String reason, String model, CostStage stage) {
+    private CostReservationDecision blockedBudget(String reason, String model, String stageTag) {
         Counter.builder("ai.cost.blocked")
                 .tag("reason", reason)
                 .tag("model", normalize(model))
-                .tag("stage", stage.tag())
+                .tag("stage", stageTag)
                 .register(meterRegistry)
                 .increment();
 

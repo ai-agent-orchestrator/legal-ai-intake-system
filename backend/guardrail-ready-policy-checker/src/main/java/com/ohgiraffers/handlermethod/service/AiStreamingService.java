@@ -112,6 +112,21 @@ public class AiStreamingService {
                 return;
             }
 
+            // Whole-request budget gate before the first paid stage (same rule as the synchronous path).
+            var requestBudgetBlock = costControlService.precheckRequestBudget(
+                    guardrails.chatPlan(systemPrompt, request.message()), configuredModel, request.sessionId());
+            if (requestBudgetBlock.isPresent()) {
+                var block = requestBudgetBlock.get();
+                metricRecorder.recordRequest("stream_cost_blocked", configuredModel);
+                metricRecorder.recordLegalCostBlock(block.detailCode());
+                metricRecorder.recordLlmCallPrevented(block.reasonCode());
+                sendTerminal(emitter, "blocked", AiStreamEvent.blocked(
+                        traceId, configuredModel, block.safeResponse(),
+                        block.detailCode(), block.reasonCode(), block.detailCode()));
+                settled.set(true);
+                return;
+            }
+
             var input = guardrails.checkInput(request.message(), request.sessionId()).result();
             metricRecorder.recordStage("stream_input_guardrail", input.status());
             if (!input.allowed()) {
