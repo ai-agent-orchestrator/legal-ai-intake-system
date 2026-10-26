@@ -1,11 +1,16 @@
 # 발표·촬영 필수 묶음
 
+**현재 영상 기준:** [기존8분 + 화면10 마케팅 검증1분, 총9분 편집본](09M_MARKETING_SECURITY_EDIT.md). 07:45–08:45에 가상 고객 여정의 실제 API 집계·중복 방지 증거를 넣고 모바일로 마무리합니다. 보안4분과 timeout 반복 제거는 유지합니다. 무음 검토본이며 이전8분·6분30초본도 보관합니다.
+
+**발표·녹음 가이드:** [시연 흐름도·30장면 타임스탬프·키워드·발표 멘트 매칭표](09M_DEMO_FLOW_TIMESTAMP_KEYWORD.md). 제품 PDF의 백엔드11~13쪽과 연결합니다.
+
 ## 제품 소개 추가본
 
 - [PM·보안·운영 핵심 원본](04_PM_SECURITY_CORE.md): PM Positioning, Problem → Solution, 6개 관점, 4개 보안 통제, 역할별 보드, Observability와 현재 구현 범위를 8쪽으로 정리. PDF는 `docs/presentation-pdfs/PM_SECURITY_CORE_DARK_TABLET.pdf`입니다.
-- [제품 소개 편집 원본](00_PRODUCT_INTRODUCTION.md): Problem → Solution, 제품 정의, 입력 6개 항목, 온톨로지, 안내 예시, 역할별 흐름, 현재 범위·12월 계획을 8쪽으로 구성.
+- [제품 소개 편집 원본](00_PRODUCT_INTRODUCTION.md): 기존 제품 설명10쪽에 백엔드 구체적 흐름3쪽을 추가했습니다. 8쪽 Current Implementation·9쪽 Boards And Dashboards·10쪽 Observability·11쪽 등록/검색·12쪽 상태/메모·13쪽 AI/SSE 순서의13쪽 구성입니다.
 - PDF: `output/pdf/LEGAL_AI_INTAKE_PRODUCT_INTRO_DARK_TABLET.pdf` (1024×768, 가로 4:3, 다크 테마).
 - [전체 흐름 Mermaid](PRODUCT_INTAKE_FLOW.mmd) / [온톨로지 Mermaid](MINI_LEGAL_ONTOLOGY.mmd).
+- [백엔드 구체적 흐름3개 · Mermaid 편집 원본](BACKEND_CONCRETE_FLOWS.md): HTTP 진입점·서비스·ID·권한·저장·응답·비용/지표 연결. README는 `scripts/Sync-BackendFlowReadme.py`로 동기화합니다.
 - 재생성: 저장소 루트에서 `python scripts/Build-ProductIntroduction.py`. Markdown 본문과 Python 레이아웃을 분리해 수정할 수 있습니다.
 
 ## 기존 발표·촬영 묶음

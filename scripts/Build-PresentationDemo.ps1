@@ -12,4 +12,4 @@ try{
     & (Get-Command node.exe).Source node_modules/vite/bin/vite.js build --outDir $destination
     if($LASTEXITCODE){throw 'Presentation frontend build failed'}
 }finally{$env:VITE_API_BASE_URL=$previous;Pop-Location}
-Write-Output 'Presentation build ready:5176 frontend ->18080 mock backend. Main frontend dist unchanged.'
+Write-Output 'Presentation build ready:5176 intake ->18080 mock backend; operator09-13 ->8080 fixed server. Main frontend dist unchanged.'

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as api from './operatorApi.js';
 import { useResource } from './useResource.js';
 import { AuditPage, MarketingPage, ObservabilityPage, OverviewPage, PageRefresh, SecurityPage } from './pages.jsx';
@@ -14,21 +14,23 @@ const pages = [
   { id: 'audit', n: '12', name: '위험 이력·Incident 대응', sub: 'Audit & response', title: '판단 근거에서 후속 조치까지.', description: '위험 이력을 추적하고 Incident의 확인·해결 상태를 갱신합니다.' },
   { id: 'observability', n: '13', name: 'AI 위험 요약', icon: 'chart', sub: 'Observability', title: 'Dynamic Guard', description: '위험한 요청과 반복 행동을 두 가지 기준으로 확인합니다.' },
 ];
-const defaultBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+// Operator pages always use the main server, independent of the intake demo build.
+const defaultBase = 'http://127.0.0.1:8080';
 
 export default function OperatorApp() {
-  return <OperatorAuthGate defaultBase={defaultBase}>{props => <OperatorWorkspace key={`${props.base}:${props.user?.revision || 'preview'}`} {...props} />}</OperatorAuthGate>;
+  return <OperatorAuthGate defaultBase={defaultBase} fixedBase>{props => <OperatorWorkspace key={`${props.base}:${props.user?.revision || 'preview'}`} {...props} />}</OperatorAuthGate>;
 }
 
 function OperatorWorkspace({ base: initialBase, user, preview, logout, reconnect, requireLogin }) {
   const [hash, setHash] = useState(() => location.hash);
   const { route, riskId: requestedRiskId } = readOperatorRoute(hash);
-  const [baseInput, setBaseInput] = useState(initialBase);
+  const baseInput = initialBase;
   const base = initialBase;
   const [baseRevision, setBaseRevision] = useState(0);
   const [settings, setSettings] = useState(false);
   const [error, setError] = useState(null);
   const [locked, setLocked] = useState(false);
+  const accountMenu = useRef(null);
   const page = pages.find(item => item.id === route);
   const summary = useResource(api.getAdminDashboardSummary, base, { enabled: route === 'overview' });
   useEffect(() => {
@@ -42,12 +44,34 @@ function OperatorWorkspace({ base: initialBase, user, preview, logout, reconnect
     return () => window.removeEventListener('hashchange', change);
   }, []);
   useEffect(() => {
+    if (accountMenu.current) accountMenu.current.open = false;
     const frame = window.requestAnimationFrame(() => {
       window.scrollTo(0, 0);
       document.querySelector('main h1')?.focus({ preventScroll: true });
     });
     return () => window.cancelAnimationFrame(frame);
   }, [route, requestedRiskId]);
+  useEffect(() => {
+    const closeOutside = event => {
+      const menu = accountMenu.current;
+      if (menu?.open && !menu.contains(event.target)) menu.open = false;
+    };
+    const closeOnEscape = event => {
+      const menu = accountMenu.current;
+      if (event.key === 'Escape' && menu?.open) {
+        menu.open = false;
+        menu.querySelector('summary')?.focus();
+      }
+    };
+    document.addEventListener('pointerdown', closeOutside);
+    document.addEventListener('keydown', closeOnEscape);
+    document.addEventListener('scroll', closeOutside, true);
+    return () => {
+      document.removeEventListener('pointerdown', closeOutside);
+      document.removeEventListener('keydown', closeOnEscape);
+      document.removeEventListener('scroll', closeOutside, true);
+    };
+  }, []);
   function connect(event) {
     event.preventDefault();
     if (locked) return;
@@ -69,8 +93,8 @@ function OperatorWorkspace({ base: initialBase, user, preview, logout, reconnect
       <div className="sidebar-bottom"><a href="./" aria-disabled={locked} onClick={event => { if (locked) event.preventDefault(); }}>법률 절차 Previewer ↗</a></div>
     </aside>
     <main>
-      <header className="topbar"><details className="operator-menu"><summary><Icon name="user" /><span>{preview ? '모의 화면' : `${user.username} · 관리자`}</span><Icon name="chevron-down" /></summary><div className="operator-menu-content"><p>운영자 워크스페이스</p><small>{preview ? '서버 자료를 조회하지 않는 모의 화면입니다.' : '관리자 계정으로 연결되어 있습니다.'}</small><button className="quiet-button" disabled={locked} aria-expanded={settings} onClick={() => setSettings(!settings)}>고급 설정 · 서버 주소</button><button className="quiet-button" onClick={logout}>{preview ? '관리자 로그인' : '로그아웃'}</button></div></details></header>
-      {settings && <section className="settings"><form onSubmit={connect}><label htmlFor="api-base">Spring Boot API 서버</label><div className="input-row"><input id="api-base" type="url" required value={baseInput} disabled={locked} onChange={event => setBaseInput(event.target.value)} /><button className="primary" disabled={locked}>연결</button></div></form><p>업무 API는 ADMIN JWT, 지표 조회는 별도 ADMIN Basic 인증을 사용합니다. 서버를 변경하면 다시 로그인합니다.</p></section>}
+      <header className="topbar"><details ref={accountMenu} className="operator-menu" onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) event.currentTarget.open = false; }}><summary><Icon name="user" /><span>{preview ? '모의 화면' : `${user.username} · 관리자`}</span><Icon name="chevron-down" /></summary><div className="operator-menu-content"><p>운영자 워크스페이스</p><small>{preview ? '서버 자료를 조회하지 않는 모의 화면입니다.' : '관리자 계정으로 연결되어 있습니다.'}</small><button className="quiet-button" disabled={locked} aria-expanded={settings} onClick={() => { accountMenu.current.open = false; setSettings(!settings); }}>고급 설정 · 서버 주소</button><button className="quiet-button" onClick={logout}>{preview ? '관리자 로그인' : '로그아웃'}</button></div></details></header>
+      {settings && <section className="settings"><form onSubmit={connect}><label htmlFor="api-base">Spring Boot API 서버 · 8080 고정</label><div className="input-row"><input id="api-base" type="url" required value={baseInput} disabled={locked} readOnly /><button className="primary" disabled={locked}>새로 조회</button></div></form><p>운영자 API 서버는 8080으로 고정됩니다. 업무 API는 ADMIN JWT, 지표 조회는 별도 ADMIN Basic 인증을 사용합니다.</p></section>}
       <div className="content">
         {error && <div className="notice error" role="alert">{error}</div>}
         {page ? <>{!['marketing', 'security', 'audit', 'observability'].includes(route) && <div className="page-heading" key={page.id}><div><div className="eyebrow">{route === 'overview' ? '운영 대시보드' : `운영자 · ${page.n}`}</div><h1 tabIndex="-1">{page.title}</h1><p>{page.description}</p></div>{route === 'overview' && <PageRefresh item={summary} />}</div>}

@@ -15,7 +15,7 @@ before(async () => {
 after(async () => { await vite?.close(); });
 const text = node => typeof node === 'string' ? node : (node.children || []).map(text).join('');
 const response = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
-async function mount(run, { role = 'ROLE_ADMIN', mock = false } = {}) {
+async function mount(run, { role = 'ROLE_ADMIN', mock = false, fixedBase = false } = {}) {
   const old = { fetch: globalThis.fetch, location: globalThis.location, window: globalThis.window };
   const calls = [];
   globalThis.location = new URL(`${base}/operator.html${mock ? '?mock=1' : ''}#/observability`);
@@ -26,13 +26,13 @@ async function mount(run, { role = 'ROLE_ADMIN', mock = false } = {}) {
     if (url.endsWith('/api/me')) return response({ username: 'qa-admin', role });
     return response([], 401);
   };
-  let tree;
+  let tree, connectionProps;
   try {
     api.clearOperatorSession();
-    await act(async () => { tree = Renderer.create(React.createElement(Gate, { defaultBase: base }, props => React.createElement('section', {},
+    await act(async () => { tree = Renderer.create(React.createElement(Gate, { defaultBase: base, fixedBase }, props => { connectionProps = props; return React.createElement('section', {},
       React.createElement('p', {}, props.preview ? '모의 자료' : 'PRIVATE_ADMIN_DATA'),
-      React.createElement('button', { onClick: props.preview ? props.requireLogin : props.logout }, props.preview ? '실제 자료 연결' : '로그아웃')))); });
-    await run(tree, calls);
+      React.createElement('button', { onClick: props.preview ? props.requireLogin : props.logout }, props.preview ? '실제 자료 연결' : '로그아웃')); })); });
+    await run(tree, calls, () => connectionProps);
   } finally {
     await act(async () => tree?.unmount()); api.clearOperatorSession();
     Object.assign(globalThis, old);
@@ -47,6 +47,22 @@ async function login(tree) {
 
 test('operator gate mounts no protected data or request before login', async () => {
   await mount(async (tree, calls) => { assert.ok(!text(tree.toJSON()).includes('PRIVATE_ADMIN_DATA')); assert.equal(calls.length, 0); });
+});
+
+test('fixed operator server cannot switch to the intake demo during login or reconnect', async () => {
+  await mount(async (tree, calls, current) => {
+    const server = tree.root.findByProps({ 'aria-label': 'API 서버' });
+    assert.equal(server.props.readOnly, true);
+    await act(async () => server.props.onChange({ target: { value: 'http://127.0.0.1:18080' } }));
+    assert.equal(tree.root.findByProps({ 'aria-label': 'API 서버' }).props.value, base);
+    await login(tree);
+    await act(async () => current().reconnect('http://127.0.0.1:18080'));
+    assert.equal(current().base, base);
+    assert.match(text(tree.toJSON()), /PRIVATE_ADMIN_DATA/);
+    assert.ok(calls.length >= 2);
+    assert.ok(calls.every(call => call.url.startsWith(base + '/')));
+    assert.ok(api.operatorSession(base));
+  }, { fixedBase: true });
 });
 test('ADMIN login reveals workspace and logout removes its data and JWT', async () => {
   await mount(async tree => {

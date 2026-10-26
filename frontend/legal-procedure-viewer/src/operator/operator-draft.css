@@ -36,6 +36,7 @@
 .operator-draft > main { position: relative; min-width: 0; padding-top: var(--masthead-height); }
 .operator-draft .topbar { position: absolute; top: 0; right: 0; z-index: 4; height: auto; min-height: 0; padding: 0; background: transparent; border: 0; }
 .operator-menu { position: relative; }
+.operator-menu:not([open]) > .operator-menu-content { display: none; }
 .operator-menu > summary { display: flex; align-items: center; gap: 13px; min-width: 195px; min-height: 91px; padding: 25px 28px; background: #fff; border-radius: 0 0 0 17px; box-shadow: 0 3px 12px #19365818; color: #0a1b5b; font-size: 20px; font-weight: 700; cursor: pointer; list-style: none; }
 .operator-menu > summary::-webkit-details-marker { display: none; }
 .operator-menu > summary .ui-icon:first-child { width: 30px; height: 30px; border-radius: 50%; background: #f2f5f9; padding: 3px; box-sizing: content-box; }

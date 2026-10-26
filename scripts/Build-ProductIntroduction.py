@@ -58,12 +58,63 @@ def render(source=SOURCE, output=OUTPUT, generic=False):
         c.line(x1, H-y1, x2, H-y2)
         c.line(x2-6, H-y2+6, x2, H-y2); c.line(x2+6, H-y2+6, x2, H-y2)
 
+    def flow_box(x, y, width, height, heading, body, accent=BLUE, size=13, heading_size=16):
+        c.setFillColor(HexColor(PANEL)); c.setStrokeColor(HexColor(accent))
+        c.roundRect(x, H-y-height, width, height, 9, fill=1, stroke=1)
+        th = text(heading, x+14, y+8, width-28, heading_size, accent, True)
+        bh = text(body, x+14, y+11+th, width-28, size)
+        assert 11+th+bh <= height-7, (heading, height, th, bh)
+
+    def line_arrow(x1,y1,x2,y2):
+        import math
+        c.setStrokeColor(HexColor(CYAN)); c.setLineWidth(1.5)
+        c.line(x1,H-y1,x2,H-y2)
+        angle=math.atan2(y2-y1,x2-x1)
+        for offset in (-.55,.55):
+            c.line(x2,H-y2,x2-7*math.cos(angle+offset),H-(y2-7*math.sin(angle+offset)))
+
+    def backend_page(title, cards):
+        if title.startswith('백엔드 ①'):
+            boxes=[(44,200,936,84),(44,302,936,84),(44,406,458,84),
+                   (522,406,458,84),(44,515,936,84),(44,616,936,84)]
+            for a,b in [((512,284),(512,302)),((512,386),(273,406)),
+                        ((512,386),(751,406)),((273,490),(512,515)),
+                        ((751,490),(512,515)),((512,599),(512,616))]: line_arrow(*a,*b)
+            for j,((x,y,w,h),(heading,body)) in enumerate(zip(boxes,cards)):
+                flow_box(x,y,w,h,heading,body,[BLUE,GREEN,CYAN,BLUE,GREEN,BLUE][j])
+        elif title.startswith('백엔드 ②'):
+            boxes=[(44,200,936,84),(44,304,458,84),(522,304,458,84),
+                   (44,409,458,116),(522,409,458,116),(44,558,936,84)]
+            for a,b in [((512,284),(273,304)),((512,284),(751,304)),
+                        ((273,388),(273,409)),((751,388),(751,409)),
+                        ((273,525),(512,558)),((751,525),(512,558))]: line_arrow(*a,*b)
+            for j,((x,y,w,h),(heading,body)) in enumerate(zip(boxes,cards)):
+                flow_box(x,y,w,h,heading,body,[BLUE,BLUE,BLUE,GREEN,GREEN,BLUE][j])
+            text('expectedVersion 생략 시 버전 검사 없음 · 메모 재전송은 Idempotent-Replayed로 구분',
+                 46,657,930,13,MUTED)
+            text('메모 키가 없으면 기본120초 추정만 적용 · 같은 상태는200·changed=false·버전 유지',
+                 46,685,930,13,MUTED)
+        else:
+            for j,(heading,body) in enumerate(cards[:6]):
+                y=190+j*79
+                flow_box(44,y,604,76,heading,body,[BLUE,GREEN,CYAN,GREEN,CYAN,BLUE][j],12,14)
+                if j<5: line_arrow(346,y+76,346,y+79)
+            flow_box(676,295,304,212,cards[6][0],cards[6][1],RED,13)
+            for y in (304,380,456,532): line_arrow(648,y,676,401)
+            text('SSE는 원본 토큰을 바로 중계하지 않고 내부 버퍼에 수집한 뒤 검사합니다.',
+                 682,538,288,13,MUTED)
+            text('출력이 차단돼도 이미 생성한 답변의 비용은 정산합니다.',682,613,288,13,MUTED)
+            text('AiMetricRecorder · 비용/위험 메모리 → C16 /actuator/prometheus · 별도 ADMIN Basic',
+                 46,676,930,14,CYAN,True)
+
     for i, (title, lead, cards) in enumerate(pages, 1):
         c.setFillColor(HexColor(BG)); c.rect(0, 0, W, H, fill=1, stroke=0)
         text('LEGAL AI INTAKE  /  PRODUCT BRIEF', 42, 24, 900, 12, CYAN, True)
         text(title, 42, 72, 940, 34, TEXT, True)
         text(lead, 44, 134, 930, 18, MUTED)
-        if generic:
+        if title.startswith('백엔드 '):
+            backend_page(title,cards)
+        elif generic or i >= 8:
             if len(cards) == 6:
                 for j,(heading,body) in enumerate(cards):
                     panel(44+(j%3)*316,208+(j//3)*230,304,210,heading,body,[BLUE,GREEN,CYAN][j%3],17)

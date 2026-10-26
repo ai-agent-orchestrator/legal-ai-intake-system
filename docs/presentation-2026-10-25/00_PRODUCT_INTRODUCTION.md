@@ -1,6 +1,6 @@
 # 제품 소개 - 편집 원본
 
-본문은 아래 8개 페이지에서 수정합니다. `##`는 페이지, 첫 문장은 부제, `###`는 카드입니다.
+본문은 아래 13개 페이지에서 수정합니다. `##`는 페이지, 첫 문장은 부제, `###`는 카드입니다. 11~13쪽은 백엔드 구체적 흐름입니다.
 PDF 재생성: `python scripts/Build-ProductIntroduction.py`.
 흐름도 별도 원본: `PRODUCT_INTAKE_FLOW.mmd`, `MINI_LEGAL_ONTOLOGY.mmd`.
 PDF 도표는 벡터로 출력되며, Mermaid는 README와 다른 문서에 재사용할 수 있습니다.
@@ -119,22 +119,128 @@ Security-Aware Legal AI Intake System
 접수·검색·상담 준비 현황을 확인합니다.
 화면13에서 위험 패턴과 점수를 살펴보고 필요한 점검과 대응을 판단합니다.
 
-## 작게 시작하고, 근거를 갖고 확장합니다.
-고객 경험·업무 효율·AI 운영을 연결하는 PM 중심의 제품 설계
-### 현재 구현 범위
-선택형 접수와 규칙 기반 안내
-공개 정보 검색과 관련성 설명
-USER·LAWYER·ADMIN 권한 분리
-AI 보안·비용 통제와 운영 관측
+## Current Implementation
+간단 안내·위험 통제·비용·출력 보호·지표를 연결했습니다.
+### Minimal Legal Intake Flow
+POST
+/api/legal-intake/minimal
+규칙·템플릿 기반 간단 안내
+### Fixed Guard
+Jailbreak / Prompt Injection
+Legal Harm / Secret Request
+Auth Bypass
+### Dynamic Guard
+sessionId 기반 riskScore 누적
+반복 위험 세션 차단
+### Cost Control
+긴 입력과 예상 토큰 비용 제한
+단계별 예산·예약·정산
+### Privacy Output Guard
+개인정보 입력 허용
+출력 패턴 마스킹
+### Metric
+guardrail / cost / dynamic block
+privacy output masking
+llm call prevented
 
-변협 전용 API가 아닌 공개 웹 검색입니다. 개인정보 보호는 패턴 마스킹과 권한 통제를 조합합니다.
-### 12월 확장 계획
-RAG 기반 법률 문서 검색
-Python actions.py 연계
-Vector DB 활용
-변호사 전달 요약
-카카오톡·이메일 후속 연락
+## Boards And Dashboards
+고객은 안내받고, 변호사는 사건을 검토하며, ADMIN은 운영·보안을 봅니다.
+### 01 Client Chatbot Screen
+고객이 선택한 내용을 자연어 안내문으로 정리합니다.
+초기 안내는 규칙·템플릿으로 제공합니다.
+### 02 Attorney Case Review Board
+배정 문의의 사건 유형·당사자 위치·보유 자료·원하는 도움을 상담 전에 확인합니다.
+상태와 내부 메모로 상담 준비를 이어갑니다.
+### 03 Marketing / Operation Board
+ADMIN 권한으로 문의 수·사건 유형·검색 수·현재 상담 준비 수를 조회합니다.
+상담 후 전환·이탈 사유는 별도 더미 시연 모드입니다.
+### 04 Security Check Board
+Fixed Guard·Dynamic Guard·Cost Control·Privacy Masking·LLM call prevented를 확인합니다.
+보안·비용·위험 패턴을 운영자가 점검합니다.
 
-아직 현재 구현으로 제시하지 않으며, 데이터·동의·운영 기준을 검토할 계획입니다.
-### 핵심 메시지
-문의는 더 명확하게, 상담 준비는 더 쉽게, AI 운영은 더 안심되게.
+## Observability
+실제 DB 집계와 관측 지표를 확인하며, 실측하지 않은 전환율·이탈률은 분리합니다.
+### 실제 DB 집계
+문의 수 · 사건 유형별 유입
+검색 요청 수 · 현재 상담 준비 수
+단계별 집계만으로 고객의 중도 이탈률을 계산하지 않습니다.
+### 보안·비용 관측 지표
+Fixed / Dynamic / Cost Control 차단 수
+Privacy Masking 발생 수
+LLM 호출 방지 수
+### 지표·판정을 읽는 기준
+REQUEST_TOO_LONG은 비용 세부 사유, PII_OUTPUT_MASKED는 보호 결과 맥락입니다.
+요청 80점 차단 권고와 대화 누적 100점 등 세션 제한은 별도 기준입니다.
+### 목표와 현재 수집 범위
+문의 흐름의 끊김을 관찰하는 intake observability system을 지향합니다.
+상담 후 전환·이탈 사유는 더미 시연이며, 실제 측정에는 여정·상담 결과·수집 기준이 필요합니다.
+
+## 백엔드 ① 등록 → 검색 → 이력
+C03 저장 · C06 요청 생성 · P03 실행은 각각 별도 요청입니다.
+### C03 · 문의 등록
+LegalIntakeRecordController → LegalIntakeRecordService.create
+문의·자료 종류·검색 조건 저장 → intakeId·conditionId
+### C06 · 검색 요청 생성
+createSearchRequest · 문의 접근 권한·최신 조건 확인
+AiSearchRequest → PREVIEW_READY · searchRequestId
+### P03 · 실제 검색 실행
+SearchExecutionService.execute → run · 202
+LLM 검색문 → 네이버 2회 → 결과 저장·LLM 설명
+### C08 · 수동 결과 추가
+addSearchResult · 제목·URL·순서 검증
+호출자 결과 저장 · 실행 중 요청은409
+### 결과와 요청을 연결
+SearchResultSnapshot.searchRequestId
+P03 완료·무결과·부분 완료·실패 상태 저장
+### C07 상세 · P02 문의별 이력
+findSearchRequest / findSearchRequests
+조건 + 정렬된 results DTO → 화면이 별도 재조회
+
+## 백엔드 ② 상태·메모 → 재조회
+배정 LAWYER·ADMIN만 수정합니다. 상태와 메모는 별도 트랜잭션입니다.
+### C05 상세 / C09 목록
+검토할 intakeId·현재 version 확인
+C10·C11 요청에 같은 문의ID·기대 버전 전달
+### C10 · 상태 변경 요청
+LegalIntakeStatusController.update
+status · expectedVersion → updateStatus
+### C11 · 상담 메모 요청
+ConsultationMemoController.create
+content · followUpItems · expectedVersion · 키 헤더
+### 상태 판정 → 200 / 409
+requireManager·행 잠금 → 같은 상태면 변경 없음
+버전 대조 → canChangeTo → changeStatus·flush
+허용200 · 금지 전이/버전 충돌409
+### 재전송 판정 → 저장·마스킹
+requireManager·행 잠금 → 작성자·키·해시 대조
+기존 메모 재전송 / 버전 대조 → save·touch·flush
+Privacy.mask → 201 · memoId·intakeVersion
+### 화면에서 C05 / C09 재조회
+최신 상태·버전·허용된 메모 확인
+USER 응답에는 내부 상담 메모 제외
+
+## 백엔드 ③ AI·SSE → 보호·관측
+입력 검사부터 비용 처리·출력 보호·지표까지 단계별로 연결합니다.
+### JWT·DTO → AiController
+S01 → AiService.chat
+S02 → AiStreamingService.stream
+### Dynamic → Fixed → 입력 길이
+preCheck → check → checkInputPageLimit
+입력 차단 사유는 세션 반복 위험에 반영
+### 입력 Guard · 비용 처리
+CostedGuardrailService.checkInput
+입력 검사 비용 예약 → 검사 → 정산
+### 답변 예약 → LLM → 정산
+reserveWithBlock → LLM → recordUsage
+usage 확인 여부로 실사용·추정 구분
+### 출력 Guard → Privacy.mask
+출력 검사 비용 예약·검사·정산 → 패턴 마스킹
+S02는 전체 출력 검사 후 마스킹 조각 전송
+### S01 JSON / S02 token·done
+traceId · reasonCode/detailCode
+usageAvailable · costSource는 경로별 제공
+### 차단·오류 / SSE 중단
+정책 차단: 안전 응답 · 후속 단계 중단
+기술 오류: fallback · SSE blocked/error
+SSE 취소·중복 종결 방지 → 사용량 있으면 정산
+미확인·호출됨은 추정 / 미호출은 예약 해제

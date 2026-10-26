@@ -1,296 +1,204 @@
 # Security-Aware Legal AI Intake System
 
-> **2026-10-23 베타:** 화면01~13과 P03·SSE·권한 처리를 포함한 로컬 시연용 소스입니다.
-
-> This repository is a security-focused MVP draft. The core goal is not to build a full legal consultation chatbot, but to design a PM-driven legal intake flow with AI security controls.
-
-**고객은 선택하고, 챗봇은 정리한다.** 선택형 Legal Intake Form으로 문의를 사건 유형·보유 자료·다음 단계로 구조화하고, 변호사의 상담 준비와 관리자의 AI 보안·비용 관측을 연결합니다.
-
-[제품 정의와 Problem → Solution](#problem---solution) · [제품 소개 PDF](docs/presentation-pdfs/PRODUCT_INTRODUCTION_DARK_TABLET.pdf) · [PM·보안·운영 핵심 PDF](docs/presentation-pdfs/PM_SECURITY_CORE_DARK_TABLET.pdf)
+> 고객은 선택하고, 챗봇은 정리하며, 운영자는 근거를 보고 통제합니다.
 
 ## PM Positioning
 
-[PM 포지셔닝·Problem → Solution·보안 구조·역할별 보드·Observability 핵심 PDF](docs/presentation-pdfs/PM_SECURITY_CORE_DARK_TABLET.pdf) · [편집 원본](docs/presentation-2026-10-25/04_PM_SECURITY_CORE.md)
+법률 문의를 상담 준비로 연결하고, AI의 보안·비용까지 운영할 수 있도록 설계한 PM 중심 프로젝트입니다.
 
-`Legal AI Intake System`은 고객 경험, 변호사 업무 효율, 운영 지표, AI 보안을 함께 고려한 PM 중심의 보안형 챗봇 프로젝트입니다.
+**시장 문제 → 선택형 UX → 보안·비용 통제 → 운영 관측**을 하나의 흐름으로 연결했습니다.
 
-저는 이 프로젝트를 단순히 개발자 관점의 기능 구현 과제로만 접근하지 않았습니다. PM 관점에서 다음 요소를 함께 검토했습니다.
+[PM·보안·운영 핵심 PDF](docs/presentation-pdfs/PM_SECURITY_CORE_DARK_TABLET.pdf)
 
-- 이 기능이 어떤 시장 문제를 해결하는가
-- 누가 이 서비스를 사용하고 어떤 효율과 가치를 얻는가
-- 고객은 어디서 입력을 어려워하는가
-- 변호사는 어떤 정보가 정리되어야 상담 효율이 올라가는가
-- 운영 중 어떤 보안·비용 리스크가 생기는가
-- 그 리스크를 어떤 지표와 dashboard로 관찰하고 통제할 수 있는가
+## Problem → Solution
 
-AI가 코드를 빠르게 만들어내는 시대일수록, 시장 문제를 정확히 정의하고, 고객 경험을 구조화하며, 보안과 비용까지 고려한 운영 가능한 아키텍처를 설계하는 PM 역량이 중요하다고 봅니다.
+![시장·UX·기술·보안·운영·확장 관점의 Problem → Solution](docs/presentation-pdfs/assets/PM_PROBLEM_SOLUTION.png)
 
-이번 프로젝트에서 강조하고 싶은 역량은 단순 코딩이 아니라, 법률 intake라는 시장 문제를 발견하고, 이를 선택형 사용자 경험과 AI 보안 아키텍처로 연결한 PM 역량입니다.
+## Security Architecture
 
-## Problem -> Solution
+| 통제 | 핵심 역할 |
+|---|---|
+| **Fixed Guard** | 탈옥·프롬프트 주입·법률 위해·비밀 요청·인증 우회 차단 |
+| **Dynamic Guard** | 같은 세션의 반복 위험을 누적하고 세션 제한 |
+| **Cost Control** | 입력·출력 범위와 예산을 확인하고 단계별 예약·정산 |
+| **Privacy Output Guard** | 응답·SSE 출력의 개인정보 패턴 마스킹 |
+| **Observability** | 사유 코드·비용·위험 이력·지표를 관리자 화면에서 확인 |
 
-| 관점 | Problem | Solution |
-|---|---|---|
-| 시장 | 소규모 법률 사무소에는 초기 문의를 구조화하는 intake 시스템이 부족합니다. 이로 인해 고객 문의가 상담으로 이어지지 못하는 전환 손실이 발생할 수 있습니다. | Legal AI Intake System을 통해 고객 문의를 사건 유형, 보유 자료, 원하는 다음 단계로 구조화합니다. |
-| UX | 고객은 법률 용어를 모르기 때문에 자신의 문제를 처음부터 주관식으로 설명하기 어렵습니다. | 고객은 선택형 입력과 체크리스트를 사용하고, 챗봇은 선택값을 자연어 안내문으로 정리합니다. |
-| 기술 | 자유대화형 챗봇은 입력이 길어지고 구조가 불안정해질 수 있습니다. | Legal Intake Form + Spring Java 구조로 입력을 정형화하고, 사건 유형과 준비 자료를 안정적으로 분류합니다. |
-| 보안 | AI 서비스는 위험 요청, 반복 공격, 비용 폭주, 개인정보 재출력 위험을 가집니다. | Fixed Guard, Dynamic Guard, Cost Control, Privacy Output Guard로 LLM 호출 전후의 리스크를 통제합니다. |
-| 운영 | 차단 이유와 문의 흐름이 기록되지 않으면 운영자가 문제를 파악하기 어렵습니다. | reasonCode, Prometheus metric, dashboard를 통해 문의 흐름과 보안 차단을 관찰 가능하게 설계합니다. |
-| 확장 | 1차 버전만으로는 깊은 법률 문서 검색, 변호사 전달 요약, 후속 연락 자동화까지 처리하기 어렵습니다. | 12월에는 RAG, Python actions.py, Vector DB, 카톡/이메일 연동으로 실무형 MVP로 확장할 계획입니다. |
+화면13은 **요청 위험 패턴 80점 차단 권고**와 **대화 누적 100점 등 세션 제한**을 구분해 보여줍니다.
 
-## Product Definition
+## Product Introduction
 
-이 프로젝트는 자유대화형 법률 상담 챗봇이 아닙니다. `Legal Intake Form` 기반의 정보 제공형 챗봇입니다.
+**고객은 선택하고, 챗봇은 정리한다.**
 
-핵심 UX는 한 문장으로 정리할 수 있습니다.
+문의 목적·사건 유형·당사자 위치·핵심 사실·보유 자료·다음 단계를 입력하면, 규칙·템플릿으로 문의 유형과 준비 자료를 안내합니다. 초기 안내는 LLM을 호출하지 않으며, 저장된 검색 조건을 활용하는 검색문 구성·관련성 설명을 별도 LLM 단계로 연결했습니다.
 
-```text
-고객은 선택하고, 챗봇은 정리한다.
-```
+[제품 설명 PDF](docs/presentation-pdfs/PRODUCT_INTRODUCTION_DARK_TABLET.pdf)
 
-고객은 문의 목적, 사건 유형, 당사자 위치, 핵심 사실, 보유 자료, 원하는 다음 단계를 선택·입력합니다. 시스템은 이 선택값을 바탕으로 현재 문의 유형, 분쟁 가능성, 준비 자료, 다음 정리 방향을 자연어 문장으로 안내합니다.
+| 사용자 | 사용하는 기능 |
+|---|---|
+| USER | 선택형 접수 → 간단 안내 → 공개 정보 검색 |
+| LAWYER | 배정 문의 → 자료 확인 → 상태·내부 메모 |
+| ADMIN | 전체 현황·배정 → 보안·비용 → 화면13 위험 요약 |
 
-화면02~04의 초반 분류·간단 안내는 **규칙·템플릿 기반**이며, 매번 LLM으로 사건을 요약하지 않습니다. 화면05의 검색문 구성·검색 결과 관련성 설명에서 LLM을 사용합니다. 상담 전환 손실 감소는 제품 목표이며, 실제 전환율 개선을 실증한 수치로 주장하지 않습니다.
-
-예시:
-
-```text
-입력:
-문의 목적: 필요한 자료 확인
-사건 유형: 민사
-당사자 위치: 원고
-보유 자료: 입금내역, 카카오톡
-원하는 다음 단계: 상담
-핵심 내용: 빌려준 돈을 못 받고 있습니다.
-
-출력:
-현재 문의는 민사 사건에 가까워 보입니다.
-
-금전 반환 또는 대여금 분쟁 가능성이 있습니다.
-상담 전에는 입금 내역, 카카오톡/문자 대화,
-상대방에게 반환을 요청한 기록을 날짜순으로 정리해 주세요.
-
-계약서나 약정서가 있다면 함께 준비하는 것이 좋습니다.
-개인정보 보호를 위해 출력 경로의 패턴 마스킹과 역할별 접근 통제를 적용합니다.
-```
-
-위 문장은 안내 예시입니다. 패턴 마스킹이 모든 개인정보를 탐지한다는 의미는 아니며, 안내는 최종 법률 판단을 대신하지 않습니다.
-
-## Minimal Legal Intake Form
-
-이번 프로젝트의 intake 범위는 아래 6개 항목으로 제한합니다. 깊은 법률 판단이나 RAG 기반 문서 검색은 12월 확장 범위로 둡니다.
-
-### 1. 문의 목적
-
-- 절차 안내
-- 필요한 자료 확인
-- 작성한 문서 검토
-- 변호사 선임/계약 검토
-- 전자소송 제출 안내
-
-### 2. 사건 유형
-
-- 민사
-- 형사
-- 가사
-- 전자소송
-- 잘 모르겠음
-
-### 3. 당사자 위치
-
-- 피해자
-- 피고소인
-- 원고
-- 피고
-- 신청인
-- 상대방
-- 잘 모르겠음
-
-### 4. 핵심 사실
-
-- 사건 발생일
-- 상대방
-- 문제가 된 금액 또는 피해 규모
-- 현재 진행 단계
-- 핵심 내용 한 문장: 최대 100자(서버 UTF-16 길이 기준)
-
-### 5. 보유 자료
-
-- 계약서
-- 입금 내역
-- 카카오톡/문자
-- 사진/영상
-- 소장/고소장/통지서
-- 없음
-
-### 6. 원하는 다음 단계
-
-- 상담
-- 서면 검토
-- 소송 준비
-- 전자소송 제출
-- 변호사 선임
-
-Implemented endpoint:
-
-```http
-POST /api/legal-intake/minimal
-```
-
-이 API는 JWT 인증을 확인하고 입력값을 규칙·템플릿으로 안내합니다. 문의 저장은 별도의 `POST /api/intakes`이며, 간단 안내 API 자체는 문의 저장이나 LLM 생성을 수행하지 않습니다.
-
-## Mini Legal Ontology
-
-본 프로젝트는 법률 상담 전환 손실 문제를 `선택형 Legal Intake Form`과 `미니 법률 온톨로지`로 구조화했습니다.
-
-이 프로젝트에서 온톨로지는 복잡한 법률 지식 그래프가 아니라, 고객의 선택값과 키워드를 사건 유형, 분쟁 영역, 준비 자료로 연결하는 최소 분류 체계입니다.
+## 핵심 기능 Flow
 
 ```mermaid
-flowchart LR
-    A[고객 입력] --> B[선택값]
-    B --> C[사건 유형]
-    C --> D[분쟁 영역]
-    D --> E[준비 자료]
-    E --> F[다음 정리 방향]
+flowchart TD
+    A["USER · 선택형 입력"] --> B["규칙 분류 · 문의 저장"]
+    B --> C["간단 안내 · 준비 자료"]
+    C --> D["선택한 검색 요청 실행"]
+    D --> E["저장 조건 → LLM 검색문"]
+    E --> F["네이버 웹 검색 · 변협 도메인 대상 + 일반 웹"]
+    F --> G["결과 저장 · 관련성 설명"]
+    C --> H["LAWYER · 배정 문의 검토"]
+    G --> H
+    H --> I["상태 변경 · 내부 상담 메모"]
+    E -. "유료 호출 전후" .-> J["Fixed · Dynamic · Cost · Privacy"]
+    G -. "유료 호출 전후" .-> J
+    I --> K["ADMIN · 운영·마케팅 현황"]
+    J --> L["Metric · 위험 이력 · 비용 관측"]
+    L --> M["화면13 · 위험 패턴 요약"]
+    classDef user fill:#162438,stroke:#68a8ff,color:#e8eff7
+    classDef guard fill:#162438,stroke:#70dfb2,color:#e8eff7
+    classDef admin fill:#162438,stroke:#6bd6e8,color:#e8eff7
+    class A,B,C,D,E,F,G,H,I user
+    class J guard
+    class K,L,M admin
 ```
 
-예: `빌려준 돈을 못 받음` → `민사·원고` → `대여금·금전 반환 가능성` → `입금 내역·대화·계약서` → `반환 요청 기록을 날짜순 정리`.
+변협 전용 API가 아닌 네이버 공개 웹 검색입니다. 내부 상담 메모는 USER 응답에서 제외하며, 개인정보 마스킹은 지원 패턴에 적용합니다.
 
-[편집 가능한 전체 입력·검색 흐름](docs/presentation-2026-10-25/PRODUCT_INTAKE_FLOW.mmd) · [온톨로지 예시 흐름](docs/presentation-2026-10-25/MINI_LEGAL_ONTOLOGY.mmd)
+<!-- BACKEND_CONCRETE_FLOWS:START -->
+## 백엔드 구체적 흐름
 
-선택형 intake와 미니 법률 온톨로지는 고객, 변호사, 시스템 모두의 비용을 줄이는 구조입니다.
+HTTP 진입점 → 서비스·정책 → 저장·응답·관측을 세 흐름으로 연결했습니다. 현재 소스 기준이며 새 실행 검수 결과는 아닙니다.
 
-- 고객은 법률 용어를 몰라도 선택할 수 있어 입력 부담이 줄어듭니다.
-- 변호사는 상담 전에 사건 유형과 보유 자료를 파악할 수 있어 기본 질문 시간이 줄어듭니다.
-- 시스템은 긴 자유입력을 줄이고 템플릿 기반 응답을 활용할 수 있어 LLM 비용을 줄일 수 있습니다.
+### 1. 문의 등록 → 검색 요청 → 실행·결과 → 이력
 
-## 기존 과제와의 연결
-
-이전 Spring Boot–React 연동 과제에서 구현한 `legal-procedure-viewer`를 이번 프로젝트의 **Legal Reference 모듈**로 활용합니다. 기존의 법률 절차·단계·양식·체크리스트 조회 API 6개를 재사용하고, 문의 분류·입력·결과 안내 화면에서 절차와 준비자료를 확인할 수 있도록 연결할 계획입니다.
-
-| 이번 프로젝트 화면 | 기존 기능의 활용 |
-|---|---|
-| 화면 2: 사건 유형 안내 | 분야별 절차 목록·상세를 사건 유형 이해에 필요한 참고 정보로 제공 |
-| 화면 3: 문의 입력 | 절차별 단계·체크리스트·양식 안내를 보며 보유 자료와 다음 단계를 정리 |
-| 화면 4: 결과 안내 | 문의 안내 결과와 함께 관련 절차·준비자료를 제시하고, 필요한 경우 형사 보완수사 체크리스트 제공 |
-
-현재 기존 React에서 연결한 기능은 절차 목록·상세·형사 체크리스트 조회 3개입니다. 화면 2~4의 새 화면 연결은 이후 React 단계에서 진행합니다. 사건 분류 preview·Intake 저장·LLM 검색 실행은 각각 별도 기능으로 구분합니다.
-
-현재 구현 API 37개에는 기존 Reference 6개도 포함됩니다. 과제의 React–API 연결 경험을 재사용하면서 문의 저장·상담 검토·검색 기록·보안·비용 관리로 기능을 확장한 프로젝트로 설명합니다.
-
-기존 구현: [Legal Procedure Viewer](C:/myLectureWs/legal-ai-intake-security-server/frontend/legal-procedure-viewer/README.md). 현재 연결 범위: [화면/API 매핑](C:/myLectureWs/legal-ai-intake-security-server/docs/SCREEN_API_CONTROLLER_MAPPING.md), [API 정리서](C:/myLectureWs/legal-ai-intake-security-server/docs/API_STATUS_SPEC.md).
-
-## Security Architecture Summary
-
-이번 프로젝트의 중심은 보안 구조입니다.
-
-단순히 LLM API를 호출하는 것이 아니라, LLM 호출 전에 위험 요청, 반복 공격, 비용 폭주를 통제하고, LLM 출력 이후 개인정보 재노출을 막는 구조를 설계했습니다.
-
-```text
-Fixed Guard
--> Jailbreak, Prompt Injection, Legal Harm, Secret/API Key 요청, 인증/전자서명 우회 차단
-
-Dynamic Guard
--> 같은 sessionId의 반복 위험 요청을 점수화하고 임계치 초과 시 세션 차단
-
-Cost Control
--> 긴 입력과 토큰 비용 폭주를 LLM 호출 전에 제한
-
-Privacy Output Guard
--> 개인정보 입력은 허용하되 출력에서는 마스킹
+```mermaid
+flowchart TD
+    A["C03 POST /api/intakes<br/>LegalIntakeRecordController.create<br/>DTO 검증 · JWT · Idempotency-Key"] --> B["LegalIntakeRecordService.create · 트랜잭션<br/>LegalIntake + 자료 종류 + LawyerSearchCondition 저장<br/>응답 id = intakeId · lawyerSearchCondition.id = conditionId"]
+    B --> C["C06 POST /api/intakes/{intakeId}/search-requests<br/>createSearchRequest · 문의 접근 권한·최신 조건 확인<br/>AiSearchRequest 저장 · PREVIEW_READY · id = searchRequestId"]
+    C --> D["P03 POST /api/intakes/search-requests/{searchRequestId}/execute<br/>SearchExecutionController → SearchExecutionService.execute<br/>실행권 선점 · 작업 큐 · 202 응답"]
+    D --> E["run · SearchLlmService.query → 외부 검색<br/>네이버 변협 도메인 대상 + 일반 웹<br/>결과 저장 → 결과별 LLM 관련성 설명"]
+    C --> F["C08 POST /api/intakes/search-requests/{searchRequestId}/results<br/>LegalIntakeRecordService.addSearchResult<br/>호출자가 직접 보낸 결과 저장 · 실행 중이면409"]
+    E --> G["SearchResultSnapshot · searchRequestId로 연결<br/>P03 COMPLETED / NO_RESULTS / PARTIAL / FAILED"]
+    F --> G
+    G --> H["C07 요청 상세 · P02 문의별 요청 이력<br/>조건 + 정렬된 results를 DTO로 조합<br/>화면이 별도로 조회·갱신"]
+    B -. "문의 조회" .-> I["C05 상세 / C09 역할별 목록"]
+    classDef api fill:#183348,stroke:#68a8ff,color:#e8eff7
+    classDef store fill:#173a32,stroke:#70dfb2,color:#e8eff7
+    classDef control fill:#3e3521,stroke:#d5af55,color:#e8eff7
+    class A,C,D,F,H,I api
+    class B,G store
+    class E control
 ```
 
-대표 정책 사유·세부 사유·보호 결과 (응답 필드와 역할은 구분):
+- **자동 연쇄 실행이 아닙니다.** C03 저장, C06 요청 생성, P03 실행은 각각 별도 요청입니다. C08 수동 저장과 P03 내부 저장도 별도 경로입니다.
+- `conditionId`는 서버가 연결하므로 C06 본문으로 다시 보내지 않습니다. 검색 실행·상세·결과 추가에는 `searchRequestId`, 문의별 이력에는 `intakeId`를 사용합니다.
+- 조회·검색 접근은 문의 소유자·배정 변호사·ADMIN 범위입니다. P03의 PARTIAL 상태에서 `retryExplanation:true`를 보내면 저장 결과를 유지하며 미완료 설명만 재시도합니다.
 
-```text
-BLOCKED_JAILBREAK
-BLOCKED_PROMPT_INJECTION
-BLOCKED_LEGAL_HARM
-BLOCKED_SECRET_REQUEST
-BLOCKED_AUTH_BYPASS
-COST_LIMIT_BLOCKED
-REQUEST_TOO_LONG
-DYNAMIC_SESSION_BLOCKED
-PII_OUTPUT_MASKED
+### 2. 상태 변경·상담 메모 → 문의 재조회
+
+```mermaid
+flowchart TD
+    A["C05 상세 / C09 목록<br/>intakeId · 현재 version 확인"] --> B["C10 PATCH /api/intakes/{id}/status<br/>LegalIntakeStatusController.update<br/>status · expectedVersion 검증"]
+    A --> C["C11 POST /api/intakes/{id}/memo<br/>ConsultationMemoController.create<br/>content · followUpItems · expectedVersion<br/>헤더 Idempotency-Key"]
+    B --> D["LegalIntakeRecordService.updateStatus<br/>requireManager · 문의 행 잠금<br/>배정 LAWYER / ADMIN 권한 확인"]
+    D --> E["같은 상태 → 200 · changed=false · 버전 유지<br/>다른 상태 → expectedVersion 대조<br/>IntakeStatus.canChangeTo → changeStatus"]
+    E --> F["허용: flush → 200<br/>previousStatus · status · changed · version"]
+    E --> X["금지 전이 / 오래된 버전 → 409<br/>CLOSED 재개·SUBMITTED 복귀 금지"]
+    C --> G["LegalIntakeRecordService.createMemo<br/>requireManager · 같은 문의 행 잠금<br/>작성자·키·내용 해시로 재전송 판별"]
+    G --> H["같은 키·작성자·내용 → 기존 memoId 반환<br/>키 재사용 충돌 / 버전 불일치 → 409<br/>새 요청: memo save · intake.touch · flush"]
+    H --> I["PrivacyOutputGuardService.mask → 201<br/>id = memoId · intakeId · intakeVersion<br/>Idempotent-Replayed 응답 헤더"]
+    F --> J["화면의 별도 C05 / C09 재조회<br/>최신 상태·버전·허용된 메모 확인<br/>USER DTO에는 내부 메모 제외"]
+    I --> J
+    classDef api fill:#183348,stroke:#68a8ff,color:#e8eff7
+    classDef store fill:#173a32,stroke:#70dfb2,color:#e8eff7
+    classDef control fill:#3e3521,stroke:#d5af55,color:#e8eff7
+    classDef error fill:#422630,stroke:#ff9eaa,color:#e8eff7
+    class A,B,C,F,I,J api
+    class D,G store
+    class E,H control
+    class X error
 ```
 
-개인정보 표시 마스킹 예시 (개념 예시이며 실제 출력 형식은 필드·패턴에 따라 다름):
+- 상태와 메모는 **각각 별도 트랜잭션**이며 서로를 자동 호출하지 않습니다. 동일 문의 행 잠금으로 상태 변경·메모·재배정을 직렬화합니다.
+- `expectedVersion`은 현행 호환 정책상 선택값입니다. 보내야 오래된 편집을409로 검출합니다. 같은 상태와 기존 메모 재전송 판별은 버전 검사보다 먼저 수행합니다.
+- 메모 키가 없으면 같은 작성자·같은 내용의 기본120초 재전송 추정만 적용하며 영구 멱등 보장이 아닙니다. C11의201은 새 저장과 기존 응답 재전송 모두에 사용하므로 헤더·ID로 구분합니다.
 
-```text
-홍길동 -> 홍**
-010-1234-5678 -> 010-1***-****
-900101-1234567 -> 900101-*******
-123-456-789012 -> 123-***-******
+### 3. AI 동기·SSE → 사유·비용·마스킹·지표
+
+```mermaid
+flowchart TD
+    A["JWT · DTO 통과 → AiController<br/>S01 /api/ai/chat → AiService.chat<br/>S02 /api/ai/chat/stream → AiStreamingService.stream"] --> B["LegalDynamicGuardService.preCheck<br/>→ LegalFixedGuardService.check<br/>→ AiCostControlService.checkInputPageLimit"]
+    B --> C["CostedGuardrailService.checkInput<br/>입력 Guard 비용 예약 → 검사 → 정산"]
+    C --> D["AiCostControlService.reserveWithBlock<br/>답변 예산 예약 → LLM 호출 → recordUsage<br/>usage 확인 여부로 실사용·추정 정산 구분"]
+    D --> E["CostedGuardrailService.checkOutput<br/>출력 Guard 비용 예약·검사·정산<br/>허용 출력 → PrivacyOutputGuardService.mask"]
+    E --> F["S01 JSON / S02 마스킹된 token → done<br/>traceId · reasonCode/detailCode<br/>usageAvailable · costSource는 경로에 따라 제공"]
+    B -. "차단 · 후속 단계 중단" .-> X["안전 응답 / blocked / error<br/>발생 사유 반환 · 기술 오류 fallback<br/>입력 차단은 반복 위험에 반영"]
+    C -. "정책·예산 차단 / 오류" .-> X
+    D -. "예산 차단 / 공급자 오류" .-> X
+    E -. "출력 차단 · 생성 비용은 정산" .-> X
+    D -. "SSE 종료·timeout·오류" .-> Y["LlmStreamControl.cancel · 중복 종결 방지<br/>usage 있음: 해당 사용량 정산<br/>호출됨·usage 없음: 추정 정산<br/>미호출: 예약 해제"]
+    F --> M["AiMetricRecorder · 비용/위험 메모리 상태<br/>C16 GET /actuator/prometheus · ADMIN Basic<br/>Counter/Gauge/Timer → 운영 화면 관측"]
+    X --> M
+    Y --> M
+    classDef api fill:#183348,stroke:#68a8ff,color:#e8eff7
+    classDef store fill:#173a32,stroke:#70dfb2,color:#e8eff7
+    classDef control fill:#3e3521,stroke:#d5af55,color:#e8eff7
+    classDef error fill:#422630,stroke:#ff9eaa,color:#e8eff7
+    class A,F,M api
+    class D store
+    class B,C,E,Y control
+    class X error
 ```
 
-## PM Multi-Layer Analysis
+- S02는 공급자 원본 조각을 내부 버퍼에 모은 뒤 **전체 출력 검사·패턴 마스킹 후** 전송합니다. 원본 토큰을 실시간으로 그대로 중계하지 않습니다.
+- 출력이 차단돼도 이미 생성한 답변 비용은 남습니다. 입력 Guard·답변·출력 Guard는 각각 비용 처리 단계입니다. C16 조회는 LLM을 호출하지 않습니다.
+- `reason`은 기존 호환 필드이며 공통 사유·세부 사유가 항상 같은 의미는 아닙니다. `usageAvailable`·`costSource`가 없는 분기에서 임의의0·실측으로 해석하지 않습니다.
+- 초기 화면02~04의 규칙·템플릿 안내와 이 S01·S02 AI 파이프라인은 구분합니다. Prometheus는 지표이고, DB 위험 이력·Incident는 별도 저장·조회 경로입니다.
 
-이 프로젝트는 법률 intake 문제를 시장, 의뢰인, 변호사, 기술, 보안, 운영 관점에서 나누어 분석한 뒤 설계했습니다.
+[편집 원본·코드 대조 진입점](docs/presentation-2026-10-25/BACKEND_CONCRETE_FLOWS.md) · [제품 소개 PDF 11~13쪽](docs/presentation-pdfs/PRODUCT_INTRODUCTION_DARK_TABLET.pdf)
+<!-- BACKEND_CONCRETE_FLOWS:END -->
 
-### 1. 시장 관점
+## 핵심 API
 
-소규모 법률 사무소의 초기 응대는 전화 중심, 주관식 설명 중심, 담당자 역량 의존적인 경우가 많습니다. 고객 문의가 사건 정보로 구조화되지 못하면 상담 전환 손실이 발생할 수 있습니다.
+| 기능 | 번호 | HTTP API |
+|---|---|---|
+| 로그인·현재 사용자 | C01 · P01 | `POST /api/auth/login` · `GET /api/me` |
+| 분류·문의 접수 | C02 · C03 | `POST /api/intakes/classify-preview` · `POST /api/intakes` |
+| 간단 안내 | C04 | `POST /api/legal-intake/minimal` |
+| 문의 목록·상세 | C09 · C05 | `GET /api/intakes` · `GET /api/intakes/{id}` |
+| 검색 요청·실행 | C06 · P03 | `POST /api/intakes/{intakeId}/search-requests` · `POST /api/intakes/search-requests/{searchRequestId}/execute` |
+| 검색 결과·이력 조회 | C07 · P02 | `GET /api/intakes/search-requests/{searchRequestId}` · `GET /api/intakes/{intakeId}/search-requests` |
+| 상태·메모 | C10 · C11 | `PATCH /api/intakes/{id}/status` · `POST /api/intakes/{id}/memo` |
+| 운영·마케팅 | C12 · C13 | `GET /api/admin/dashboard/summary` · `GET /api/admin/dashboard/marketing-funnel` |
+| 지표·위험 이력 | C16 · C17 | `GET /actuator/prometheus` · `GET /api/agent/risk/history` |
+| AI 질문·SSE | S01 · S02 | `POST /api/ai/chat` · `POST /api/ai/chat/stream` |
 
-### 2. 의뢰인 관점
+[전체 화면·API·Controller 매핑 및 인증·Postman 입력값](docs/SCREEN_API_CONTROLLER_MAPPING.md)
 
-법률 문제를 처음 겪는 고객은 자신의 사건이 민사인지, 형사인지, 가사인지조차 알기 어렵습니다. 따라서 처음부터 긴 주관식 설명을 요구하기보다, 선택형 입력과 준비자료 안내가 필요합니다.
-
-### 3. 변호사 관점
-
-정리되지 않은 상담은 변호사의 시간을 사실관계 청취와 기본 확인에 소모시킵니다. 상담 전 사건 유형, 보유 자료, 원하는 도움을 구조화하면 변호사는 상담 시간을 자료 분류가 아니라 쟁점 파악과 전략 검토에 사용할 수 있습니다.
-
-### 4. 기술 관점
-
-자유 대화형 챗봇보다 `Legal Intake Form` 기반 정보 제공형 챗봇이 MVP에 적합하다고 판단했습니다. 선택형 입력과 체크리스트를 사용하면 입력 구조화, DTO Validation, reasonCode, metric 설계가 쉬워집니다.
-
-### 5. 보안 관점
-
-AI 서비스는 LLM 호출 전에 위험 요청, 반복 공격, 비용 폭주를 통제해야 하며, 출력 단계에서는 개인정보 재노출을 막아야 합니다. 이를 위해 Fixed Guard, Dynamic Guard, Cost Control, Privacy Output Guard를 분리 설계했습니다.
-
-### 6. 운영 관점
-
-AI 서비스는 운영 중 관찰 가능해야 합니다. 현재 문의·검색·상담 준비 현황은 DB 집계로, 보안·비용은 Prometheus 지표와 운영자 대시보드로 확인합니다. 화면13에서 위험 신호 조합과 이력을 함께 봅니다.
-
-차단 이유는 사유 코드·지표·대시보드에 연결했습니다. 실제 고객 여정의 중도 이탈과 상담 후 계약 전환은 추가 수집이 필요한 범위이며, 현재 마케팅 시연 모드의 더미 결과와 구분합니다.
+업무 API의 JWT·역할/문의 접근 권한과 C16의 별도 ADMIN Basic 인증을 구분합니다. 운영 집계는 실데이터, 상담 후 전환·이탈 사유는 별도 더미 시연입니다.
 
 ## Boards And Dashboards
 
-고객은 챗봇으로 안내받고, 변호사는 사건·마케팅·보안을 각각의 보드로 봅니다.
+고객은 챗봇으로 안내받고, 변호사는 배정 사건을 검토하며, ADMIN은 마케팅·운영·보안 보드를 봅니다.
 
-```text
-1. Client Chatbot Screen
-   -> 고객이 선택한 내용을 자연어 안내문으로 정리
-
-2. Attorney Case Review Board
-   -> 변호사가 상담 전 사건 유형, 당사자 위치, 보유 자료, 원하는 도움을 확인
-
-3. Marketing / Operation Board
-   -> ADMIN 권한으로 문의 수·사건 유형·검색 수·현재 상담 준비 수 조회
-   -> 상담 후 전환·이탈 사유는 별도 더미 시연 모드
-
-4. Security Check Board
-   -> Fixed Guard, Dynamic Guard, Cost Control, Privacy Masking, LLM call prevented를 확인
-```
+| 보드 | 핵심 기능 |
+|---|---|
+| Client Chatbot Screen | 고객의 선택값을 자연어 안내문으로 정리 |
+| Attorney Case Review Board | 사건 유형·당사자 위치·보유 자료·원하는 도움 확인 |
+| Marketing / Operation Board | ADMIN 권한으로 문의·사건 유형·검색·현재 상담 준비 집계. 상담 후 전환·이탈 사유는 별도 더미 시연 |
+| Security Check Board | Fixed·Dynamic·Cost 차단, Privacy Masking, LLM call prevented 확인 |
 
 ## Observability
 
-운영자는 실제 DB 집계와 관측 지표를 확인합니다. 실측하지 않은 전환율과 이탈률은 분리합니다.
+운영자는 **문의 수·사건 유형별 유입·검색 요청 수·현재 상담 준비 수**와 **Fixed·Dynamic·Cost 차단 수·Privacy Masking 발생 수·LLM 호출 방지 수**를 확인합니다.
 
-```text
-문의 수
-사건 유형별 유입
-검색 요청 수
-현재 상담 준비 수
-Fixed Guard 차단 수
-Dynamic Guard 차단 수
-Cost Control 차단 수
-Privacy Masking 발생 수
-LLM 호출 방지 수
-```
+초기 문의 흐름의 끊김을 관찰하는 intake observability system을 지향합니다. 현재 단계별 집계로 실제 중도 이탈률을 계산하지 않으며, 상담 후 전환·이탈 사유는 더미 시연입니다. 실측에는 고객 여정·상담 결과·수집 기준이 필요합니다.
 
-이 시스템은 단순 챗봇이 아니라, 초기 문의가 어디서 끊기는지 관찰할 수 있는 intake observability system을 지향합니다.
-
-현재 단계별 집계만으로 고객의 중도 이탈률을 계산하지 않습니다. 상담 후 계약 전환·이탈 사유는 더미 시연이며, 실제 측정에는 고객 여정·상담 결과와 수집 기준이 필요합니다. `REQUEST_TOO_LONG`은 비용 공통 사유와 구분되는 세부 사유이며 `PII_OUTPUT_MASKED`는 보호 결과 맥락에서 읽습니다. 요청 패턴 80점 차단 권고와 대화 누적 100점 세션 제한도 별도 기준입니다.
+`REQUEST_TOO_LONG`은 비용 세부 사유, `PII_OUTPUT_MASKED`는 보호 결과입니다. 요청 80점 차단 권고와 대화 누적 100점 등 세션 제한은 별도 기준입니다.
 
 ## Current Implementation
 
@@ -358,6 +266,3 @@ Dashboard Enhancement
 최근 기업용 AI에서는 모델 활용과 함께 정책에 따른 사용 통제, 개인정보 보호, 비용 관리와 운영 관측을 중요하게 다루고 있습니다. [OpenAI의 보안·운영 구성](https://learn.chatgpt.com/docs/enterprise/security-cookbook)과 [Claude의 관리자 분석·비용 관리 기능](https://claude.com/resources/articles/giving-admins-more-visibility-and-control-over-claude-usage-and-spend)에서도 이러한 방향을 확인할 수 있습니다.
 
 이번 프로젝트에서는 Fixed Guard, Dynamic Guard, Privacy Output Guard, Cost Control을 모듈로 나누고, reasonCode·Metric·운영 조회 API로 처리 결과를 확인할 수 있도록 설계·구현했습니다. 법률 문의 서비스에 이 구조를 적용하면서, 기업용 AI에서 중요하게 다루는 통제와 관측의 기초 구조를 직접 설계하고 구현해본 데 의미가 있습니다.
-# 2026-10-23 로컬 DB·실행본 갱신
-
-현재8080은 최신 SHA별 JAR와 `local-persistent` 파일 H2/validate로 실행한다. 기존 문의3건을 포함한 전체20개 테이블의 원래 데이터 복원·해시 대조와 실제 재시작 보존을 확인했다. 로컬 MySQL의 별도 스키마에도 버전·요청 키/유니크를 이행했다. [D01/D02 검수·기동·복구](docs/DB_DEPLOYMENT_REVIEW_2026-10-23.md).

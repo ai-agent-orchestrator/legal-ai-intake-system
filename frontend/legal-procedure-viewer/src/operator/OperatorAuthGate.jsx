@@ -3,7 +3,7 @@ import * as api from './operatorApi.js';
 import LoginLayout from '../shared/LoginLayout.jsx';
 import Icon from '../client/Icon.jsx';
 
-export default function OperatorAuthGate({ defaultBase, children }) {
+export default function OperatorAuthGate({ defaultBase, fixedBase = false, children }) {
   const [base, setBase] = useState(defaultBase);
   const [user, setUser] = useState(() => api.operatorSession(defaultBase));
   const [username, setUsername] = useState('');
@@ -30,7 +30,12 @@ export default function OperatorAuthGate({ defaultBase, children }) {
     api.clearOperatorSession(); setUser(null); setPassword(''); setVisible(false); setBusy(false); requireLogin();
   }
   function reconnect(target) {
-    logout(); setBase(api.normalizeApiBase(target)); setNotice('변경한 서버의 관리자 계정으로 로그인해 주세요.');
+    const normalized = api.normalizeApiBase(target);
+    if (fixedBase && normalized !== base) {
+      setNotice('운영자 API 서버는 8080으로 고정되어 있습니다.');
+      return;
+    }
+    logout(); setBase(normalized); setNotice('변경한 서버의 관리자 계정으로 로그인해 주세요.');
   }
   async function submit(event) {
     event.preventDefault(); if (active.current) return;
@@ -49,7 +54,7 @@ export default function OperatorAuthGate({ defaultBase, children }) {
       <label><span className="sr-only">비밀번호</span><div className="login-input"><Icon name="lock"/><input name="password" type={visible ? 'text' : 'password'} autoComplete="current-password" placeholder="비밀번호 입력" value={password} disabled={busy} onChange={event => setPassword(event.target.value)} required /><button type="button" className="login-password-toggle" aria-label={visible ? '비밀번호 숨기기' : '비밀번호 표시'} aria-pressed={visible} disabled={busy} onClick={() => setVisible(value => !value)}><Icon name={visible ? 'eye' : 'eyeOff'}/></button></div></label></div>
       <button type="submit" className="intake-button primary" disabled={busy}>{busy ? '로그인 확인 중' : '관리자 로그인'}</button>
       <div className="login-feedback" aria-live="polite">{notice && <p className="operator-login-error" role="alert">{notice}</p>}</div>
-      <details className="operator-login-server"><summary>서버 연결 설정</summary><label>API 서버<input aria-label="API 서버" type="url" value={base} disabled={busy} onChange={event => setBase(event.target.value)} required /></label></details>
+      <details className="operator-login-server"><summary>{fixedBase ? 'API 서버 · 8080 고정' : '서버 연결 설정'}</summary><label>API 서버<input aria-label="API 서버" type="url" value={base} disabled={busy} readOnly={fixedBase} onChange={event => { if (!fixedBase) setBase(event.target.value); }} required /></label></details>
     </form>
     <footer className="login-security"><p><Icon name="lock"/>JWT 인증 및 관리자 권한 확인</p><small>운영 현황과 위험 이력은 사무소 관리자만 조회할 수 있습니다.<br/>지표 연결은 로그인 후 별도 인증으로 진행합니다.</small></footer>
     <a className="operator-login-back" href="intake.html#/login">의뢰인·변호사 로그인으로 돌아가기</a>
