@@ -1,5 +1,16 @@
 # 발표·촬영 필수 묶음
 
+## 최종 팀 프로젝트 결과보고서
+
+- [전체 PDF · 76쪽](../presentation-pdfs/LEGAL_AI_INTAKE_TEAM_PROJECT_REPORT_FINAL_2026-10-26.pdf): README 순서로 재구성하고, 중복 설명을 통합한 검수 완료본입니다.
+- 전체·핵심 흐름도: 7쪽·12~16쪽 / 전체 API 지도: 17쪽 / 회고·체크리스트·확장 계획: 67~76쪽.
+- [목차·본문·표 편집 원본](FINAL_REPORT_STRUCTURE.md): API 38개, 화면01~13, ERD·DDD·실험 근거를 함께 연결합니다.
+- 재생성 스크립트: 저장소 루트의 scripts/Build-FinalTeamProjectReport.py. 원본 V2 PDF를 별도 입력해야 하며, Windows의 맑은 고딕·Consolas와 Python의 reportlab·pypdf가 필요합니다.
+
+    python scripts/Build-FinalTeamProjectReport.py --source-pdf "원본 V2 보고서.pdf"
+
+원본 V2 PDF는 저장소에 중복 업로드하지 않았습니다. 재생성 시 97쪽 원본을 지정하며, 산출물은 기본적으로 output/pdf/에 저장됩니다.
+
 ## 시연·배포 회고와 실행 체크리스트
 
 - [회고·체크리스트 편집 원본](14_DEMO_DEPLOYMENT_RETROSPECTIVE.md): 2026-10-26 오류 11건(코드 2건·실행 환경 9건), 사전 준비, 창 4개 기동 순서, 외부 PC 접속, 스모크 테스트, 종료, 운영 배포 보완을 정리했습니다.
