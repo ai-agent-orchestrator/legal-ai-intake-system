@@ -77,13 +77,13 @@ const isUploadedDocument = (value, intakeId) => isObject(value) && isId(value.id
 
 export function createIntakeApi({ base = '', getToken = () => '', onUnauthorized = () => {}, timeoutMs = 15000 } = {}) {
   const apiBase = normalizeBase(base);
-  async function request(path, { method = 'GET', body, signal, authenticated = false, accessToken, binary = false, validate = isObject, idempotencyKey } = {}) {
+  async function request(path, { method = 'GET', body, signal, authenticated = false, accessToken, binary = false, validate = isObject, idempotencyKey, timeoutMs: requestTimeoutMs } = {}) {
     const controller = new AbortController();
     const abort = () => controller.abort();
     signal?.addEventListener('abort', abort, { once: true });
     if (signal?.aborted) controller.abort();
     let timedOut = false;
-    const timer = setTimeout(() => { timedOut = true; controller.abort(); }, timeoutMs);
+    const timer = setTimeout(() => { timedOut = true; controller.abort(); }, requestTimeoutMs ?? timeoutMs);
     const token = authenticated ? (accessToken ?? getToken()) : '';
     try {
       const response = await fetch(`${apiBase}${path}`, {
@@ -263,7 +263,8 @@ export function createIntakeApi({ base = '', getToken = () => '', onUnauthorized
       if (!getToken()) throw new ApiError('외부 검색 실행은 문의 소유자 또는 관리자 로그인이 필요합니다.', 401);
       if (typeof retryExplanation !== 'boolean') throw new Error('설명 재생성 여부를 확인해 주세요.');
       return request(`/api/intakes/search-requests/${encodeURIComponent(searchRequestId)}/execute`, {
-        method: 'POST', body: { retryExplanation }, signal, authenticated: true,
+        // Query generation + web search + explanation can take longer than the default 15s (real providers).
+        method: 'POST', body: { retryExplanation }, signal, authenticated: true, timeoutMs: 90000,
         validate: data => isSearch(data) && String(data.id) === String(searchRequestId) && String(data.intakeId) === String(intakeId),
       }).catch(error => {
         if (error.status === 503) error.message = '외부 검색 설정이 준비되지 않았습니다. 서버의 LLM·네이버 검색 설정이 필요합니다.';
