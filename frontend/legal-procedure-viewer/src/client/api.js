@@ -267,7 +267,7 @@ export function createIntakeApi({ base = '', getToken = () => '', onUnauthorized
         method: 'POST', body: { retryExplanation }, signal, authenticated: true, timeoutMs: 90000,
         validate: data => isSearch(data) && String(data.id) === String(searchRequestId) && String(data.intakeId) === String(intakeId),
       }).catch(error => {
-        if (error.status === 503) error.message = '외부 검색 설정이 준비되지 않았습니다. 서버의 LLM·네이버 검색 설정이 필요합니다.';
+        if (error.status === 503) error.message = '외부 검색 설정이 준비되지 않았습니다. 서버의 LLM·외부 검색 설정이 필요합니다.';
         throw error;
       });
     },

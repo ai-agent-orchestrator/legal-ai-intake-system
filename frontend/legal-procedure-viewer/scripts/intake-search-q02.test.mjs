@@ -139,7 +139,7 @@ test('Q02 P03: execute response lost after the server claimed the job → review
   saved = finished('COMPLETED', { results: [searchResult({ sourceType: 'NAVER_WEB', explanation: '조건 관련 설명입니다. 원문 확인 필요.' })] });
   await wait(POLL);
   assert.ok(text(tree.root).includes('검색 완료'));
-  assert.ok(text(tree.root).includes('네이버 공개 웹 검색'));
+  assert.ok(text(tree.root).includes('공개 웹 검색'));
   assert.equal(executes(calls), 1);
 });
 
@@ -200,12 +200,12 @@ test('Q02 C06: create response lost after commit keeps the purpose, sends one PO
 });
 
 test('Q02 sources: KBA badge uses the same host rule as the server (SearchText.kbaPublicUrl); warning text matches server codes', () => {
-  const official = '대한변협 공개 페이지 · 네이버 수집', unverified = '공개 웹 · 출처 확인 필요';
+  const official = '대한변협 공개 페이지 · 웹 검색 수집', unverified = '공개 웹 · 출처 확인 필요';
   for (const url of ['https://www.klaw.or.kr/fixture?id=1', 'https://klaw.or.kr/', 'https://sub.koreanbar.or.kr/a', 'https://WWW.KLAW.OR.KR/x'])
     assert.equal(searchSourceLabel('KBA_PUBLIC_WEB', url), official, url);
   for (const url of ['https://klaw.or.kr.example.com/', 'https://evilklaw.or.kr/', 'https://user@klaw.or.kr/', 'javascript:alert(1)', 'https://example.com/p03-civil'])
     assert.equal(searchSourceLabel('KBA_PUBLIC_WEB', url), unverified, url);
-  assert.equal(searchSourceLabel('NAVER_WEB', 'https://www.klaw.or.kr/'), '네이버 공개 웹 검색');
+  assert.equal(searchSourceLabel('NAVER_WEB', 'https://www.klaw.or.kr/'), '공개 웹 검색');
   assert.equal(searchSourceWarningLabel('KBA_SEARCH_UNAVAILABLE'), '변협 대상 검색에 연결하지 못했습니다. 일반 웹 검색에서 수집한 결과를 표시합니다.');
   assert.equal(searchSourceWarningLabel('GENERAL_SEARCH_UNAVAILABLE'), '일반 웹 검색에 연결하지 못했습니다. 변협 대상 검색에서 수집한 결과를 표시합니다.');
   assert.equal(searchSourceWarningLabel('SOMETHING_NEW'), '일부 출처를 조회하지 못했습니다. 수집된 결과를 표시합니다.');

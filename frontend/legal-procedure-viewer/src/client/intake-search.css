@@ -55,7 +55,7 @@
 .screen05 .intake-button{min-height:43px;font-size:14px;border-radius:6px;padding:8px 15px;gap:10px}
 .screen05 .intake-button .intake-icon{width:21px;height:21px}
 .search05-create-actions .intake-button{flex:1}
-.search05-create-actions .search05-execute{color:#64799f;background:#dfe5ef;border-color:#dfe5ef;opacity:.72}
+.search05-create-actions .search05-execute:disabled{color:#64799f;background:#dfe5ef;border-color:#dfe5ef;opacity:.72}
 .search05-create-form>.field-hint{text-align:right;font-size:11px}
 .search05-history{margin-top:18px}
 .search05-history-title{display:flex;align-items:center;gap:8px;flex:1;min-width:0}

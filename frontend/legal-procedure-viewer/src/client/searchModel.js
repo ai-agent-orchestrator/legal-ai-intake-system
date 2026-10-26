@@ -32,11 +32,11 @@ export function searchSourceLabel(value, sourceUrl) {
     try {
       const url = new URL(safeSearchUrl(sourceUrl));
       if (['klaw.or.kr', 'koreanbar.or.kr'].some(host => url.hostname === host || url.hostname.endsWith(`.${host}`)))
-        return '대한변협 공개 페이지 · 네이버 수집';
+        return '대한변협 공개 페이지 · 웹 검색 수집';
     } catch { /* A manually recorded source label alone does not establish an official source. */ }
     return '공개 웹 · 출처 확인 필요';
   }
-  return value === 'NAVER_WEB' ? '네이버 공개 웹 검색' : RESULT_SOURCE_TYPES.find(item => item.value === value)?.label || value;
+  return value === 'NAVER_WEB' ? '공개 웹 검색' : RESULT_SOURCE_TYPES.find(item => item.value === value)?.label || value;
 }
 export function searchSourceWarningLabel(code) {
   return ({ KBA_SEARCH_UNAVAILABLE: '변협 대상 검색에 연결하지 못했습니다. 일반 웹 검색에서 수집한 결과를 표시합니다.',
