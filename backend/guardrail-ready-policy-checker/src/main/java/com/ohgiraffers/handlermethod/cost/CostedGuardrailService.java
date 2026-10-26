@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -43,6 +44,32 @@ public class CostedGuardrailService {
         this.outputRate = outputRate;
         this.promptOverheadTokens = promptOverheadTokens;
         this.estimatedOutputTokens = estimatedOutputTokens;
+    }
+
+    /**
+     * Upper estimate of UTF-8 bytes per generated answer token, used only to size the output check before the answer
+     * exists. Korean averages roughly 3-5 bytes per token; actual reservations use the real answer text.
+     */
+    static final int ANSWER_BYTES_PER_TOKEN = 6;
+
+    /** Estimate for the input check of {@code message} (same basis as the reservation in checkInput). */
+    public AiCostControlService.StageEstimate inputCheckEstimate(String message) {
+        return new AiCostControlService.StageEstimate(AiCostControlService.CostStage.INPUT_GUARDRAIL,
+                AiCostControlService.estimateTokens(message) + promptOverheadTokens, estimatedOutputTokens,
+                inputRate, outputRate);
+    }
+
+    /** Estimate for the output check of an answer that is at most {@code maxAnswerTokens} long. */
+    public AiCostControlService.StageEstimate outputCheckEstimate(int maxAnswerTokens) {
+        int answerTokens = Math.multiplyExact(Math.max(maxAnswerTokens, 0), ANSWER_BYTES_PER_TOKEN);
+        return new AiCostControlService.StageEstimate(AiCostControlService.CostStage.OUTPUT_GUARDRAIL,
+                Math.addExact(answerTokens, promptOverheadTokens), estimatedOutputTokens, inputRate, outputRate);
+    }
+
+    /** Every paid stage of one chat request (input check, answer, output check) for the whole-request precheck. */
+    public List<AiCostControlService.StageEstimate> chatPlan(String systemPrompt, String message) {
+        return List.of(inputCheckEstimate(message), cost.answerEstimate(systemPrompt, message),
+                outputCheckEstimate(cost.maxOutputTokens()));
     }
 
     public Check<InputGuardrailResult> checkInput(String message, String sessionId) {

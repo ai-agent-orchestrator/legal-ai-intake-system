@@ -92,7 +92,7 @@ test('Mixed search keeps source provenance and optional source warnings in exist
   const data = await createIntakeApi().searchRequest(42, 81);
   assert.equal(data.results[0].sourceType, 'KBA_PUBLIC_WEB');
   assert.equal(data.execution.sourceWarningCode, 'GENERAL_SEARCH_UNAVAILABLE');
-  assert.match(searchSourceLabel('KBA_PUBLIC_WEB', data.results[0].url), /대한변협.*네이버 수집/);
+  assert.match(searchSourceLabel('KBA_PUBLIC_WEB', data.results[0].url), /대한변협.*웹 검색 수집/);
   for (const url of ['https://klaw.or.kr.evil.example/a', 'https://evil.example/klaw.or.kr', 'https://klaw.or.kr@evil.example/a'])
     assert.equal(searchSourceLabel('KBA_PUBLIC_WEB', url), '공개 웹 · 출처 확인 필요');
   assert.match(searchSourceWarningLabel('GENERAL_SEARCH_UNAVAILABLE'), /일반 웹 검색에 연결하지 못했습니다/);
@@ -102,7 +102,7 @@ test('P03 missing configuration and ownership errors remain explicit without ret
   let calls = 0;
   const mock = t.mock.method(globalThis, 'fetch', async () => { calls++; return json({}, 503); });
   const api = createIntakeApi({ getToken: () => 'qa-jwt' });
-  await assert.rejects(api.executeSearch(42, 81), error => error.status === 503 && error.message.includes('LLM·네이버'));
+  await assert.rejects(api.executeSearch(42, 81), error => error.status === 503 && error.message.includes('LLM·외부 검색'));
   mock.mock.mockImplementation(async () => { calls++; return json({}, 403); });
   await assert.rejects(api.executeSearch(42, 81), error => error.status === 403); assert.equal(calls, 2);
 });

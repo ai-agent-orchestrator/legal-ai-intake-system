@@ -13,7 +13,9 @@ param(
     [ValidateRange(0.000001, 2.0)][double]$MonthlyBudgetUsd = 2.0,
     [ValidateRange(0.000001, 0.5)][double]$DailyBudgetUsd = 0.5,
     [ValidateRange(0.000001, 0.12)][double]$SessionBudgetUsd = 0.12,
-    [ValidateRange(1, 30000)][int]$RequestTimeoutMs = 30000
+    [ValidateRange(1, 30000)][int]$RequestTimeoutMs = 30000,
+    # 0 = NAVER mock (default). Port of Start-OpenAiSearchBridge.ps1 = real OpenAI web search for the P03 lawyer search.
+    [ValidateRange(0, 65535)][int]$SearchBridgePort = 0
 )
 $ErrorActionPreference = 'Stop'
 
@@ -44,6 +46,9 @@ foreach ($scope in 'User', 'Machine') {
         }
     }
 }
+if ($SearchBridgePort -gt 0 -and -not (Test-Listening $SearchBridgePort)) {
+    throw "STOP: Search bridge is not running on $SearchBridgePort. Start it first: .\scripts\Start-OpenAiSearchBridge.ps1"
+}
 if ($Mode -eq 'RealLlm' -and -not (Test-Path -LiteralPath $keyFile)) {
     throw 'STOP: No saved key. Run scripts\Set-LocalOpenAiKey.ps1 first.'
 }
@@ -55,6 +60,9 @@ $stderr = Join-Path $runDirectory "$Mode-$stamp.stderr.log"
 
 $mockUrl = "http://127.0.0.1:$MockPort"
 $llmUrl = if ($Mode -eq 'Mock') { $mockUrl } else { 'https://api.openai.com' }
+$searchUrl = if ($SearchBridgePort -gt 0) { "http://127.0.0.1:$SearchBridgePort" } else { $mockUrl }
+$searchMax = if ($SearchBridgePort -gt 0) { 3 } else { 1 }
+$searchTimeout = if ($SearchBridgePort -gt 0) { 45000 } else { 10000 }
 $javaArgs = @(
     '-jar', $builtJar,
     '--server.address=127.0.0.1', "--server.port=$Port",
@@ -67,10 +75,10 @@ $javaArgs = @(
     ('--llm.cost.monthly-budget-usd=' + $MonthlyBudgetUsd.ToString([Globalization.CultureInfo]::InvariantCulture)),
     ('--llm.cost.daily-budget-usd=' + $DailyBudgetUsd.ToString([Globalization.CultureInfo]::InvariantCulture)),
     ('--llm.cost.session-budget-usd=' + $SessionBudgetUsd.ToString([Globalization.CultureInfo]::InvariantCulture)),
-    # P03 search: the NAVER endpoint is the local mock as well (dummy credentials, never a real search call).
-    '--search.enabled=true', "--search.naver.base-url=$mockUrl",
+    # P03 search: the NAVER-shaped endpoint is the local mock, or the OpenAI web search bridge (dummy NAVER credentials either way).
+    '--search.enabled=true', "--search.naver.base-url=$searchUrl",
     '--search.naver.client-id=mock-client', '--search.naver.client-secret=mock-secret',
-    '--search.max-results=1'
+    "--search.max-results=$searchMax", "--search.request-timeout-ms=$searchTimeout"
 )
 
 $previous = @{ LLM_API_KEY = $env:LLM_API_KEY; OPENAI_API_KEY = $env:OPENAI_API_KEY }
@@ -96,7 +104,7 @@ finally {
     if ($secureKey) { $secureKey.Dispose() }
 }
 
-[ordered]@{ pid = $proc.Id; mode = $Mode; port = $Port; mockPort = $MockPort; maxOutputTokens = $MaxOutputTokens; monthlyBudgetUsd = $MonthlyBudgetUsd; dailyBudgetUsd = $DailyBudgetUsd; sessionBudgetUsd = $SessionBudgetUsd; requestTimeoutMs = $RequestTimeoutMs; started = (Get-Date).ToString('o'); stdout = $stdout } |
+[ordered]@{ pid = $proc.Id; mode = $Mode; port = $Port; mockPort = $MockPort; maxOutputTokens = $MaxOutputTokens; monthlyBudgetUsd = $MonthlyBudgetUsd; dailyBudgetUsd = $DailyBudgetUsd; sessionBudgetUsd = $SessionBudgetUsd; requestTimeoutMs = $RequestTimeoutMs; searchBridgePort = $SearchBridgePort; started = (Get-Date).ToString('o'); stdout = $stdout } |
     ConvertTo-Json | Set-Content -LiteralPath $stateFile -Encoding UTF8
 
 Write-Host "Starting ($Mode) on http://127.0.0.1:$Port ... (pid $($proc.Id))"
@@ -105,7 +113,7 @@ while ((Get-Date) -lt $deadline) {
     if ($proc.HasExited) { throw "STOP: Server exited during startup. See $stderr" }
     try {
         $health = Invoke-RestMethod "http://127.0.0.1:$Port/actuator/health" -TimeoutSec 3
-        if ($health.status) { Write-Host "READY: health=$($health.status), mode=$Mode, LLM=$llmUrl, maxOutputTokens=$MaxOutputTokens" -ForegroundColor Green; Write-Host "       budgets month/day/session = $MonthlyBudgetUsd / $DailyBudgetUsd / $SessionBudgetUsd USD, requestTimeoutMs = $RequestTimeoutMs" -ForegroundColor Green; exit 0 }
+        if ($health.status) { Write-Host "READY: health=$($health.status), mode=$Mode, LLM=$llmUrl, maxOutputTokens=$MaxOutputTokens" -ForegroundColor Green; Write-Host "       budgets month/day/session = $MonthlyBudgetUsd / $DailyBudgetUsd / $SessionBudgetUsd USD, requestTimeoutMs = $RequestTimeoutMs" -ForegroundColor Green; Write-Host ("       lawyer search = " + $(if ($SearchBridgePort -gt 0) { "OpenAI web search bridge $searchUrl (paid, cap in the bridge window)" } else { "NAVER mock (free)" })) -ForegroundColor Green; exit 0 }
     } catch { Start-Sleep -Seconds 2 }
 }
 throw "STOP: Server did not become ready in 90s. See $stderr"

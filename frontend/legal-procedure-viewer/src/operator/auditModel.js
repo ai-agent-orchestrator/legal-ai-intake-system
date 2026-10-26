@@ -25,6 +25,11 @@ export function riskQuery(mode, value) {
   // The server prioritizes riskLevel, so deliberately send only one condition.
   return new URLSearchParams({ [mode]: value }).toString();
 }
+// Risk -> Incident direction of the audit flow. The server opens at most one Incident per risk record (score >= 80 or block/escalate).
+export function incidentForRisk(incidents, riskHistoryId) {
+  if (riskHistoryId == null || !Array.isArray(incidents)) return null;
+  return incidents.find(row => row.riskHistoryId === riskHistoryId) || null;
+}
 export function filterIncidents(rows, { status = 'ALL', severity = 'ALL' }) {
   return rows.filter(row => (status === 'ALL' || row.status === status) && (severity === 'ALL' || row.severity === severity));
 }

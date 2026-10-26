@@ -1,6 +1,6 @@
 # Project Ground Rule
 
-The current presentation schedule and upcoming module order are defined in the [12-day project plan](docs/PROJECT_12_DAY_PLAN.md).
+The current presentation schedule and upcoming module order are defined in the [14-day execution schedule](docs/PROJECT_14_DAY_SCHEDULE_2026-10-26.md).
 
 ## 1. Technical PM Positioning
 

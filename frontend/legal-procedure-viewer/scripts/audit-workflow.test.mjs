@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import * as api from '../src/operator/operatorApi.js';
-import { canChangeIncident, changeIncidentAndReload, filterIncidents, incidentId, riskId, riskQuery } from '../src/operator/auditModel.js';
+import { canChangeIncident, changeIncidentAndReload, filterIncidents, incidentForRisk, incidentId, riskId, riskQuery } from '../src/operator/auditModel.js';
 
 async function withServer(handler, run) {
   const server = createServer((req, res) => {
@@ -90,4 +90,12 @@ test('resolved conflict retains safe reason and independently refreshes list and
     assert.equal(result.status,409);assert.equal(result.code,'INCIDENT_ALREADY_RESOLVED');assert.match(result.error,/이미 해결/);assert(!result.error.includes('SECRET'));
     assert.equal(result.incidentsRefreshed,true);assert.equal(result.summaryRefreshed,false);assert.equal(writes,1);
   });
+});
+
+test('risk -> Incident link: finds the one Incident of a risk record, none below the creation rule', () => {
+  const incidents = [{ id: 11, riskHistoryId: 37, status: 'OPEN' }, { id: 10, riskHistoryId: 35, status: 'ACKNOWLEDGED' }];
+  assert.deepEqual(incidentForRisk(incidents, 37), incidents[0]);
+  assert.equal(incidentForRisk(incidents, 43), null);
+  assert.equal(incidentForRisk(incidents, null), null);
+  assert.equal(incidentForRisk(null, 37), null);
 });

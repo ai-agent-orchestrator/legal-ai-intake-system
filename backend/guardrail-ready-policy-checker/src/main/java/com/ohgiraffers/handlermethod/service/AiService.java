@@ -116,6 +116,20 @@ public class AiService {
                         block.reasonCode(), block.detailCode());
             }
 
+            // Whole-request budget gate before the first paid stage, so a request is never stopped after the
+            // answer has been paid for (input check + answer + output check must all fit).
+            var requestBudgetBlock = costControlService.precheckRequestBudget(
+                    guardrails.chatPlan(systemPrompt, request.message()), configuredModel, request.sessionId());
+            if (requestBudgetBlock.isPresent()) {
+                AiCostControlService.CostLimitBlock block = requestBudgetBlock.get();
+                metricRecorder.recordRequest("cost_blocked", configuredModel);
+                metricRecorder.recordLegalCostBlock(block.detailCode());
+                metricRecorder.recordLlmCallPrevented(block.reasonCode());
+                return AiChatResponse.fallback(
+                        block.safeResponse(), traceId, configuredModel,
+                        block.detailCode(), block.reasonCode(), block.detailCode());
+            }
+
             InputGuardrailResult input = checkInput(request.message(), request.sessionId());
             if (!input.allowed()) {
                 metricRecorder.recordRequest("input_blocked", "none");

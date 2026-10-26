@@ -399,21 +399,22 @@ class AiSecurityIntegrationTest {
     @ValueSource(strings = {"/api/ai/chat", "/api/ai/chat/stream"})
     void outputBudgetDenialDoesNotDiscardAlreadyGeneratedCost(String path) throws Exception {
         String sessionId = session();
-        // Allow the larger reservation, then report an overrun which leaves no output-Guard budget.
-        var spent = reserveSessionBalance(sessionId, new BigDecimal("0.0025")).reservation();
+        // Leave enough for the whole-request precheck (input check + answer + output check, about $0.0038 here),
+        // then report a provider overrun which leaves no output-Guard budget.
+        var spent = reserveSessionBalance(sessionId, new BigDecimal("0.0040")).reservation();
         cost.recordActualUsage(spent, 0, 1);
-        when(llm.chat(anyString(), anyString())).thenReturn(new LlmClient.LlmResponse("안내", "test", 15000, 0));
+        when(llm.chat(anyString(), anyString())).thenReturn(new LlmClient.LlmResponse("안내", "test", 30000, 0));
         doAnswer(call -> {
             call.<com.ohgiraffers.handlermethod.llm.LlmStreamControl>getArgument(5).dispatch(() -> {});
             Consumer<String> chunk = call.getArgument(2);
             Consumer<StreamingLlmClient.Usage> complete = call.getArgument(3);
             chunk.accept("안내");
-            complete.accept(new StreamingLlmClient.Usage("test", 15000, 0));
+            complete.accept(new StreamingLlmClient.Usage("test", 30000, 0));
             return null;
         }).when(streamingLlm).stream(anyString(), anyString(), any(), any(), any(), any());
         double before = stageGauge("actual", "answer");
         assertBlocked(reply(path, "민사", sessionId), "COST_LIMIT_BLOCKED", "SESSION_BUDGET_EXCEEDED");
-        assertThat(stageGauge("actual", "answer") - before).isCloseTo(0.00225,
+        assertThat(stageGauge("actual", "answer") - before).isCloseTo(0.0045,
                 org.assertj.core.data.Offset.offset(0.00000001));
         verifyNoInteractions(outputGuard);
     }

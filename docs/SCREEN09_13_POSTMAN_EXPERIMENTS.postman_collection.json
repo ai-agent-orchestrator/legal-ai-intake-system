@@ -736,9 +736,16 @@
             ],
             "url": "{{baseUrl}}/api/agent/risk/analyze",
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminAccessToken}}",
+                  "type": "string"
+                }
+              ]
             },
-            "description": "S05 · AgentRiskDecisionController.analyze()\nraw JSON: userInput, toolName, retryCount, promptTokens, completionTokens, policyViolation, toolError, externalApiCall, approvalRequired, dbWrite\nNo Auth\n200 JSON",
+            "description": "S05 · AgentRiskDecisionController.analyze()\nraw JSON: userInput, toolName, retryCount, promptTokens, completionTokens, policyViolation, toolError, externalApiCall, approvalRequired, dbWrite\nBearer {{adminAccessToken}} (ADMIN JWT 필수, 2026-10-25)\n200 JSON",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"userInput\": \"Postman 운영 지표용 가상 위험 요청\",\n  \"toolName\": \"external-api\",\n  \"retryCount\": 2,\n  \"promptTokens\": 0,\n  \"completionTokens\": 0,\n  \"policyViolation\": true,\n  \"toolError\": false,\n  \"externalApiCall\": true,\n  \"approvalRequired\": false,\n  \"dbWrite\": false\n}",

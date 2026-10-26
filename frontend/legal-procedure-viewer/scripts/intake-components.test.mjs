@@ -1137,7 +1137,7 @@ test('P03 React: official source badge, partial-source notice and direct KBA lin
     results: [searchResult({ sourceType: 'KBA_PUBLIC_WEB', url: 'https://www.klaw.or.kr/fixture?id=1', explanation: '조건과 관련된 공개 자료입니다. 원문 확인 필요.' })] });
   const { tree, calls, navigate } = await mountAsStaff(t, url => url === '/api/intakes/search-requests/81' ? response(saved) : undefined);
   await navigate('/intake/42/search/81');
-  assert.ok(text(tree.root).includes('대한변협 공개 페이지 · 네이버 수집'));
+  assert.ok(text(tree.root).includes('대한변협 공개 페이지 · 웹 검색 수집'));
   assert.ok(text(tree.root).includes('일반 웹 검색에 연결하지 못했습니다.'));
   assert.ok(text(tree.root).includes('조건과 관련된 공개 자료입니다.'));
   assert.ok(tree.root.findAllByType('a').some(link => link.props.href === 'https://www.klaw.or.kr/' && link.props.rel === 'noopener noreferrer'));
@@ -1160,7 +1160,7 @@ test('P03 React: requires login, submits once, polls C07 and displays source and
   saved = testSearch(42, 81, { status: 'COMPLETED', execution: p03Execution({ stage: 'FINISHED', finishedAt: '2026-10-21T10:02:00' }), results: [searchResult({ sourceType: 'NAVER_WEB', explanation: '조건 관련 설명입니다. 원문 확인 필요.' })] });
   await act(async () => { await new Promise(resolve => setTimeout(resolve, 1650)); });
   assert.ok(text(tree.root).includes('AI 관련성 설명 · 원문 확인 필요')); assert.ok(text(tree.root).includes('조건 관련 설명입니다.'));
-  assert.ok(text(tree.root).includes('네이버 공개 웹 검색')); assert.equal(button(tree, '외부 검색 실행').props.disabled, true);
+  assert.ok(text(tree.root).includes('공개 웹 검색')); assert.equal(button(tree, '외부 검색 실행').props.disabled, true);
   assert.equal(calls.find(call => call.url.endsWith('/execute')).init.headers.Authorization, 'Bearer qa-token');
 });
 test('Q02 P03: rapid repeated execute clicks produce one POST and keep the running request locked', async t => {
@@ -1183,7 +1183,7 @@ test('P03 React: missing config preserves selected request and shows actionable 
   const { tree, calls, navigate } = await mountAsStaff(t, url => searchLogin(url) || (url.endsWith('/81/execute') ? response({}, 503) : undefined));
   await navigate('/intake/42/search/81'); await loginSearch(tree);
   await act(async () => button(tree, '외부 검색 실행').props.onClick());
-  assert.ok(text(tree.root).includes('LLM·네이버 검색 설정이 필요합니다.')); assert.ok(text(tree.root).includes('SR-81'));
+  assert.ok(text(tree.root).includes('LLM·외부 검색 설정이 필요합니다.')); assert.ok(text(tree.root).includes('SR-81'));
   assert.equal(button(tree, '외부 검색 실행').props.disabled, false); assert.equal(calls.filter(call => call.url.endsWith('/execute')).length, 1);
 });
 test('P03 React: PARTIAL keeps source results and retries explanations only', async t => {

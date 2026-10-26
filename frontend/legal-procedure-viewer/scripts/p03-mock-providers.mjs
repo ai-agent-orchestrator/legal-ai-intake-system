@@ -16,7 +16,10 @@ const server = http.createServer(async (req, res) => {
     calls.push(query ? 'query' : 'explanation');
     await new Promise(resolve => setTimeout(resolve, mode === 'slow' ? 3000 : 400));
     if (!query && mode === 'explanation-error') return send({ error: 'local fixture failure' }, 500);
-    const content = query ? JSON.stringify({ query: '서울 민사 대여금 변호사 공개 법률 자료' }) : '민사 대여금과 서울 지역 검색 조건에 관련된 공개 자료입니다. 요약에 없는 경력·자격 정보는 원문 확인이 필요합니다.';
+    // 'pii-answer': synthetic personal data in a non-query answer, to verify the Privacy Output Guard masks it.
+    const content = query ? JSON.stringify({ query: '서울 민사 대여금 변호사 공개 법률 자료' })
+      : mode === 'pii-answer' ? '상담 예약은 담당자 010-1234-5678 또는 hong.gildong@example.com 으로 문의하세요. 주민번호 900101-1234567 은 보내지 마세요.'
+      : '민사 대여금과 서울 지역 검색 조건에 관련된 공개 자료입니다. 요약에 없는 경력·자격 정보는 원문 확인이 필요합니다.';
     return send({ model: 'p03-local-fixture', choices: [{ message: { role: 'assistant', content } }], usage: { prompt_tokens: 30, completion_tokens: 18 } });
   }
   if (url.pathname === '/v1/search/webkr.json') {

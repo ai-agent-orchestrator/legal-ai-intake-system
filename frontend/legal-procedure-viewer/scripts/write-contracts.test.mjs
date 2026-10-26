@@ -5,6 +5,25 @@ import { prepareWriteAttempt, serverProblem } from '../src/shared/writeContracts
 import { testIntake, testMemo } from './intake-test-data.mjs';
 const json = (data, status = 200, headers = {}) => new Response(JSON.stringify(data), {status,headers:{'Content-Type':'application/json',...headers}});
 
+test('LAN HTTP writes generate valid unique UUIDs without crypto.randomUUID and retain retry keys', () => {
+  const original = Object.getOwnPropertyDescriptor(globalThis, 'crypto');
+  const crypto = globalThis.crypto;
+  Object.defineProperty(globalThis, 'crypto', {
+    configurable: true,
+    value: { getRandomValues: crypto.getRandomValues.bind(crypto) },
+  });
+  try {
+    const first = prepareWriteAttempt(null, 'lan-user', { story: 'LAN test' });
+    assert.match(first.key, /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+    const next = prepareWriteAttempt(null, 'lan-user', { story: 'LAN test' });
+    assert.notEqual(first.key, next.key);
+    first.uncertain = true;
+    assert.equal(prepareWriteAttempt(first, 'lan-user', { story: 'LAN test' }), first);
+  } finally {
+    Object.defineProperty(globalThis, 'crypto', original);
+  }
+});
+
 test('logical write survives retry; new identity or confirmed new intent uses a different key', () => {
   const first=prepareWriteAttempt(null,'user',{story:'가상 문의'});
   assert.equal(prepareWriteAttempt(first,'user',{story:'가상 문의'}),first);
