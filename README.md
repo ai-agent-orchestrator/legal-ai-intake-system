@@ -1,5 +1,7 @@
 # Security-Aware Legal AI Intake System
 
+**한국어** | [English](README.en.md)
+
 > 고객은 선택하고, 챗봇은 정리하며, 운영자는 근거를 보고 통제합니다.
 
 **최종 자료:** [팀 프로젝트 결과보고서 PDF · 76쪽](docs/presentation-pdfs/LEGAL_AI_INTAKE_TEAM_PROJECT_REPORT_FINAL_2026-10-26.pdf) · [보고서 목차·편집 원본](docs/presentation-2026-10-25/FINAL_REPORT_STRUCTURE.md)
