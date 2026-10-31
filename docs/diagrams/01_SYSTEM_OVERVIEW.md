@@ -4,7 +4,7 @@
 
 기준: **2026-10-17(Asia/Seoul)**. 번호는 제출 대상 구현 API 37개의 C/R/S/P ID이며, 노드 옆 번호로 README·API 기능표·개별 Postman flow를 연결한다. 번호가 함께 적힌 노드는 업무 묶음이며 API가 자동으로 연속 호출된다는 뜻은 아니다.
 
-읽는 질문: **누가 어떤 기능을 사용하고, 각 API가 백엔드·DB·외부 서비스의 어디에 위치하는가?** 파란 노드는 구현된 화면·API 경로, 주황 점선은 RAG 등 향후 확장이다. 화면 API 연결 완료나 외부 NeMo/LLM 실서비스 검증을 뜻하지 않는다.
+읽는 질문: **누가 어떤 기능을 사용하고, 각 API가 백엔드·DB·외부 서비스의 어디에 위치하는가?** 파란 노드는 구현된 화면·API 경로, 주황 점선은 memvid 메모리 계층 등 향후 확장이다. 화면 API 연결 완료나 외부 NeMo/LLM 실서비스 검증을 뜻하지 않는다.
 
 백엔드 기능은 **3열 × 3단**으로 묶었다. DB·외부 서비스는 아래 연결 영역, **C16은 맨 아래 Metric 조회 영역**에서 확인한다. 박스의 배치는 기능 분류용이며 API 자동 호출 순서가 아니다.
 
@@ -55,7 +55,7 @@ flowchart TD
     Backend --> Metrics["Metric · Trace 관측<br/>DB 이력과 구분 · MeterRegistry"]
     Metrics --> Monitor["C16 Prometheus · ADMIN Basic<br/>화면11·13에서 재사용"]
     Monitor --> Observability["화면13 AI 위험 요약<br/>C16 지표 + C17 저장된 요청 점수<br/>요청별 위험 / 대화 누적 위험의 두 기준"]
-    Backend -. "향후 확장" .-> Future["RAG / Vector DB / 기간·코호트 분석"]
+    Backend -. "향후 확장" .-> Future["memvid 메모리 계층 / 기간·코호트 분석"]
     classDef implemented fill:#eaf2ff,stroke:#3465a4,color:#102544
     classDef planned fill:#fff4dc,stroke:#b7791f,stroke-dasharray:5 5,color:#5b3b12
     classDef data fill:#edf8ed,stroke:#38803c,color:#173c20
@@ -85,7 +85,7 @@ flowchart TD
 | 마케팅·행동 | C13, P06 |
 | Metric 조회 | C16 |
 
-**빠진 API 번호**: 구현 37개 중 **없음(37/37 표시)**. P03도 검색 실행 구현 수에 포함한다. 화면13은 C16/C17 재사용이므로 새 API 번호를 추가하지 않는다. RAG·코호트는 확장 개념이라 새 API 번호를 만들지 않았다.
+**빠진 API 번호**: 구현 37개 중 **없음(37/37 표시)**. P03도 검색 실행 구현 수에 포함한다. 화면13은 C16/C17 재사용이므로 새 API 번호를 추가하지 않는다. memvid 메모리 계층·코호트는 확장 개념이라 새 API 번호를 만들지 않았다.
 
 **사용자 흐름을 읽는 순서**
 

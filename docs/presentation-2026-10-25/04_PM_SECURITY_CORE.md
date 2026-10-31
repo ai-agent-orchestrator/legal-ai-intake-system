@@ -39,7 +39,7 @@ README 핵심 내용을 담은 다크 태블릿용 7쪽입니다. 제품 소개�
 결과: 원인과 조치 후보 확인
 ### 확장
 과제: 심층 검색·전달·후속 연락
-12월 계획: RAG·Python·Vector DB
+12월 계획: memvid 메모리 계층·Python
 카카오톡·이메일 연계 검토
 
 ## PM Multi-Layer Analysis
