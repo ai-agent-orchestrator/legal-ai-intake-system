@@ -61,7 +61,7 @@ npm install
 Get-NetTCPConnection -State Listen -LocalPort 18090,18181,18282,5176
 ```
 
-- [ ] **서버 IP**: ipconfig로 서버 PC의 IP를 확인합니다. 오늘 기록: 192.168.10.48. IP가 달라지면 뒤의 예시도 바꿉니다.
+- [ ] **서버 IP**: ipconfig로 서버 PC의 IP를 확인합니다. 오늘 기록: (공개본에서는 생략). IP가 달라지면 뒤의 예시도 바꿉니다.
 
 ```powershell
 ipconfig
@@ -94,7 +94,7 @@ node frontend\legal-procedure-viewer\scripts\p03-mock-providers.mjs
 ```powershell
 $env:CORS_ALLOWED_ORIGIN_PATTERNS = (
   'http://127.0.0.1:[*],http://localhost:[*],' +
-  'http://192.168.10.48:[*]'
+  'http://<서버-IP>:[*]'
 )
 .\scripts\Start-LlmTestServer.ps1 -Mode RealLlm `
   -SearchBridgePort 18282
@@ -131,8 +131,8 @@ Get-NetConnectionProfile
 - [ ] **시연 PC에서 접속**: 오늘 서버 IP 기준입니다. 시연 PC와 서버 PC가 같은 Wi-Fi 또는 스위치에 연결돼 있어야 합니다.
 
 ```powershell
-http://192.168.10.48:5176/intake.html
-http://192.168.10.48:5176/operator.html
+http://<서버-IP>:5176/intake.html
+http://<서버-IP>:5176/operator.html
 ```
 
 - [ ] **로그인부터 쓰기까지**: 시연 PC에서 로그인과 문의 접수까지 끝까지 확인합니다. 읽기만 되고 쓰기는 실패할 수 있습니다. Ctrl+F5로 새 코드도 받습니다.

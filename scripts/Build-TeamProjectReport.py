@@ -271,7 +271,7 @@ manifest=dict(date='2026-10-26',totalPages=len(parts),sections=[dict(code=code,t
 (OUT/'SOURCE_MANIFEST.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2),encoding='utf-8')
 (OUT/'LAYOUT_BOUNDS.json').write_text(json.dumps(bounds,ensure_ascii=False,indent=2),encoding='utf-8')
 print('CREATED',str(FINAL),'pages',len(parts),'screens13/APIs38',flush=True)
-poppler='C:/Users/Codelab/.cache/codex-runtimes/codex-primary-runtime/dependencies/native/poppler/Library/bin/pdftoppm.exe'
+poppler=__import__('shutil').which('pdftoppm') or 'pdftoppm'
 r=subprocess.run([poppler,'-scale-to','700','-png',str(FINAL),str(QA/'page')],capture_output=True)
 if r.returncode:raise RuntimeError(r.stderr.decode('utf-8',errors='replace'))
 frames=sorted(QA.glob('page-*.png'));face=ImageFont.truetype('C:/Windows/Fonts/malgun.ttf',15)

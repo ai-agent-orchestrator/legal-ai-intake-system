@@ -136,7 +136,7 @@ sizeBytes, createdAt, downloadUrl
 - `output/intake-08/api-evidence.json`: 실제 문의/파일 ID, 크기, 권한 응답 결과 (token 제외)
 - `output/intake-08/screen08-live-desktop.png`: 실제 API와 로그인 상태
 - `output/intake-08/screen08-mobile.png`: 모바일 재검수 결과
-- 브라우저 저장 파일: `C:/Users/Codelab/Downloads/화면08-검수.txt`, 31 bytes, 개발 검수용 내용
+- 브라우저 저장 파일: `<다운로드 폴더>/화면08-검수.txt`, 31 bytes, 개발 검수용 내용
 
 현재 전체 실제 API 테스트는 회당 가상 문의 5건(기존 흐름 1·상태 메모 2·상세 다운로드 2), 검색 요청 1건, 메모 3건, 첨부 1건과 다운로드 감사 기록을 로컬 DB에 추가한다. 앞선 상태·메모 브라우저 검수에서는 그 검수용 문의에 메모 1건을 추가했다. 기존 개발 자료를 삭제하거나 재시작으로 초기화하지 않았다.
 
