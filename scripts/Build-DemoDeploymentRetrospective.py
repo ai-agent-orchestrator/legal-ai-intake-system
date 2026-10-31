@@ -46,7 +46,7 @@ PREP = [
     dict(title="키 파일", body=".local\\secrets\\openai-key.dpapi가 있어야 합니다. 없으면 Set-LocalOpenAiKey.ps1을 실행합니다."),
     dict(title="환경변수 충돌", body="Windows 환경변수에 OPENAI_API_KEY·LLM_API_KEY가 없어야 합니다. 있으면 시작 스크립트가 STOP으로 멈춥니다."),
     dict(title="포트", body="18090(Spring)·18181(모의)·18282(브리지)·5176(Vite)가 비어 있는지 확인합니다.", code="Get-NetTCPConnection -State Listen -LocalPort 18090,18181,18282,5176"),
-    dict(title="서버 IP", body="ipconfig로 서버 PC의 IP를 확인합니다. 오늘 기록: 192.168.10.48. IP가 달라지면 뒤의 예시도 바꿉니다.", code="ipconfig"),
+    dict(title="서버 IP", body="ipconfig로 서버 PC의 IP를 확인합니다. 오늘 기록: (공개본에서는 생략). IP가 달라지면 뒤의 예시도 바꿉니다.", code="ipconfig"),
     dict(title="남은 크레딧", body="OpenAI 사용량 화면에서 남은 크레딧을 확인합니다."),
 ]
 
@@ -60,7 +60,7 @@ START = [
     dict(title="창 ③ | Spring", body="저장소 루트에서 CORS를 먼저 설정한 뒤 같은 창에서 서버를 시작합니다.",
          code="$env:CORS_ALLOWED_ORIGIN_PATTERNS = (\n"
               "  'http://127.0.0.1:[*],http://localhost:[*],' +\n"
-              "  'http://192.168.10.48:[*]'\n"
+              "  'http://<서버-IP>:[*]'\n"
               ")\n"
               f".\\scripts\\Start-LlmTestServer.ps1 -Mode RealLlm {TICK}\n"
               "  -SearchBridgePort 18282",
@@ -79,7 +79,7 @@ LAN = [
               "Get-NetConnectionProfile"),
     dict(title="CORS와 바인딩", body="CORS에 서버 LAN 주소가 있고, Vite가 --host 0.0.0.0으로 실행 중이어야 합니다. IP 변경 시 CORS도 변경하고 Spring을 재시작합니다."),
     dict(title="시연 PC에서 접속", body="오늘 서버 IP 기준입니다. 시연 PC와 서버 PC가 같은 Wi-Fi 또는 스위치에 연결돼 있어야 합니다.",
-         code="http://192.168.10.48:5176/intake.html\nhttp://192.168.10.48:5176/operator.html"),
+         code="http://<서버-IP>:5176/intake.html\nhttp://<서버-IP>:5176/operator.html"),
     dict(title="로그인부터 쓰기까지", body="시연 PC에서 로그인과 문의 접수까지 끝까지 확인합니다. 읽기만 되고 쓰기는 실패할 수 있습니다. Ctrl+F5로 새 코드도 받습니다."),
 ]
 
@@ -441,7 +441,7 @@ def build():
         "crypto.randomUUID", "Set-LocalOpenAiKey.ps1", "Get-NetTCPConnection",
         "Start-OpenAiSearchBridge.ps1", "MaxSearches 20", "SearchBridgePort 18282",
         "API_PROXY_TARGET", "--host 0.0.0.0", "New-NetFirewallRule",
-        "192.168.10.48:5176/intake.html", "BLOCKED_JAILBREAK",
+        "<서버-IP>:5176/intake.html", "BLOCKED_JAILBREAK",
         "Stop-LlmTestServer.ps1", "Remove-NetFirewallRule", "JWT_SECRET",
         "MFA", "npm run test:intake", "npm run test:operator", "gradlew.bat test",
     ]:
