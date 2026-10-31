@@ -44,7 +44,7 @@ flowchart TD
     Backend --> Metrics["Metric · Trace 관측<br/>DB 이력과 구분 · MeterRegistry"]
     Metrics --> Monitor["C16 Prometheus · ADMIN Basic<br/>화면11·13에서 재사용"]
     Monitor --> Observability["화면13 AI 위험 요약<br/>C16 지표 + C17 저장된 요청 점수<br/>요청별 위험 / 대화 누적 위험의 두 기준"]
-    Backend -. "향후 확장" .-> Future["RAG / Vector DB / 기간·코호트 분석"]
+    Backend -. "향후 확장" .-> Future["memvid 메모리 계층 / 기간·코호트 분석"]
     classDef implemented fill:#eaf2ff,stroke:#3465a4,color:#102544
     classDef planned fill:#fff4dc,stroke:#b7791f,stroke-dasharray:5 5,color:#5b3b12
     classDef data fill:#edf8ed,stroke:#38803c,color:#173c20
