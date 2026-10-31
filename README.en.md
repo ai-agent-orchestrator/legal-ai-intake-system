@@ -189,7 +189,7 @@ This repository is a documented prototype of the AI-call backbone. Development c
 |---|---|
 | **Spring Boot** | Single boundary for authentication, role-based access, business transactions, and policy and cost enforcement. Carries over the current implementation. |
 | **FastAPI (Python)** | AI processing, retrieval, and memory adapters, connected to Spring only through narrow, explicit JSON contracts. |
-| **memvid** | Evidence-oriented memory layer: answers carry sources and update dates, and reads stay within the caller's permissions. Evaluated against a retrieval-augmented (RAG) baseline by experiment. |
+| **memvid** | Evidence-oriented memory layer: answers carry sources and update dates, and reads stay within the caller's permissions. Chosen over a separate vector-database RAG stack for its lighter operational footprint and simpler adoption. |
 
 **Principles**
 
@@ -213,9 +213,9 @@ The most valuable learning was to trace a feature beyond its happy path: where i
 
 1. **Deepen Top–Middle–Bottom understanding.** Trace API → Controller → Service/Policy → persistence/external calls → response/metrics, and explain normal, failed, and blocked paths.
 2. **Extend security with Python actions.** Start with small NeMo policy-checking/masking actions and verify timeouts, errors, and the contract with existing Spring controls.
-3. **Add a small, source-grounded RAG workflow.** Begin with official procedures, forms, and FAQs; show sources and document dates; limit answers when evidence is insufficient. Expand later to permission-filtered internal documents and retrieval-injection tests.
+3. **Build a small, source-grounded memory workflow on memvid.** Begin with official procedures, forms, and FAQs; show sources and document dates; limit answers when evidence is insufficient. Expand later to permission-filtered internal documents and retrieval-injection tests.
 4. **Harden the deployment boundary.** HTTPS, production frontend hosting, managed secrets, durable data/budgets, and cross-device regression remain separate from a local demo.
 
-Python actions, RAG/Vector DB, automated follow-up messaging, and measured post-consultation conversion are future work, not completed features.
+Python actions, the memvid memory layer, automated follow-up messaging, and measured post-consultation conversion are future work, not completed features.
 
 **The goal is an AI service whose decisions, failures, and costs an operator can understand.**
