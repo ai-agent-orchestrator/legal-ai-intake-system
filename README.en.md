@@ -18,6 +18,7 @@ Legal intake is the application domain. The central engineering work is the back
 | Reliability | Stop downstream processing on rejection; handle retries, stale writes, cancellation, and partial search results |
 | Operations | Role-based workspaces, reason codes, incident review, cost metrics, and risk time series |
 | Stack | Java 21, Spring Boot, Spring Security, JPA, React, Micrometer, and Prometheus |
+| Direction | Extending to a Spring Boot + FastAPI hybrid with a memvid memory layer; commercial release planned |
 
 This is a prototype with documented experiments and limitations. It does not claim production readiness, legal-advice accuracy, or a provider-enforced spending ceiling.
 
@@ -42,25 +43,7 @@ The portfolio emphasis is the ability to turn a product problem into an architec
 
 ## Security and Cost Backbone
 
-```mermaid
-flowchart TD
-    A[Authenticated AI request / DTO validation] --> B[Dynamic session check]
-    B --> C[Fixed input rules / length limit]
-    C --> D[Reserve / inspect / settle input guard]
-    D --> E[Reserve answer budget / call LLM]
-    E --> F[Settle reported or estimated usage]
-    F --> G[Reserve / inspect / settle output guard]
-    G --> H[Mask supported personal-data patterns]
-    H --> I[JSON response / checked SSE output]
-    B -. Rejection .-> X[Stop downstream processing]
-    C -. Rejection .-> X
-    D -. Rejection or error .-> X
-    E -. Cancellation or error .-> Y[Finalize reservation once]
-    G -. Output blocked .-> X
-    I --> M[Reasons / metrics / operational evidence]
-    X --> M
-    Y --> M
-```
+[![AI chat pipeline: guards, staged cost accounting, masking, and metrics](docs/diagrams/ai-security-cost-backbone-en.png)](docs/diagrams/ai-security-cost-backbone-en.svg)
 
 This diagram describes the AI chat pipeline. Classification, reference queries, intake storage, and external-search stages have their own processing paths; they do not all execute the full chat pipeline.
 
@@ -120,20 +103,7 @@ Mock-provider experiments, internal cost estimates, and real paid-provider obser
 
 The client provides purpose, case category, party position, core facts, available materials, and the desired next step. Initial classification and preparation guidance use rules/templates, without an LLM call. LLM-based search-query generation and result explanations are separate stages.
 
-```mermaid
-flowchart LR
-    A[Guided client input] --> B[Rule-based classification]
-    B --> C[Save intake and search conditions]
-    C --> D[Preparation guidance]
-    C --> E[Create search request]
-    E --> F[Explicit execution request]
-    F --> G[Generate query / external search]
-    G --> H[Save results / explain relevance]
-    D --> I[Assigned lawyer review]
-    H --> I
-    I --> J[Status / internal notes]
-    J --> K[Operator summaries and risk review]
-```
+[![Guided intake to lawyer search, review, and operator summaries](docs/diagrams/guided-intake-and-search-en.png)](docs/diagrams/guided-intake-and-search-en.svg)
 
 Creation, search-request creation, and search execution are separate API calls. The implementation includes NAVER public-web search targeting the Korean Bar Association domain plus general web results; this is not a dedicated Bar Association API. Provider-specific demo bridges and real-call observations depend on the chosen runtime configuration. Search results are references for review, not verified endorsements or guaranteed lawyer recommendations.
 
@@ -210,6 +180,32 @@ Privacy Output      → supported-pattern masking, including checked SSE output
 Search Routing      → explicit execution, persisted results, relevance explanations
 Observability       → reason codes, metrics, risk history, operator review
 ```
+
+## Direction: Commercial Extension
+
+This repository is a documented prototype of the AI-call backbone. Development continues on a **Spring Boot + FastAPI hybrid with a memvid memory layer**, with a commercial release planned.
+
+| Layer | Role |
+|---|---|
+| **Spring Boot** | Single boundary for authentication, role-based access, business transactions, and policy and cost enforcement. Carries over the current implementation. |
+| **FastAPI (Python)** | AI processing, retrieval, and memory adapters, connected to Spring only through narrow, explicit JSON contracts. |
+| **memvid** | Evidence-oriented memory layer: answers carry sources and update dates, and reads stay within the caller's permissions. Evaluated against a retrieval-augmented (RAG) baseline by experiment. |
+
+**Principles**
+
+- Security and cost controls are enforced in code before the AI call and never depend on model judgment.
+- When evidence is insufficient, the answer is limited and sources and dates are shown.
+- Every extension keeps regression checks for normal, failed, and blocked paths.
+
+**Commercial-readiness work (planned)**
+
+- Operations: HTTPS, static frontend hosting, managed secrets, durable storage for business data and budgets
+- Accounts and access: a member database and stronger administrator authentication
+- Product: attorney-ready consultation summaries, follow-up messaging, and a dashboard based on measured conversion and drop-off
+
+These items are in development and are not completed features; the implemented scope is described under Current Implementation. The service does not claim legal-advice accuracy; it helps prepare consultations with lawyers.
+
+Diagram sources (Mermaid): [`docs/diagrams/*-en.mmd`](docs/diagrams)
 
 ## Retrospective and Next Steps
 

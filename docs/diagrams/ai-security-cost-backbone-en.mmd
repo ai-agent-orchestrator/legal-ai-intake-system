@@ -1,0 +1,30 @@
+%%{init: {"flowchart": {"rankSpacing": 34, "nodeSpacing": 26, "subGraphTitleMargin": {"top": 8, "bottom": 18}}}}%%
+flowchart TD
+    A[Authenticated AI request / DTO validation] --> B[Dynamic session check]
+    B --> C[Fixed input rules / length limit]
+    C --> D[Reserve / inspect / settle input guard]
+    D --> E[Reserve answer budget / call LLM]
+    E --> F[Settle reported or estimated usage]
+    F --> G[Reserve / inspect / settle output guard]
+    G --> H[Mask supported personal-data patterns]
+    H --> I[JSON response / checked SSE output]
+    B -. Rejection .-> X[Stop downstream processing]
+    C -. Rejection .-> X
+    D -. Rejection or error .-> X
+    E -. Cancellation or error .-> Y[Finalize reservation once]
+    G -. Output blocked .-> X
+    I --> M[Reasons / metrics / operational evidence]
+    X --> M
+    Y --> M
+    class A engineering
+    class B,C,D,G,H guard
+    class E worker
+    class F,Y control
+    class I,M result
+    class X stop
+    classDef engineering fill:#18344b,stroke:#5ba7db,stroke-width:2px,color:#e6edf6
+    classDef guard fill:#263c17,stroke:#91cc45,stroke-width:3px,color:#e6edf6
+    classDef worker fill:#4b2b22,stroke:#d39a6a,stroke-width:3px,color:#e6edf6
+    classDef control fill:#42351e,stroke:#ddb965,stroke-width:2px,color:#e6edf6
+    classDef result fill:#1a2837,stroke:#78d5ef,stroke-width:2px,color:#e6edf6
+    classDef stop fill:#40282d,stroke:#c58b92,stroke-width:2px,color:#e6edf6
