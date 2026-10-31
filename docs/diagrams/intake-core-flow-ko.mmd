@@ -1,0 +1,22 @@
+%%{init: {"flowchart": {"rankSpacing": 34, "nodeSpacing": 26, "subGraphTitleMargin": {"top": 8, "bottom": 18}}}}%%
+flowchart TD
+    A["USER · 선택형 입력"] --> B["규칙 분류 · 문의 저장"]
+    B --> C["간단 안내 · 준비 자료"]
+    C --> D["선택한 검색 요청 실행"]
+    D --> E["저장 조건 → LLM 검색문"]
+    E --> F["네이버 웹 검색 · 변협 도메인 대상 + 일반 웹"]
+    F --> G["결과 저장 · 관련성 설명"]
+    C --> H["LAWYER · 배정 문의 검토"]
+    G --> H
+    H --> I["상태 변경 · 내부 상담 메모"]
+    E -. "유료 호출 전후" .-> J["Fixed · Dynamic · Cost · Privacy"]
+    G -. "유료 호출 전후" .-> J
+    I --> K["ADMIN · 운영·마케팅 현황"]
+    J --> L["Metric · 위험 이력 · 비용 관측"]
+    L --> M["화면13 · 위험 패턴 요약"]
+    class A,B,C,D,E,F,G,H,I engineering
+    class J guard
+    class K,L,M result
+    classDef engineering fill:#18344b,stroke:#5ba7db,stroke-width:2px,color:#e6edf6
+    classDef guard fill:#263c17,stroke:#91cc45,stroke-width:3px,color:#e6edf6
+    classDef result fill:#1a2837,stroke:#78d5ef,stroke-width:2px,color:#e6edf6

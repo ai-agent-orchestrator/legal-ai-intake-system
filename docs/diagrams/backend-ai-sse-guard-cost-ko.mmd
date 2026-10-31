@@ -1,0 +1,23 @@
+%%{init: {"flowchart": {"rankSpacing": 34, "nodeSpacing": 26, "subGraphTitleMargin": {"top": 8, "bottom": 18}}}}%%
+flowchart TD
+    A["JWT · DTO 통과 → AiController<br/>S01 /api/ai/chat → AiService.chat<br/>S02 /api/ai/chat/stream → AiStreamingService.stream"] --> B["LegalDynamicGuardService.preCheck<br/>→ LegalFixedGuardService.check<br/>→ AiCostControlService.checkInputPageLimit"]
+    B --> C["CostedGuardrailService.checkInput<br/>입력 Guard 비용 예약 → 검사 → 정산"]
+    C --> D["AiCostControlService.reserveWithBlock<br/>답변 예산 예약 → LLM 호출 → recordUsage<br/>usage 확인 여부로 실사용·추정 정산 구분"]
+    D --> E["CostedGuardrailService.checkOutput<br/>출력 Guard 비용 예약·검사·정산<br/>허용 출력 → PrivacyOutputGuardService.mask"]
+    E --> F["S01 JSON / S02 마스킹된 token → done<br/>traceId · reasonCode/detailCode<br/>usageAvailable · costSource는 경로에 따라 제공"]
+    B -. "차단 · 후속 단계 중단" .-> X["안전 응답 / blocked / error<br/>발생 사유 반환 · 기술 오류 fallback<br/>입력 차단은 반복 위험에 반영"]
+    C -. "정책·예산 차단 / 오류" .-> X
+    D -. "예산 차단 / 공급자 오류" .-> X
+    E -. "출력 차단" .-> X
+    D -. "SSE 종료·timeout·오류" .-> Y["LlmStreamControl.cancel · 중복 종결 방지<br/>usage 있음: 해당 사용량 정산<br/>호출됨·usage 없음: 추정 정산<br/>미호출: 예약 해제"]
+    F --> M["AiMetricRecorder · 비용/위험 메모리 상태<br/>C16 GET /actuator/prometheus · ADMIN Basic<br/>Counter/Gauge/Timer → 운영 화면 관측"]
+    X --> M
+    Y --> M
+    class A,F,M engineering
+    class D python
+    class B,C,E,Y control
+    class X stop
+    classDef engineering fill:#18344b,stroke:#5ba7db,stroke-width:2px,color:#e6edf6
+    classDef python fill:#26313d,stroke:#a1afbf,stroke-width:2px,color:#e6edf6
+    classDef control fill:#42351e,stroke:#ddb965,stroke-width:2px,color:#e6edf6
+    classDef stop fill:#40282d,stroke:#c58b92,stroke-width:2px,color:#e6edf6

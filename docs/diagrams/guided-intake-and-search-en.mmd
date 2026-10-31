@@ -1,0 +1,23 @@
+%%{init: {"flowchart": {"rankSpacing": 34, "nodeSpacing": 26, "subGraphTitleMargin": {"top": 8, "bottom": 18}}}}%%
+flowchart TD
+    A[Guided client input] --> B[Rule-based classification]
+    B --> C[Save intake and search conditions]
+    C --> D[Preparation guidance]
+    C --> E[Create search request]
+    E --> F[Explicit execution request]
+    F --> G[Generate query / external search]
+    G --> H[Save results / explain relevance]
+    D --> I[Assigned lawyer review]
+    H --> I
+    I --> J[Status / internal notes]
+    J --> K[Operator summaries and risk review]
+    class A,B,C,D,E,F engineering
+    class G worker
+    class H python
+    class I,J control
+    class K result
+    classDef engineering fill:#18344b,stroke:#5ba7db,stroke-width:2px,color:#e6edf6
+    classDef worker fill:#4b2b22,stroke:#d39a6a,stroke-width:3px,color:#e6edf6
+    classDef python fill:#26313d,stroke:#a1afbf,stroke-width:2px,color:#e6edf6
+    classDef control fill:#42351e,stroke:#ddb965,stroke-width:2px,color:#e6edf6
+    classDef result fill:#1a2837,stroke:#78d5ef,stroke-width:2px,color:#e6edf6

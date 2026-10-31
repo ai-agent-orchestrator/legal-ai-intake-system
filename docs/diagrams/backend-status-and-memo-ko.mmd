@@ -1,0 +1,21 @@
+%%{init: {"flowchart": {"rankSpacing": 34, "nodeSpacing": 26, "subGraphTitleMargin": {"top": 8, "bottom": 18}}}}%%
+flowchart TD
+    A["C05 상세 / C09 목록<br/>intakeId · 현재 version 확인"] --> B["C10 PATCH /api/intakes/{id}/status<br/>LegalIntakeStatusController.update<br/>status · expectedVersion 검증"]
+    A --> C["C11 POST /api/intakes/{id}/memo<br/>ConsultationMemoController.create<br/>content · followUpItems · expectedVersion<br/>헤더 Idempotency-Key"]
+    B --> D["LegalIntakeRecordService.updateStatus<br/>requireManager · 문의 행 잠금<br/>배정 LAWYER / ADMIN 권한 확인"]
+    D --> E["같은 상태 → 200 · changed=false · 버전 유지<br/>다른 상태 → expectedVersion 대조<br/>IntakeStatus.canChangeTo → changeStatus"]
+    E --> F["허용: flush → 200<br/>previousStatus · status · changed · version"]
+    E --> X["금지 전이 / 오래된 버전 → 409<br/>CLOSED 재개·SUBMITTED 복귀 금지"]
+    C --> G["LegalIntakeRecordService.createMemo<br/>requireManager · 같은 문의 행 잠금<br/>작성자·키·내용 해시로 재전송 판별"]
+    G --> H["같은 키·작성자·내용 → 기존 memoId 반환<br/>키 재사용 충돌 / 버전 불일치 → 409<br/>새 요청: memo save · intake.touch · flush"]
+    H --> I["PrivacyOutputGuardService.mask → 201<br/>id = memoId · intakeId · intakeVersion<br/>Idempotent-Replayed 응답 헤더"]
+    F --> J["화면의 별도 C05 / C09 재조회<br/>최신 상태·버전·허용된 메모 확인<br/>USER DTO에는 내부 메모 제외"]
+    I --> J
+    class A,B,C,F,I,J engineering
+    class D,G python
+    class E,H control
+    class X stop
+    classDef engineering fill:#18344b,stroke:#5ba7db,stroke-width:2px,color:#e6edf6
+    classDef python fill:#26313d,stroke:#a1afbf,stroke-width:2px,color:#e6edf6
+    classDef control fill:#42351e,stroke:#ddb965,stroke-width:2px,color:#e6edf6
+    classDef stop fill:#40282d,stroke:#c58b92,stroke-width:2px,color:#e6edf6

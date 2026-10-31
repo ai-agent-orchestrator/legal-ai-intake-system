@@ -1,0 +1,17 @@
+%%{init: {"flowchart": {"rankSpacing": 34, "nodeSpacing": 26, "subGraphTitleMargin": {"top": 8, "bottom": 18}}}}%%
+flowchart TD
+    A["C03 POST /api/intakes<br/>LegalIntakeRecordController.create<br/>DTO 검증 · JWT · Idempotency-Key"] --> B["LegalIntakeRecordService.create · 트랜잭션<br/>LegalIntake + 자료 종류 + LawyerSearchCondition 저장<br/>응답 id = intakeId · lawyerSearchCondition.id = conditionId"]
+    B --> C["C06 POST /api/intakes/{intakeId}/search-requests<br/>createSearchRequest · 문의 접근 권한·최신 조건 확인<br/>AiSearchRequest 저장 · PREVIEW_READY · id = searchRequestId"]
+    C --> D["P03 POST /api/intakes/search-requests/{searchRequestId}/execute<br/>SearchExecutionController → SearchExecutionService.execute<br/>실행권 선점 · 작업 큐 · 202 응답"]
+    D --> E["run · SearchLlmService.query → 외부 검색<br/>네이버 변협 도메인 대상 + 일반 웹<br/>결과 저장 → 결과별 LLM 관련성 설명"]
+    C --> F["C08 POST /api/intakes/search-requests/{searchRequestId}/results<br/>LegalIntakeRecordService.addSearchResult<br/>호출자가 직접 보낸 결과 저장 · 실행 중이면409"]
+    E --> G["SearchResultSnapshot · searchRequestId로 연결<br/>P03 COMPLETED / NO_RESULTS / PARTIAL / FAILED"]
+    F --> G
+    G --> H["C07 요청 상세 · P02 문의별 요청 이력<br/>조건 + 정렬된 results를 DTO로 조합<br/>화면이 별도로 조회·갱신"]
+    B -. "문의 조회" .-> I["C05 상세 / C09 역할별 목록"]
+    class A,C,D,F,H,I engineering
+    class B,G python
+    class E control
+    classDef engineering fill:#18344b,stroke:#5ba7db,stroke-width:2px,color:#e6edf6
+    classDef python fill:#26313d,stroke:#a1afbf,stroke-width:2px,color:#e6edf6
+    classDef control fill:#42351e,stroke:#ddb965,stroke-width:2px,color:#e6edf6
